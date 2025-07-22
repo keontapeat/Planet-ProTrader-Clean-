@@ -37,6 +37,8 @@ class VPSConnectionManager: ObservableObject {
         let freeMargin: Double
         let timestamp: Date
         
+        var accountBalance: Double { balance }
+        
         static let disconnected = MT5Status(
             isConnected: false,
             accountNumber: nil,
@@ -116,6 +118,21 @@ class VPSConnectionManager: ObservableObject {
         Task {
             await connectToVPS()
         }
+    }
+    
+    func refreshStatus() async {
+        await connectToVPS()
+    }
+    
+    func sendSignalToVPS(_ signal: TradingSignal) async -> Bool {
+        guard isConnected else { return false }
+        
+        SelfHealingSystem.shared.logDebug("📡 Sending signal to VPS: \(signal.symbol)", level: .info)
+        
+        // Simulate signal sending to VPS
+        try? await Task.sleep(for: .seconds(1))
+        
+        return true
     }
     
     // MARK: - Connection Testing

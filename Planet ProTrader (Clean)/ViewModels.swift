@@ -1,10 +1,10 @@
-//
+// 
 //  ViewModels.swift
 //  Planet ProTrader - Complete View Models
-//
+// 
 //  Comprehensive View Models with State Management
 //  Created by AI Assistant on 1/25/25.
-//
+// 
 
 import SwiftUI
 import Foundation
@@ -188,14 +188,15 @@ class TradingDashboardViewModel: ObservableObject {
     
     private func setupDataBindings() {
         // Bind to TradingManager updates
-        TradingManager.shared.$goldPrice
-            .sink { [weak self] _ in
-                // Update dashboard when gold price changes
-                DispatchQueue.main.async {
+        Task { @MainActor in
+            TradingManager.shared.$goldPrice
+                .receive(on: DispatchQueue.main)
+                .sink { [weak self] _ in
+                    // Update dashboard when gold price changes
                     self?.loadDashboardData()
                 }
-            }
-            .store(in: &cancellables)
+                .store(in: &cancellables)
+        }
     }
     
     var winRateFormatted: String {
@@ -415,7 +416,7 @@ class SettingsViewModel: ObservableObject {
         UserDefaults.standard.set(trading.autoTradingEnabled, forKey: "trading_auto")
         UserDefaults.standard.set(risk.maxRiskPerTrade, forKey: "risk_max_per_trade")
         
-        print("✅ Settings saved successfully")
+        print(" Settings saved successfully")
     }
     
     func loadSettings() {
@@ -424,7 +425,7 @@ class SettingsViewModel: ObservableObject {
         trading.autoTradingEnabled = UserDefaults.standard.bool(forKey: "trading_auto")
         risk.maxRiskPerTrade = UserDefaults.standard.double(forKey: "risk_max_per_trade")
         
-        print("✅ Settings loaded successfully")
+        print(" Settings loaded successfully")
     }
     
     func resetToDefaults() {
@@ -435,7 +436,7 @@ class SettingsViewModel: ObservableObject {
         account = AccountSettings()
         
         saveSettings()
-        print("✅ Settings reset to defaults")
+        print(" Settings reset to defaults")
     }
 }
 
@@ -598,7 +599,7 @@ class MarketAnalysisViewModel: ObservableObject {
 
 #Preview {
     VStack(spacing: 20) {
-        Text("📊 View Models Preview")
+        Text(" View Models Preview")
             .font(DesignSystem.Typography.largeTitle)
             .goldText()
         
@@ -633,7 +634,7 @@ class MarketAnalysisViewModel: ObservableObject {
         }
         .standardCard()
         
-        Text("🔄 Real-time updates • 📱 State management • ⚙️ Settings control")
+        Text(" Real-time updates  State management  Settings control")
             .font(.caption)
             .foregroundColor(.secondary)
     }

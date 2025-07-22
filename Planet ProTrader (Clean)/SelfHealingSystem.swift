@@ -35,6 +35,7 @@ class SelfHealingSystem: ObservableObject {
         case warning = "Warning"
         case critical = "Critical"
         case unknown = "Unknown"
+        case disconnected = "Disconnected"
         
         var color: Color {
             switch self {
@@ -43,6 +44,7 @@ class SelfHealingSystem: ObservableObject {
             case .warning: return .orange
             case .critical: return .red
             case .unknown: return .gray
+            case .disconnected: return .red
             }
         }
         
@@ -53,6 +55,7 @@ class SelfHealingSystem: ObservableObject {
             case .warning: return "exclamationmark.triangle.fill"
             case .critical: return "xmark.octagon.fill"
             case .unknown: return "questionmark.circle.fill"
+            case .disconnected: return "wifi.slash"
             }
         }
         
@@ -63,6 +66,7 @@ class SelfHealingSystem: ObservableObject {
             case .warning: return "Minor issues detected, monitoring closely"
             case .critical: return "Critical issues requiring immediate attention"
             case .unknown: return "System status unknown"
+            case .disconnected: return "System disconnected from network"
             }
         }
     }
@@ -218,7 +222,7 @@ class SelfHealingSystem: ObservableObject {
         guard !isMonitoring else { return }
         isMonitoring = true
         
-        logDebug("🏥 Self-Healing System activated", level: .info)
+        logDebug(" Self-Healing System activated", level: .info)
         
         // Start periodic health checks
         healthTimer = Timer.scheduledTimer(withTimeInterval: 30.0, repeats: true) { [weak self] _ in
@@ -242,13 +246,13 @@ class SelfHealingSystem: ObservableObject {
         isMonitoring = false
         healthTimer?.invalidate()
         performanceTimer?.invalidate()
-        logDebug("🛑 Self-Healing System deactivated", level: .info)
+        logDebug(" Self-Healing System deactivated", level: .info)
     }
     
     // MARK: - Enhanced Health Checking with AI
     func performHealthCheck() async {
         lastHealthCheck = Date()
-        logDebug("🔍 Starting comprehensive health check", level: .info)
+        logDebug(" Starting comprehensive health check", level: .info)
         
         // 1. Check app performance
         let appHealth = await checkAppHealth()
@@ -286,7 +290,7 @@ class SelfHealingSystem: ObservableObject {
         // 10. Run predictive analysis
         await predictiveAnalytics.analyzePatterns(performanceMetrics)
         
-        logDebug("✅ Health check completed: \(overallHealth.rawValue)", level: .info)
+        logDebug(" Health check completed: \(overallHealth.rawValue)", level: .info)
     }
     
     private func checkAppHealth() async -> SystemHealth {
@@ -321,7 +325,7 @@ class SelfHealingSystem: ObservableObject {
             
             if path.status != .satisfied {
                 reportIssue(.networkConnectivity, "Network connection lost", .critical)
-                return .critical
+                return .disconnected
             }
             
             // Test internet connectivity
@@ -346,13 +350,16 @@ class SelfHealingSystem: ObservableObject {
     
     private func checkDataIntegrity() async -> SystemHealth {
         // Check if core data is available
-        if TradingManager.shared.goldPrice.currentPrice <= 0 {
-            reportIssue(.dataCorruption, "Invalid gold price data", .medium)
-            return .warning
+        await MainActor.run {
+            if TradingManager.shared.goldPrice.currentPrice <= 0 {
+                reportIssue(.dataCorruption, "Invalid gold price data", .medium)
+            }
         }
         
         // Check if bots are responsive
-        let activeBots = BotManager.shared.activeBots
+        let activeBots = await MainActor.run {
+            BotManager.shared.activeBots
+        }
         let unresponsiveBots = activeBots.filter { !$0.isActive }
         
         if !unresponsiveBots.isEmpty {
@@ -365,9 +372,11 @@ class SelfHealingSystem: ObservableObject {
     
     private func calculateOverallHealth(_ healths: [SystemHealth]) -> SystemHealth {
         let criticalCount = healths.filter { $0 == .critical }.count
+        let disconnectedCount = healths.filter { $0 == .disconnected }.count
         let warningCount = healths.filter { $0 == .warning }.count
         
         if criticalCount > 0 { return .critical }
+        if disconnectedCount > 0 { return .disconnected }
         if warningCount >= 2 { return .warning }
         if warningCount == 1 { return .good }
         return .optimal
@@ -375,7 +384,7 @@ class SelfHealingSystem: ObservableObject {
     
     // MARK: - AI Analysis Integration
     private func triggerAIAnalysis() async {
-        logDebug("🧠 Triggering AI analysis for system issues", level: .info)
+        logDebug(" Triggering AI analysis for system issues", level: .info)
         
         let systemContext = SystemContext(
             health: systemHealth,
@@ -390,7 +399,7 @@ class SelfHealingSystem: ObservableObject {
     
     // MARK: - Auto-Healing
     private func triggerAutoHealing() async {
-        logDebug("🔧 Initiating auto-healing procedures", level: .info)
+        logDebug(" Initiating auto-healing procedures", level: .info)
         
         for issue in activeIssues.filter({ !$0.isResolved }) {
             await healIssue(issue)
@@ -470,14 +479,15 @@ class SelfHealingSystem: ObservableObject {
             }
         }
         
-        logDebug("🔧 Healing action completed: \(result)", level: success ? .info : .error)
+        logDebug(" Healing action completed: \(result)", level: success ? .info : .error)
     }
     
     // MARK: - Specific Healing Methods
     private func healNetworkIssue() async -> Bool {
         // Attempt to reconnect network services
         try? await Task.sleep(for: .seconds(2))
-        return await checkNetworkHealth() != .critical
+        let networkHealth = await checkNetworkHealth()
+        return networkHealth != .critical && networkHealth != .disconnected
     }
     
     private func healVPSIssue() async -> Bool {
@@ -501,13 +511,17 @@ class SelfHealingSystem: ObservableObject {
     private func healTradingApiIssue() async -> Bool {
         // Restart trading manager
         await TradingManager.shared.refreshData()
-        return TradingManager.shared.isConnected
+        return await MainActor.run {
+            TradingManager.shared.isConnected
+        }
     }
     
     private func healBotIssue() async -> Bool {
         // Restart bot manager
         await BotManager.shared.refreshBots()
-        return !BotManager.shared.activeBots.isEmpty
+        return await MainActor.run {
+            !BotManager.shared.activeBots.isEmpty
+        }
     }
     
     private func healDataCorruption() async -> Bool {
@@ -515,12 +529,14 @@ class SelfHealingSystem: ObservableObject {
         await TradingManager.shared.refreshData()
         await BotManager.shared.refreshBots()
         await AccountManager.shared.refreshAccount()
-        return TradingManager.shared.goldPrice.currentPrice > 0
+        return await MainActor.run {
+            TradingManager.shared.goldPrice.currentPrice > 0
+        }
     }
     
     private func healSecurityThreat() async -> Bool {
         // Implement security measures
-        logDebug("🛡️ Security threat mitigation initiated", level: .warning)
+        logDebug(" Security threat mitigation initiated", level: .warning)
         return true
     }
     
@@ -538,7 +554,7 @@ class SelfHealingSystem: ObservableObject {
             self.activeIssues.append(issue)
         }
         
-        logDebug("⚠️ Issue reported: \(description)", level: severity == .critical ? .critical : .warning)
+        logDebug(" Issue reported: \(description)", level: severity == .critical ? .critical : .warning)
     }
     
     // MARK: - Performance Monitoring
@@ -593,11 +609,11 @@ class PredictiveAnalytics: ObservableObject {
     func analyzePatterns(_ metrics: SelfHealingSystem.PerformanceMetrics) async {
         // Analyze performance patterns and predict issues
         if metrics.cpuUsage > 80 {
-            SelfHealingSystem.shared.logDebug("📊 High CPU usage pattern detected", level: .warning)
+            SelfHealingSystem.shared.logDebug(" High CPU usage pattern detected", level: .warning)
         }
         
         if metrics.memoryUsage > 85 {
-            SelfHealingSystem.shared.logDebug("📊 Memory usage trending upward", level: .warning)
+            SelfHealingSystem.shared.logDebug(" Memory usage trending upward", level: .warning)
         }
     }
 }
@@ -617,23 +633,23 @@ extension TradingManager {
     }
     
     func restart() async {
-        print("🔄 Restarting TradingManager...")
+        print(" Restarting TradingManager...")
         await refreshData()
-        print("✅ TradingManager restarted")
+        print(" TradingManager restarted")
     }
 }
 
 extension BotManager {
     func restart() async {
-        print("🔄 Restarting BotManager...")
+        print(" Restarting BotManager...")
         await refreshBots()
-        print("✅ BotManager restarted")
+        print(" BotManager restarted")
     }
 }
 
 #Preview {
     VStack(spacing: 20) {
-        Text("🏥 Self-Healing System")
+        Text(" Self-Healing System")
             .font(DesignSystem.Typography.largeTitle)
             .goldText()
         
@@ -666,7 +682,7 @@ extension BotManager {
         }
         .standardCard()
         
-        Text("🤖 AI-Powered • 🔧 Auto-Healing • 📊 Predictive Analytics")
+        Text(" AI-Powered  Auto-Healing  Predictive Analytics")
             .font(.caption)
             .foregroundColor(.secondary)
     }

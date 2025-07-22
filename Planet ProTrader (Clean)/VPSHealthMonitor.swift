@@ -13,7 +13,7 @@ import Network
 // MARK: - VPS Health Monitor
 
 class VPSHealthMonitor: ObservableObject {
-    @Published var vpsHealth: SelfHealingSystem.SystemHealth = .disconnected
+    @Published var vpsHealth: SelfHealingSystem.SystemHealth = .unknown
     @Published var services: [VPSService] = []
     @Published var systemMetrics: VPSMetrics?
     @Published var isMonitoring = false
@@ -132,7 +132,7 @@ class VPSHealthMonitor: ObservableObject {
         isMonitoring = false
         monitoringTimer?.invalidate()
         monitoringTimer = nil
-        vpsHealth = .disconnected
+        vpsHealth = .unknown
     }
     
     private func performLinodeHealthCheck() async {
@@ -282,8 +282,7 @@ class VPSHealthMonitor: ObservableObject {
         let message = "Linode VPS health degraded to \(health.rawValue)"
         print("⚠️ \(message)")
         
-        let issue = SystemIssue(
-            id: UUID(),
+        let issue = SelfHealingSystem.SystemIssue(
             type: .vpsIssue,
             description: message + " (Linode \(linodeNodeId))",
             severity: health == .critical ? .critical : .high,
@@ -445,42 +444,6 @@ class RemoteHealingService: ObservableObject {
             remoteHealingHistory = Array(remoteHealingHistory.suffix(50))
         }
     }
-}
-
-// MARK: - Extensions
-
-extension TradingManager {
-    func performHealthCheck() async -> Bool {
-        return isConnected && goldPrice.currentPrice > 0
-    }
-    
-    func restart() async {
-        print("🔄 Restarting TradingManager...")
-        await refreshData()
-        print("✅ TradingManager restarted")
-    }
-}
-
-extension BotManager {
-    func restart() async {
-        print("🔄 Restarting BotManager...")
-        await refreshBots()
-        print("✅ BotManager restarted")
-    }
-}
-
-extension VPSConnectionManager {
-    func reconnect() async {
-        print("🔄 Reconnecting to VPS...")
-        disconnect()
-        try? await Task.sleep(for: .seconds(2))
-        await connectToVPS()
-        print("✅ VPS reconnection completed")
-    }
-}
-
-extension SelfHealingSystem.SystemHealth {
-    static let disconnected: Self = .critical
 }
 
 #Preview {

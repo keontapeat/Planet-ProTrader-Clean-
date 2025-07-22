@@ -147,11 +147,11 @@ struct VPSDetailView: View {
                         }
                         .standardCard()
                         
-                        // Performance Metrics
+                        // 
                         VStack(alignment: .leading, spacing: 16) {
                             Text("Performance Metrics")
                                 .font(.headline)
-                                .fontWeight(.bold()
+                                .fontWeight(.bold)
                             
                             VStack(spacing: 12) {
                                 MetricRow(title: "CPU Usage", value: serverInfo.cpuUsage, unit: "%", maxValue: 100)

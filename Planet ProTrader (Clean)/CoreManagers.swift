@@ -50,12 +50,11 @@ class TradingManager: ObservableObject {
             await vpsManager.connectToVPS()
             vpsConnected = vpsManager.isConnected
             
-            if let mt5Status = vpsManager.mt5Status {
-                mt5Connected = mt5Status.isConnected
-                
-                if mt5Connected {
-                    updateRealAccountData(from: mt5Status)
-                }
+            let mt5Status = vpsManager.mt5Status 
+            mt5Connected = mt5Status.isConnected
+            
+            if mt5Connected {
+                updateRealAccountData(from: mt5Status)
             }
         }
     }
@@ -66,7 +65,7 @@ class TradingManager: ObservableObject {
                 name: liveAccount.name,
                 broker: liveAccount.broker,
                 accountNumber: liveAccount.accountNumber,
-                balance: mt5Status.accountBalance,
+                balance: mt5Status.balance,
                 equity: liveAccount.equity,
                 margin: liveAccount.margin,
                 freeMargin: liveAccount.freeMargin,
@@ -83,7 +82,7 @@ class TradingManager: ObservableObject {
             }
         }
         
-        todaysPnL = mt5Status.accountBalance - 5000.0
+        todaysPnL = mt5Status.balance - 5000.0
     }
     
     private func startPriceUpdates() {
@@ -134,7 +133,8 @@ class TradingManager: ObservableObject {
         if vpsConnected {
             await vpsManager.refreshStatus()
             
-            if let mt5Status = vpsManager.mt5Status {
+            let mt5Status = await vpsManager.getMT5AccountInfo() 
+            if mt5Status.isConnected {
                 updateRealAccountData(from: mt5Status)
             }
         } else {
@@ -152,14 +152,12 @@ class TradingManager: ObservableObject {
             
             if success {
                 activeTrades.append(signal)
-                HapticManager.shared.tradeExecuted()
                 return true
             }
             
             return false
         } else {
             activeTrades.append(signal)
-            HapticManager.shared.success()
             return true
         }
     }
@@ -253,6 +251,14 @@ class BotManager: ObservableObject {
     func deployBot(_ bot: TradingBot) async {
         deploymentStatus = "Deploying \(bot.name)..."
         
+        let liveSuccess = await LiveTradingManager.shared.deployBotForLiveTrading(bot)
+        
+        if liveSuccess {
+            deploymentStatus = "✅ \(bot.name) deployed to Coinexx Demo - Trading LIVE!"
+        } else {
+            deploymentStatus = "❌ Failed to deploy \(bot.name) to live trading"
+        }
+        
         if tradingManager.vpsConnected {
             deploymentStatus = "Uploading bot to VPS..."
             try? await Task.sleep(for: .seconds(3))
@@ -285,9 +291,6 @@ class BotManager: ObservableObject {
             activeBots = allBots.filter { $0.isActive }
         }
         
-        deploymentStatus = "✅ \(bot.name) deployed successfully!"
-        HapticManager.shared.botDeployed()
-        
         DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
             self.deploymentStatus = ""
         }
@@ -312,8 +315,6 @@ class BotManager: ObservableObject {
             allBots[index] = updatedBot
             activeBots = allBots.filter { $0.isActive }
         }
-        
-        HapticManager.shared.warning()
     }
 }
 
@@ -367,14 +368,12 @@ class AccountManager: ObservableObject {
         lastUpdate = Date()
         realTimeMode = account.isLive
         
-        HapticManager.shared.success()
     }
     
     func disconnect() {
         connectionStatus = .disconnected
         currentAccount = nil
         realTimeMode = false
-        HapticManager.shared.selection()
     }
     
     func refreshAccount() async {
@@ -382,62 +381,6 @@ class AccountManager: ObservableObject {
         
         try? await Task.sleep(for: .seconds(1))
         lastUpdate = Date()
-    }
-}
-
-// MARK: - Haptic Manager
-class HapticManager: ObservableObject {
-    static let shared = HapticManager()
-    
-    private init() {}
-    
-    func impact(_ style: UIImpactFeedbackGenerator.FeedbackStyle = .medium) {
-        let generator = UIImpactFeedbackGenerator(style: style)
-        generator.prepare()
-        generator.impactOccurred()
-    }
-    
-    func selection() {
-        let generator = UISelectionFeedbackGenerator()
-        generator.prepare()
-        generator.selectionChanged()
-    }
-    
-    func notification(_ type: UINotificationFeedbackGenerator.FeedbackType) {
-        let generator = UINotificationFeedbackGenerator()
-        generator.prepare()
-        generator.notificationOccurred(type)
-    }
-    
-    func success() {
-        notification(.success)
-    }
-    
-    func warning() {
-        notification(.warning)
-    }
-    
-    func error() {
-        notification(.error)
-    }
-    
-    func tradeExecuted() {
-        success()
-    }
-    
-    func botDeployed() {
-        success()
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            self.impact(.light)
-        }
-    }
-    
-    func profitAlert() {
-        success()
-    }
-    
-    func lossAlert() {
-        warning()
     }
 }
 
