@@ -28,9 +28,11 @@ struct RealAccountView: View {
                     eaDeploymentCard
                     
                     // Connection Status
-                    connectionStatusCard
+                    if !eaManager.isEADeployed {
+                        connectionStatusCard
+                    }
                     
-                    // Account Details (if connected)
+                    // Account Details (if EA is deployed or connected)
                     if connectionSuccess || eaManager.isEADeployed {
                         accountDetailsCard
                     }
@@ -284,7 +286,7 @@ struct RealAccountView: View {
             if !eaManager.isEADeployed {
                 showingEADeployment = true
             } else {
-                // EA is deployed, maybe show bot selection
+                // EA is deployed, show success message
             }
         }) {
             HStack {
@@ -545,7 +547,6 @@ struct ActiveBotCard: View {
     }
 }
 
-// The rest of the file remains the same
 #Preview {
     RealAccountView()
 }

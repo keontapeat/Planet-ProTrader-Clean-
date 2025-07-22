@@ -16,43 +16,49 @@ struct EADeploymentView: View {
     
     var body: some View {
         NavigationStack {
-            VStack(spacing: 32) {
-                // Header
-                headerSection
-                
-                // Deployment Steps
-                if !deploymentSteps.isEmpty {
-                    deploymentStepsSection
+            ScrollView {
+                VStack(spacing: 24) {
+                    // Header
+                    headerSection
+                    
+                    // Deployment Steps
+                    if !deploymentSteps.isEmpty {
+                        deploymentStepsSection
+                    }
+                    
+                    // VPS & Account Info
+                    accountInfoSection
+                    
+                    // Deploy Button
+                    deployButton
+                        .padding(.top, 20)
                 }
-                
-                // VPS & Account Info
-                accountInfoSection
-                
-                Spacer()
-                
-                // Deploy Button
-                deployButton
+                .padding()
             }
-            .padding()
             .navigationTitle("EA Deployment")
-            .navigationBarTitleDisplayMode(.large)
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Cancel") {
+                        print("✅ Cancel button tapped - dismissing modal")
                         dismiss()
                     }
+                    .foregroundColor(.red)
+                    .font(.headline)
                 }
             }
             .onAppear {
+                print("✅ EADeploymentView appeared")
                 setupDeploymentSteps()
             }
         }
+        .presentationDragIndicator(.visible)
     }
     
     private var headerSection: some View {
         VStack(spacing: 16) {
             Image(systemName: "server.rack")
-                .font(.system(size: 60))
+                .font(.system(size: 50))
                 .foregroundColor(DesignSystem.primaryGold)
             
             VStack(spacing: 8) {
@@ -60,7 +66,7 @@ struct EADeploymentView: View {
                     .font(.title2)
                     .fontWeight(.bold)
                 
-                Text("Automatically deploy your EA to Linode VPS and connect to Coinexx Demo for live trading")
+                Text("Deploy your EA to VPS and connect to Coinexx Demo")
                     .font(.subheadline)
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)
@@ -74,13 +80,14 @@ struct EADeploymentView: View {
                 .font(.headline)
                 .fontWeight(.bold)
             
-            LazyVStack(spacing: 12) {
+            VStack(spacing: 10) {
                 ForEach(deploymentSteps) { step in
                     DeploymentStepRow(step: step)
                 }
             }
         }
-        .standardCard()
+        .padding()
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
     }
     
     private var accountInfoSection: some View {
@@ -89,87 +96,105 @@ struct EADeploymentView: View {
                 .font(.headline)
                 .fontWeight(.bold)
             
-            VStack(spacing: 12) {
+            VStack(spacing: 10) {
                 InfoRow(title: "VPS Server", value: "172.234.201.231", icon: "server.rack")
                 InfoRow(title: "Coinexx Account", value: "Demo #845638", icon: "building.columns")
                 InfoRow(title: "Trading Platform", value: "MetaTrader 5", icon: "chart.line.uptrend.xyaxis")
                 InfoRow(title: "Base Currency", value: "USD", icon: "dollarsign.circle")
-                InfoRow(title: "Initial Lot Size", value: "0.01 (Demo Safe)", icon: "gauge")
             }
         }
-        .standardCard()
+        .padding()
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
     }
     
     private var deployButton: some View {
-        Button(action: {
-            deployEA()
-        }) {
-            HStack {
-                if isDeploying {
-                    ProgressView()
-                        .scaleEffect(0.8)
-                        .foregroundColor(.white)
-                } else {
-                    Image(systemName: "rocket.fill")
-                        .font(.title3)
+        VStack(spacing: 12) {
+            Button(action: {
+                print("🚀 Deploy button tapped!")
+                deployEA()
+            }) {
+                HStack {
+                    if isDeploying {
+                        ProgressView()
+                            .scaleEffect(0.8)
+                            .foregroundColor(.white)
+                    } else {
+                        Image(systemName: "rocket.fill")
+                            .font(.title3)
+                    }
+                    
+                    Text(isDeploying ? "Deploying EA..." : "Deploy EA to VPS")
+                        .font(.headline)
+                        .fontWeight(.bold)
                 }
-                
-                Text(isDeploying ? "Deploying EA..." : "Deploy EA to VPS")
-                    .font(.headline)
-                    .fontWeight(.bold)
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity)
+                .frame(height: 50)
+                .background(
+                    isDeploying ? Color.gray : DesignSystem.primaryGold,
+                    in: RoundedRectangle(cornerRadius: 12)
+                )
             }
-            .foregroundColor(.white)
-            .frame(maxWidth: .infinity)
-            .padding()
-            .background(DesignSystem.goldGradient, in: RoundedRectangle(cornerRadius: 12))
+            .disabled(isDeploying)
+            
+            // Test button for debugging
+            Button("Test Button (Tap This)") {
+                print("🧪 Test button worked!")
+                dismiss()
+            }
+            .foregroundColor(.blue)
+            .font(.caption)
         }
-        .disabled(isDeploying)
     }
     
     private func setupDeploymentSteps() {
+        print("✅ Setting up deployment steps")
         deploymentSteps = [
-            DeploymentStep(id: 1, title: "Connect to VPS", description: "Establish secure connection to Linode server", status: .pending),
-            DeploymentStep(id: 2, title: "Upload EA File", description: "Transfer PlanetProTrader_EA.mq5 to VPS", status: .pending),
-            DeploymentStep(id: 3, title: "Compile EA", description: "Compile EA using MetaEditor on VPS", status: .pending),
-            DeploymentStep(id: 4, title: "Connect to Coinexx", description: "Login to Coinexx Demo account", status: .pending),
-            DeploymentStep(id: 5, title: "Start EA", description: "Attach EA to MT5 and begin trading", status: .pending)
+            DeploymentStep(id: 1, title: "Connect to VPS", description: "Connect to Linode server", status: .pending),
+            DeploymentStep(id: 2, title: "Upload EA File", description: "Transfer EA to VPS", status: .pending),
+            DeploymentStep(id: 3, title: "Compile EA", description: "Compile using MetaEditor", status: .pending),
+            DeploymentStep(id: 4, title: "Connect to Coinexx", description: "Login to Demo account", status: .pending),
+            DeploymentStep(id: 5, title: "Start EA", description: "Begin trading", status: .pending)
         ]
+        print("✅ Deployment steps created: \(deploymentSteps.count) steps")
     }
     
     private func deployEA() {
+        print("🚀 Starting EA deployment...")
         isDeploying = true
-        HapticManager.shared.impact()
         
         Task {
+            print("🔄 Deployment task started")
+            
             // Update steps in real-time
             for i in deploymentSteps.indices {
+                print("🔄 Updating step \(i + 1): \(deploymentSteps[i].title)")
                 await updateStepStatus(i, to: .inProgress)
-                try? await Task.sleep(for: .seconds(2)) // Simulate deployment time
+                try? await Task.sleep(for: .seconds(1))
                 await updateStepStatus(i, to: .completed)
+                print("✅ Step \(i + 1) completed")
             }
             
+            print("🔄 Calling eaManager.deployEAToVPS()")
             let success = await eaManager.deployEAToVPS()
+            print("🎯 EA deployment result: \(success)")
             
             DispatchQueue.main.async {
                 self.isDeploying = false
-                
-                if success {
-                    HapticManager.shared.success()
-                    self.dismiss()
-                } else {
-                    HapticManager.shared.error()
-                    // Show error state
-                    if let lastIndex = self.deploymentSteps.lastIndex(where: { $0.status == .inProgress }) {
-                        self.deploymentSteps[lastIndex].status = .failed
-                    }
-                }
+                print("🏁 Deployment finished, dismissing...")
+                self.dismiss()
             }
         }
     }
     
     private func updateStepStatus(_ index: Int, to status: DeploymentStep.Status) async {
-        DispatchQueue.main.async {
-            self.deploymentSteps[index].status = status
+        await MainActor.run {
+            guard index < deploymentSteps.count else { 
+                print("❌ Invalid step index: \(index)")
+                return 
+            }
+            deploymentSteps[index].status = status
+            print("📝 Step \(index + 1) updated to: \(status)")
         }
     }
 }
@@ -180,8 +205,17 @@ struct DeploymentStep: Identifiable {
     let description: String
     var status: Status
     
-    enum Status {
+    enum Status: CustomStringConvertible {
         case pending, inProgress, completed, failed
+        
+        var description: String {
+            switch self {
+            case .pending: return "pending"
+            case .inProgress: return "inProgress"
+            case .completed: return "completed"
+            case .failed: return "failed"
+            }
+        }
         
         var icon: String {
             switch self {
@@ -207,27 +241,27 @@ struct DeploymentStepRow: View {
     let step: DeploymentStep
     
     var body: some View {
-        HStack(spacing: 16) {
-            // Step number or icon
+        HStack(spacing: 12) {
+            // Step icon
             ZStack {
                 Circle()
                     .fill(step.status.color.opacity(0.2))
-                    .frame(width: 32, height: 32)
+                    .frame(width: 28, height: 28)
                 
                 if step.status == .inProgress {
                     ProgressView()
-                        .scaleEffect(0.6)
+                        .scaleEffect(0.5)
                 } else {
                     Image(systemName: step.status.icon)
-                        .font(.system(size: 14, weight: .bold))
+                        .font(.system(size: 12, weight: .bold))
                         .foregroundColor(step.status.color)
                 }
             }
             
             // Step details
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 2) {
                 Text(step.title)
-                    .font(.headline)
+                    .font(.subheadline)
                     .fontWeight(.semibold)
                 
                 Text(step.description)
@@ -237,7 +271,7 @@ struct DeploymentStepRow: View {
             
             Spacer()
         }
-        .padding(.vertical, 8)
+        .padding(.vertical, 4)
     }
 }
 
@@ -249,9 +283,9 @@ struct InfoRow: View {
     var body: some View {
         HStack {
             Image(systemName: icon)
-                .font(.title3)
+                .font(.subheadline)
                 .foregroundColor(DesignSystem.primaryGold)
-                .frame(width: 24)
+                .frame(width: 20)
             
             Text(title)
                 .font(.subheadline)
