@@ -19,11 +19,11 @@ class LiveTradingManager: ObservableObject {
     @Published var connectionStatus: MT5ConnectionStatus = .disconnected
     @Published var lastTradeTime: Date?
     
-    // Coinexx Demo Account Config
+    // Coinexx Demo Account Config - REAL ACCOUNT
     private let coinexxConfig = CoinexxAccount(
-        accountNumber: "123456789", // YOUR DEMO ACCOUNT NUMBER
-        server: "Coinexx-Demo",
-        password: "YourPassword123", // YOUR DEMO PASSWORD
+        accountNumber: "845638", // YOUR REAL DEMO ACCOUNT
+        server: "Coinexx-demo",
+        password: "Gl7#svVJbBekrg", // YOUR REAL PASSWORD  
         leverage: 100,
         currency: "USD"
     )
@@ -113,36 +113,13 @@ class LiveTradingManager: ObservableObject {
     // MARK: - Bot Trading Execution
     
     func deployBotForLiveTrading(_ bot: TradingBot) async -> Bool {
-        guard isConnectedToMT5, let account = currentAccount else {
-            SelfHealingSystem.shared.logDebug("❌ Cannot deploy bot: Not connected to MT5", level: .error)
+        guard isConnectedToMT5 || EAIntegrationManager.shared.isEADeployed else {
+            SelfHealingSystem.shared.logDebug("❌ Cannot deploy bot: EA not deployed", level: .error)
             return false
         }
         
-        connectionStatus = .trading
-        
-        SelfHealingSystem.shared.logDebug("🤖 Deploying \(bot.name) for live trading on Coinexx Demo", level: .info)
-        
-        // Configure bot parameters for live trading
-        let botConfig = LiveBotConfig(
-            botName: bot.name,
-            symbol: "XAUUSD",
-            lotSize: 0.01, // Start small on demo
-            maxRisk: 2.0, // 2% risk per trade
-            stopLoss: 25.0, // 25 pip SL
-            takeProfit: 50.0, // 50 pip TP
-            account: account
-        )
-        
-        // Send bot deployment command to VPS
-        let deploySuccess = await deployBotToVPS(botConfig)
-        
-        if deploySuccess {
-            SelfHealingSystem.shared.logDebug("✅ \(bot.name) deployed successfully to Coinexx Demo", level: .info)
-            return true
-        } else {
-            connectionStatus = .error("Bot deployment failed")
-            return false
-        }
+        // Use EA Integration Manager for bot deployment
+        return await EAIntegrationManager.shared.deployBotToEA(bot)
     }
     
     func executeLiveTrade(_ signal: TradingSignal) async -> Bool {

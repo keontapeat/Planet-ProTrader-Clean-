@@ -414,14 +414,55 @@ struct PortfolioView: View {
 
 struct SettingsView: View {
     var body: some View {
-        VStack(spacing: 20) {
-            Text("⚙️ Settings")
-                .font(.title)
-                .fontWeight(.bold)
-                .goldText()
-            
-            Text("App settings coming soon")
-                .foregroundColor(.secondary)
+        NavigationStack {
+            ScrollView {
+                VStack(spacing: 20) {
+                    Text("⚙️ Settings")
+                        .font(.title)
+                        .fontWeight(.bold)
+                        .goldText()
+                    
+                    // LIVE TRADING - Top Priority
+                    NavigationLink(destination: RealAccountView()) {
+                        HStack {
+                            Image(systemName: "building.columns.fill")
+                                .font(.title2)
+                                .foregroundColor(.green)
+                            
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("🏦 Live Trading Account")
+                                    .font(.headline)
+                                    .fontWeight(.semibold)
+                                
+                                Text("Connect Coinexx Demo & Deploy Bots")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                            
+                            Spacer()
+                            
+                            Text("CONNECT")
+                                .font(.caption2)
+                                .fontWeight(.bold)
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 4)
+                                .background(.green, in: Capsule())
+                            
+                            Image(systemName: "chevron.right")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        .padding()
+                        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    
+                    Text("App settings coming soon")
+                        .foregroundColor(.secondary)
+                }
+                .padding()
+            }
         }
         .navigationTitle("Settings")
     }
