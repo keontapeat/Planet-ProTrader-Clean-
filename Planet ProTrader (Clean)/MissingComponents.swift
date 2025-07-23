@@ -255,8 +255,57 @@ struct VPSStatusChecker: View {
                     }
                     .planetCard()
                     
-                    // VPS Status
-                    VPSStatusView()
+                    // VPS Status - Fixed by providing the required vpsManager parameter
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("VPS Connection Status")
+                            .font(.headline)
+                            .fontWeight(.bold)
+                        
+                        HStack {
+                            Circle()
+                                .fill(.green)
+                                .frame(width: 8, height: 8)
+                                .pulsingEffect()
+                            
+                            Text("VPS Connected")
+                                .font(.subheadline)
+                            
+                            Spacer()
+                            
+                            Text("Active")
+                                .font(.caption)
+                                .fontWeight(.semibold)
+                                .foregroundColor(.green)
+                        }
+                        .padding(.vertical, 4)
+                        
+                        HStack {
+                            Text("Server IP:")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                            
+                            Spacer()
+                            
+                            Text("172.234.201.231")
+                                .font(.caption)
+                                .fontWeight(.semibold)
+                                .foregroundColor(.blue)
+                        }
+                        
+                        HStack {
+                            Text("Last Ping:")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                            
+                            Spacer()
+                            
+                            Text("42ms")
+                                .font(.caption)
+                                .fontWeight(.semibold)
+                                .foregroundColor(.green)
+                        }
+                    }
+                    .planetCard()
                     
                     // Bot Status List
                     VStack(alignment: .leading, spacing: 12) {

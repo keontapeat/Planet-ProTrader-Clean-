@@ -127,10 +127,10 @@ struct RealAccountView: View {
                             .cosmicText()
                         
                         VStack(spacing: 12) {
-                            StatusRow(title: "VPS Server", status: "Connected", color: .green)
-                            StatusRow(title: "MT5 Terminal", status: "Ready", color: .orange)
-                            StatusRow(title: "Trading Account", status: "Disconnected", color: .red)
-                            StatusRow(title: "Real-time Data", status: "Awaiting Connection", color: .gray)
+                            AccountStatusRow(title: "VPS Server", value: "Connected", color: .green)
+                            AccountStatusRow(title: "MT5 Terminal", value: "Ready", color: .orange)
+                            AccountStatusRow(title: "Trading Account", value: "Disconnected", color: .red)
+                            AccountStatusRow(title: "Real-time Data", value: "Awaiting Connection", color: .gray)
                         }
                     }
                     .planetCard()
@@ -187,29 +187,24 @@ struct RealAccountView: View {
     }
 }
 
-struct StatusRow: View {
+struct AccountStatusRow: View {
     let title: String
-    let status: String
+    let value: String
     let color: Color
     
     var body: some View {
         HStack {
-            Circle()
-                .fill(color)
-                .frame(width: 8, height: 8)
-                .pulsingEffect()
-            
             Text(title)
-                .font(DesignSystem.Typography.asteroid)
-                .foregroundColor(DesignSystem.starWhite.opacity(0.8))
+                .font(.system(size: 14, weight: .medium))
+                .foregroundColor(.white.opacity(0.8))
             
             Spacer()
             
-            Text(status)
-                .font(DesignSystem.Typography.dust)
-                .fontWeight(.semibold)
+            Text(value)
+                .font(.system(size: 14, weight: .bold))
                 .foregroundColor(color)
         }
+        .padding(.vertical, 2)
     }
 }
 

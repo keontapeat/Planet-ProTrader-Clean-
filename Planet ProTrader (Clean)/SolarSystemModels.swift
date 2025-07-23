@@ -26,15 +26,39 @@ struct TradingPlanet: Identifiable, Hashable {
         return [
             TradingPlanet(
                 name: "ProTrader",
-                mentorName: "PEAT Master",
+                mentorName: "Keonta Peat",
                 description: "The foundation planet for professional trading mastery - A blue world of endless possibilities",
                 balance: 5000.0,
                 color: .blue,
                 gradientColors: [.blue, .cyan, .indigo],
-                icon: "chart.line.uptrend.xyaxis",
+                icon: "",
                 expertise: "Technical Analysis & Risk Management",
                 unlocked: true,
                 philosophy: "Precision, Excellence, Adaptability, Tenacity"
+            ),
+            TradingPlanet(
+                name: "Golden Core",
+                mentorName: "Trading Hub",
+                description: "The central trading command center - A golden planet of financial mastery",
+                balance: 10000.0,
+                color: .yellow,
+                gradientColors: [.yellow, .orange, .red],
+                icon: "",
+                expertise: "Core Trading Systems",
+                unlocked: true,
+                philosophy: "The center of all trading knowledge"
+            ),
+            TradingPlanet(
+                name: "Solar Command",
+                mentorName: "Central Hub",
+                description: "The bright center of trading operations - A radiant sun-like world",
+                balance: 15000.0,
+                color: .orange,
+                gradientColors: [.yellow, .orange, .red],
+                icon: "",
+                expertise: "Central Trading Operations",
+                unlocked: true,
+                philosophy: "Illuminate all trading paths"
             ),
             TradingPlanet(
                 name: "Discipline",
@@ -57,7 +81,7 @@ struct TradingPlanet: Identifiable, Hashable {
                 gradientColors: [.green, .mint, .teal],
                 icon: "leaf.fill",
                 expertise: "Mental Game Coaching",
-                unlocked: false,
+                unlocked: true,
                 philosophy: "Master your emotions, master the markets"
             ),
             TradingPlanet(
@@ -69,7 +93,7 @@ struct TradingPlanet: Identifiable, Hashable {
                 gradientColors: [.orange, .yellow, .red],
                 icon: "figure.mind.and.body",
                 expertise: "Emotional Intelligence & Mindfulness",
-                unlocked: false,
+                unlocked: true,
                 philosophy: "Trade from a state of emotional freedom"
             )
         ]
@@ -79,7 +103,7 @@ struct TradingPlanet: Identifiable, Hashable {
 // MARK: - Solar System Manager
 class SolarSystemManager: ObservableObject {
     @Published var planets: [TradingPlanet] = TradingPlanet.samplePlanets()
-    @Published var selectedPlanet: TradingPlanet = TradingPlanet.samplePlanets()[0]
+    @Published var selectedPlanet: TradingPlanet = TradingPlanet.samplePlanets().first(where: { $0.name == "ProTrader" }) ?? TradingPlanet.samplePlanets()[0]
     @Published var showingPlanetDetail = false
     @Published var animateOrbits = false
     
@@ -98,6 +122,9 @@ class SolarSystemManager: ObservableObject {
         if let savedPlanetName = UserDefaults.standard.string(forKey: "selectedPlanetName"),
            let planet = planets.first(where: { $0.name == savedPlanetName }) {
             selectedPlanet = planet
+        } else {
+            // Default to ProTrader if nothing saved
+            selectedPlanet = planets.first(where: { $0.name == "ProTrader" }) ?? planets[0]
         }
     }
 }
@@ -270,41 +297,6 @@ struct PlanetView: View {
             if shouldHaveRings(planet) {
                 createRealisticRings(isSelected: isSelected)
             }
-            
-            // Lock effect (if locked)
-            if !planet.unlocked {
-                ZStack {
-                    Circle()
-                        .fill(Color.black.opacity(0.8))
-                        .frame(width: isSelected ? 55 : 45, height: isSelected ? 55 : 45)
-                    
-                    Circle()
-                        .fill(
-                            RadialGradient(
-                                colors: [
-                                    Color.red.opacity(0.6),
-                                    Color.red.opacity(0.3),
-                                    Color.clear
-                                ],
-                                center: .center,
-                                startRadius: 10,
-                                endRadius: 25
-                            )
-                        )
-                        .frame(width: isSelected ? 55 : 45, height: isSelected ? 55 : 45)
-                    
-                    VStack(spacing: 4) {
-                        Image(systemName: "lock.fill")
-                            .font(.system(size: isSelected ? 18 : 15, weight: .bold))
-                            .foregroundColor(.red)
-                            .shadow(color: .red, radius: 8)
-                        
-                        Text("LOCKED")
-                            .font(.system(size: 7, weight: .black, design: .monospaced))
-                            .foregroundColor(.red.opacity(0.9))
-                    }
-                }
-            }
         }
         .onAppear {
             startPlanetRotation()
@@ -329,6 +321,20 @@ struct PlanetView: View {
                 center: UnitPoint(x: 0.35, y: 0.35),
                 startRadius: 3,
                 endRadius: 35
+            )
+            
+        case "Golden Core":
+            // Sun/Venus hybrid - Golden metallic surface
+            return RadialGradient(
+                colors: [
+                    Color(red: 1.0, green: 0.9, blue: 0.3),  // Bright gold
+                    Color(red: 0.9, green: 0.7, blue: 0.2),  // Deep gold
+                    Color(red: 0.8, green: 0.5, blue: 0.1),  // Bronze
+                    Color(red: 0.6, green: 0.3, blue: 0.05)  // Dark bronze
+                ],
+                center: UnitPoint(x: 0.3, y: 0.3),
+                startRadius: 4,
+                endRadius: 28
             )
             
         case "Discipline":
@@ -373,6 +379,20 @@ struct PlanetView: View {
                 endRadius: 33
             )
             
+        case "Solar Command":
+            // Sun - Bright yellow surface
+            return RadialGradient(
+                colors: [
+                    Color(red: 1.0, green: 1.0, blue: 0.2),  // Bright yellow
+                    Color(red: 0.8, green: 0.7, blue: 0.1),  // Mid yellow
+                    Color(red: 0.6, green: 0.4, blue: 0.05),  // Dark yellow
+                    Color(red: 0.4, green: 0.2, blue: 0.02)   // Deep yellow
+                ],
+                center: UnitPoint(x: 0.3, y: 0.3),
+                startRadius: 4,
+                endRadius: 28
+            )
+            
         default:
             return RadialGradient(
                 colors: planet.gradientColors,
@@ -397,19 +417,13 @@ struct PlanetView: View {
                     )
                 }
                 
-            case "Discipline":
-                // Jupiter's Great Red Spot and storms
-                createStormSystem(
-                    size: CGSize(width: 15, height: 10),
-                    position: CGPoint(x: 8, y: 5),
-                    color: Color(red: 0.8, green: 0.2, blue: 0.3),
-                    isSelected: isSelected
-                )
-                
-                ForEach(0..<3, id: \.self) { i in
-                    createStormBand(
-                        yPosition: Double(i * 8 - 12),
-                        color: Color(red: 0.6, green: 0.3, blue: 0.7).opacity(0.6),
+            case "Golden Core":
+                // Golden planet with metallic formations
+                ForEach(0..<5, id: \.self) { i in
+                    createMetallicFormation(
+                        size: CGSize(width: Double.random(in: 10...16), height: Double.random(in: 8...14)),
+                        position: CGPoint(x: Double.random(in: -18...18), y: Double.random(in: -18...18)),
+                        color: Color(red: 0.9, green: 0.8, blue: 0.3).opacity(0.7),
                         isSelected: isSelected
                     )
                 }
@@ -431,6 +445,17 @@ struct PlanetView: View {
                     createCrater(
                         size: CGFloat.random(in: 3...8),
                         position: CGPoint(x: Double.random(in: -18...18), y: Double.random(in: -18...18)),
+                        isSelected: isSelected
+                    )
+                }
+                
+            case "Solar Command":
+                // Sun with solar flares
+                ForEach(0..<4, id: \.self) { i in
+                    createSolarFlare(
+                        size: CGSize(width: Double.random(in: 8...12), height: Double.random(in: 8...12)),
+                        position: CGPoint(x: Double.random(in: -18...18), y: Double.random(in: -18...18)),
+                        color: Color(red: 1.0, green: 0.8, blue: 0.2).opacity(0.7),
                         isSelected: isSelected
                     )
                 }
@@ -521,6 +546,23 @@ struct PlanetView: View {
             .blur(radius: 1)
     }
     
+    private func createMetallicFormation(size: CGSize, position: CGPoint, color: Color, isSelected: Bool) -> some View {
+        Rectangle()
+            .fill(color)
+            .frame(width: size.width, height: size.height)
+            .offset(x: position.x, y: position.y)
+            .blur(radius: 1)
+            .rotationEffect(.degrees(Double.random(in: 0...360)))
+    }
+    
+    private func createMetallicTerrain(size: CGSize, position: CGPoint, color: Color, isSelected: Bool) -> some View {
+        Rectangle()
+            .fill(color.opacity(0.9))
+            .frame(width: size.width, height: size.height)
+            .offset(x: position.x, y: position.y)
+            .blur(radius: 0.8)
+    }
+    
     private func createStormSystem(size: CGSize, position: CGPoint, color: Color, isSelected: Bool) -> some View {
         Ellipse()
             .fill(color.opacity(0.7))
@@ -556,6 +598,15 @@ struct PlanetView: View {
             .blur(radius: 0.5)
     }
     
+    private func createSolarFlare(size: CGSize, position: CGPoint, color: Color, isSelected: Bool) -> some View {
+        Ellipse()
+            .fill(color)
+            .frame(width: size.width, height: size.height)
+            .offset(x: position.x, y: position.y)
+            .blur(radius: 2)
+            .rotationEffect(.degrees(rotationAngle * 0.1))
+    }
+    
     private func getRingColor(for ring: Int) -> Color {
         let colors: [Color] = [
             Color(red: 0.9, green: 0.7, blue: 0.4),  // Golden
@@ -569,15 +620,17 @@ struct PlanetView: View {
     }
     
     private func shouldHaveRings(_ planet: TradingPlanet) -> Bool {
-        return planet.name == "Zen Trading"
+        return planet.name == "Zen Trading" || planet.name == "Solar Command"
     }
     
     private func getAtmosphereColor(for planet: TradingPlanet) -> Color {
         switch planet.name {
         case "ProTrader": return Color.cyan
+        case "Golden Core": return Color.yellow
         case "Discipline": return Color.purple
         case "Mental Game": return Color.green
         case "Zen Trading": return Color.orange
+        case "Solar Command": return Color.yellow
         default: return planet.color
         }
     }

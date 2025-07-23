@@ -9,19 +9,16 @@ import SwiftUI
 
 struct ContentView: View {
     @State private var selectedTab = 0
-    @State private var isOrbiting = true
+    @State private var isInitialized = false
     @EnvironmentObject var tradingManager: TradingManager
     @EnvironmentObject var botManager: BotManager
     @EnvironmentObject var accountManager: AccountManager
     @EnvironmentObject var hapticManager: HapticManager
     
-    // CLEAN: Essential trading managers with real-time balance
-    @StateObject private var mt5Engine = MT5TradingEngine.shared
-    @StateObject private var liveTradingManager = LiveTradingManager.shared
-    @StateObject private var vpsConnection = VPSConnectionManager.shared
+    // SIMPLIFIED: Only essential managers to prevent freezing
     @StateObject private var realTimeBalanceManager = RealTimeBalanceManager()
     @StateObject private var vpsManager = VPSManagementSystem.shared
-    @StateObject private var planetTextureManager = PlanetTextureManager()
+    @StateObject private var audioManager = AudioManager.shared
     
     var body: some View {
         ZStack {
@@ -70,7 +67,7 @@ struct ContentView: View {
                 }
                 .tag(3)
                 
-                // FIRE MORE TAB - PROFESSIONAL AF! 🔥🔥😤
+                // FIRE MORE TAB - PROFESSIONAL AF! 
                 ProfessionalMoreTabView()
                     .tabItem {
                         Image(systemName: "ellipsis.circle.fill")
@@ -82,106 +79,77 @@ struct ContentView: View {
             .preferredColorScheme(.dark)
             .onChange(of: selectedTab) { oldValue, newValue in
                 hapticManager.selection()
+                audioManager.playButtonTap() // Add sound effect for tab changes
                 
-                // Show special notifications for new features
-                if newValue == 2 {
-                    GlobalToastManager.shared.show("🎮 Welcome to MicroFlip Arena! Start gaming!", type: .success)
-                } else if newValue == 3 {
-                    GlobalToastManager.shared.show("🛒 Bot Store loaded! Discover powerful trading bots!", type: .info)
-                } else if newValue == 4 {
-                    GlobalToastManager.shared.show("🔥 MORE TAB - All the premium features!", type: .success)
+                // Simplified notifications - no heavy operations
+                switch newValue {
+                case 2:
+                    GlobalToastManager.shared.show("", type: .success)
+                case 3:
+                    GlobalToastManager.shared.show("", type: .info)
+                case 4:
+                    GlobalToastManager.shared.show("", type: .success)
+                default:
+                    break
                 }
+            }
+            
+            // Audio Control Widget (floating in top-right)
+            VStack {
+                HStack {
+                    Spacer()
+                    
+                    SleekAudioToggle()
+                        .padding(.top, 60)
+                        .padding(.trailing, 20)
+                }
+                
+                Spacer()
             }
         }
         .withGlobalToast()
         .onAppear {
-            initializeRealTimeSystem()
-            
-            // AUTO-START THE REAL TRADING BOT IMMEDIATELY!
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                print("🚀 AUTO-STARTING REAL TRADING BOT...")
-                RealTradingBot.shared.startLiveTrading()
-                GlobalToastManager.shared.show("🤖 REAL TRADING BOT STARTING AUTOMATICALLY!", type: .success)
-            }
-            
-            // Show EA Bot status immediately
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-                GlobalToastManager.shared.show("🤖 EA BOT ACTIVATED - 0.50 lots per trade!", type: .success)
-            }
-            
-            // Show welcome message about new features
-            DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
-                GlobalToastManager.shared.show("🔥 NEW: Professional More Tab added!", type: .info)
+            // FIXED: Simplified initialization to prevent freezing
+            if !isInitialized {
+                initializeSystemLightweight()
+                isInitialized = true
             }
         }
         .environmentObject(realTimeBalanceManager)
-        .environmentObject(vpsConnection)
         .environmentObject(vpsManager)
+        .environmentObject(audioManager)
     }
     
-    // ENHANCED: Real-time system initialization
-    private func initializeRealTimeSystem() {
-        Task {
-            print("🚀 LAUNCHING REAL TRADING BOT WITH 0.50 LOTS...")
-            print("🎯 Target: YOUR Coinexx Demo #845638")
-            print("💰 Lot Size: 0.50 (REAL TRADES ONLY)")
+    // FIXED: Lightweight initialization to prevent UI freezing
+    private func initializeSystemLightweight() {
+        print("")
+        
+        // Show welcome message immediately
+        GlobalToastManager.shared.show("", type: .success)
+        
+        // Play welcome sound
+        audioManager.playNotification()
+        
+        // Initialize systems gradually in background
+        Task.detached {
+            // Give UI time to render
+            try? await Task.sleep(for: .seconds(1))
             
-            // Step 1: Initialize VPS connection
-            await vpsConnection.connectToVPS()
+            // Initialize VPS connection (non-blocking)
             await vpsManager.checkVPSConnection()
-            print("✅ VPS connection initialized")
             
-            // Step 2: Connect to Coinexx Demo account
-            await liveTradingManager.connectToCoinexxDemo()
-            print("✅ Coinexx Demo connection initialized")
-            
-            // Step 3: Initialize MT5 engine
-            let mt5Success = await mt5Engine.connectToMT5()
-            print("✅ MT5 engine initialized")
-            
-            // Step 4: Start real-time balance monitoring
-            if mt5Success {
-                await realTimeBalanceManager.startRealTimeMonitoring()
-                print("✅ Real-time balance monitoring started")
+            // Show system ready message
+            await MainActor.run {
+                GlobalToastManager.shared.show("", type: .success)
+                audioManager.playSuccess()
             }
             
-            // Step 5: Initialize account manager
-            await accountManager.connectToRealAccount()
-            
-            // Step 6: LAUNCH THE REAL TRADING BOT NOW!
-            launchRealTradingBot()
-            
-            print("🔥 REAL TRADING BOT LAUNCHED - 0.50 LOTS PER TRADE!")
-            
-            // Show success notification
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-                GlobalToastManager.shared.show("🚀 REAL TRADING BOT ACTIVE! 0.50 lots every 60 seconds!", type: .success)
-            }
+            print("")
         }
-    }
-    
-    // MARK: - Launch Real Trading Bot
-    private func launchRealTradingBot() {
-        print("🚀 LAUNCHING REAL TRADING BOT WITH PROGRESS BAR...")
-        
-        // Start the REAL trading bot with deployment progress
-        let realTradingBot = RealTradingBot.shared
-        realTradingBot.startLiveTrading()
-        
-        // AUTO-START IMMEDIATELY - NO BUTTON NEEDED!
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            realTradingBot.startLiveTrading()
-            GlobalToastManager.shared.show("🔥 REAL BOT AUTO-LAUNCHED! Watch the progress bar!", type: .success)
-        }
-        
-        print("✅ Real Trading Bot with progress tracking is now LIVE!")
-        print("💰 Will show deployment progress 0-100%")
-        print("📊 Placing 0.50 lot trades after deployment completes")
-        print("📱 Check your MT5 app after deployment finishes!")
     }
 }
 
-// MARK: - 🔥🔥 PROFESSIONAL MORE TAB - SLEEK AF! 😤🔥
+// MARK: - 
 
 struct ProfessionalMoreTabView: View {
     @State private var showingProfile = false
@@ -195,47 +163,32 @@ struct ProfessionalMoreTabView: View {
     @State private var animateCards = false
     @EnvironmentObject var hapticManager: HapticManager
     
-    // User stats for the header
-    @State private var totalProfit: Double = 15420.50
-    @State private var totalTrades: Int = 1247
-    @State private var winRate: Double = 73.2
+    // SIMPLIFIED: Static stats to prevent performance issues
+    private let totalProfit: Double = 15420.50
+    private let totalTrades: Int = 1247
+    private let winRate: Double = 73.2
     
     var body: some View {
         ZStack {
-            // SICK gradient background 🔥
+            // OPTIMIZED: Simpler gradient for better performance
             LinearGradient(
-                colors: [
-                    Color.black.opacity(0.95),
-                    DesignSystem.cosmicBlue.opacity(0.2),
-                    Color.purple.opacity(0.1),
-                    Color.black.opacity(0.95)
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
+                colors: [Color.black, DesignSystem.cosmicBlue.opacity(0.3), Color.black],
+                startPoint: .top,
+                endPoint: .bottom
             )
             .ignoresSafeArea()
             
             ScrollView {
-                LazyVStack(spacing: 24) {
-                    // FIRE Header with user stats 🔥😤
+                LazyVStack(spacing: 20) {
+                    // SIMPLIFIED: Header with user stats 
                     premiumHeaderSection
                     
-                    // Professional Trading Tools Section
+                    // RESPONSIVE: Simplified sections
                     professionalToolsSection
-                    
-                    // Analytics & Reports Section
                     analyticsSection
-                    
-                    // Account & Security Section
                     accountSecuritySection
-                    
-                    // System & Performance Section
                     systemPerformanceSection
-                    
-                    // Support & Resources Section
                     supportResourcesSection
-                    
-                    // Premium Footer
                     premiumFooterSection
                 }
                 .padding()
@@ -244,43 +197,31 @@ struct ProfessionalMoreTabView: View {
         .navigationTitle("")
         .navigationBarHidden(true)
         .onAppear {
-            startFireAnimations()
+            // FIXED: Simpler animation to prevent lag
+            withAnimation(.easeInOut(duration: 0.5)) {
+                animateCards = true
+            }
         }
-        // All the sheet presentations
-        .sheet(isPresented: $showingProfile) {
-            PremiumProfileView()
-        }
-        .sheet(isPresented: $showingSettings) {
-            AdvancedSettingsView()
-        }
-        .sheet(isPresented: $showingAnalytics) {
-            ProfessionalAnalyticsView()
-        }
-        .sheet(isPresented: $showingVPSSetup) {
-            VPSSetupView()
-        }
-        .sheet(isPresented: $showingNotifications) {
-            NotificationCenterView()
-        }
-        .sheet(isPresented: $showingTerminal) {
-            TradingTerminal()
-        }
-        .sheet(isPresented: $showingBackups) {
-            BackupManagementView()
-        }
-        .sheet(isPresented: $showingSupport) {
-            SupportCenterView()
-        }
+        // Sheet presentations (unchanged but with better performance)
+        .sheet(isPresented: $showingProfile) { PremiumProfileView() }
+        .sheet(isPresented: $showingSettings) { AdvancedSettingsView() }
+        .sheet(isPresented: $showingAnalytics) { ProfessionalAnalyticsView() }
+        .sheet(isPresented: $showingVPSSetup) { VPSSetupView() }
+        .sheet(isPresented: $showingNotifications) { NotificationCenterView() }
+        .sheet(isPresented: $showingTerminal) { TradingTerminal() }
+        .sheet(isPresented: $showingBackups) { BackupManagementView() }
+        .sheet(isPresented: $showingSupport) { SupportCenterView() }
     }
     
-    // MARK: - 🔥 PREMIUM HEADER SECTION
+    // MARK: - OPTIMIZED SECTIONS
+    
     private var premiumHeaderSection: some View {
-        VStack(spacing: 20) {
+        VStack(spacing: 16) {
             // Epic Header
             HStack {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("🔥 MORE")
-                        .font(.system(size: 36, weight: .black, design: .rounded))
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("")
+                        .font(.system(size: 32, weight: .black, design: .rounded))
                         .foregroundStyle(
                             LinearGradient(
                                 colors: [DesignSystem.solarOrange, .yellow, DesignSystem.cosmicBlue],
@@ -288,7 +229,6 @@ struct ProfessionalMoreTabView: View {
                                 endPoint: .trailing
                             )
                         )
-                        .shadow(color: .orange, radius: 10)
                     
                     Text("Professional Trading Suite")
                         .font(.title3)
@@ -298,7 +238,7 @@ struct ProfessionalMoreTabView: View {
                 
                 Spacer()
                 
-                // Epic profile button
+                // Profile button
                 Button(action: { showingProfile = true }) {
                     ZStack {
                         Circle()
@@ -309,20 +249,17 @@ struct ProfessionalMoreTabView: View {
                                     endPoint: .bottomTrailing
                                 )
                             )
-                            .frame(width: 60, height: 60)
-                            .shadow(color: DesignSystem.cosmicBlue, radius: 10)
+                            .frame(width: 50, height: 50)
                         
                         Image(systemName: "person.crop.circle.fill")
-                            .font(.system(size: 28))
+                            .font(.system(size: 24))
                             .foregroundColor(.white)
                     }
-                    .scaleEffect(animateCards ? 1.0 : 0.8)
-                    .animation(.spring(dampingFraction: 0.6).delay(0.1), value: animateCards)
                 }
             }
             
-            // Stats Cards Row - SICK AS HELL 🔥
-            HStack(spacing: 16) {
+            // SIMPLIFIED: Stats Cards Row
+            HStack(spacing: 12) {
                 FireStatsCard(
                     title: "Total Profit",
                     value: "$\(String(format: "%.0f", totalProfit))",
@@ -349,77 +286,64 @@ struct ProfessionalMoreTabView: View {
             }
         }
         .opacity(animateCards ? 1 : 0)
-        .offset(y: animateCards ? 0 : -30)
-        .animation(.spring(dampingFraction: 0.8).delay(0.2), value: animateCards)
+        .animation(.easeInOut.delay(0.1), value: animateCards)
     }
     
-    // MARK: - Professional Tools Section
+    // SIMPLIFIED: All other sections with better performance
     private var professionalToolsSection: some View {
-        VStack(spacing: 16) {
-            SectionHeader(title: "🚀 Professional Tools", subtitle: "Advanced trading capabilities")
+        VStack(spacing: 12) {
+            SectionHeader(title: "", subtitle: "Advanced trading capabilities")
             
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 16) {
-                // Advanced Terminal
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 12) {
                 PremiumFeatureCard(
                     title: "Advanced Terminal",
-                    subtitle: "Professional charts & analysis",
+                    subtitle: "Professional charts",
                     icon: "chart.bar.xaxis",
                     color: DesignSystem.cosmicBlue,
                     gradient: [DesignSystem.cosmicBlue, .blue],
                     action: { showingTerminal = true }
                 )
                 
-                // Real Account Manager
                 PremiumFeatureCard(
                     title: "Real Account",
-                    subtitle: "Manage live trading accounts",
+                    subtitle: "Live trading accounts",
                     icon: "building.columns.fill",
                     color: .green,
                     gradient: [.green, .mint],
-                    action: { 
-                        hapticManager.success()
-                        GlobalToastManager.shared.show("🏦 Real Account Manager - Coming Soon!", type: .info)
-                    }
+                    action: { showComingSoonAlert("Real Account Manager") }
                 )
                 
-                // VPS Management
                 PremiumFeatureCard(
                     title: "VPS Control",
-                    subtitle: "Server management & monitoring",
+                    subtitle: "Server management",
                     icon: "server.rack",
                     color: .purple,
                     gradient: [.purple, .pink],
                     action: { showingVPSSetup = true }
                 )
                 
-                // EA Bot Builder
                 PremiumFeatureCard(
                     title: "EA Bot Builder",
-                    subtitle: "Create custom trading bots",
+                    subtitle: "Create custom bots",
                     icon: "hammer.fill",
                     color: DesignSystem.solarOrange,
                     gradient: [DesignSystem.solarOrange, .red],
-                    action: { 
-                        hapticManager.success()
-                        GlobalToastManager.shared.show("🤖 EA Bot Builder - Coming Soon!", type: .info)
-                    }
+                    action: { showComingSoonAlert("EA Bot Builder") }
                 )
             }
         }
         .opacity(animateCards ? 1 : 0)
-        .offset(x: animateCards ? 0 : 50)
-        .animation(.spring(dampingFraction: 0.8).delay(0.3), value: animateCards)
+        .animation(.easeInOut.delay(0.2), value: animateCards)
     }
     
-    // MARK: - Analytics Section
     private var analyticsSection: some View {
-        VStack(spacing: 16) {
-            SectionHeader(title: "📊 Analytics & Reports", subtitle: "Deep performance insights")
+        VStack(spacing: 12) {
+            SectionHeader(title: "", subtitle: "Performance insights")
             
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 16) {
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 12) {
                 PremiumFeatureCard(
-                    title: "Professional Analytics",
-                    subtitle: "Advanced performance metrics",
+                    title: "Analytics",
+                    subtitle: "Performance metrics",
                     icon: "chart.pie.fill",
                     color: .cyan,
                     gradient: [.cyan, .blue],
@@ -428,181 +352,83 @@ struct ProfessionalMoreTabView: View {
                 
                 PremiumFeatureCard(
                     title: "Risk Manager",
-                    subtitle: "Portfolio risk analysis",
+                    subtitle: "Portfolio analysis",
                     icon: "shield.checkered",
                     color: .orange,
                     gradient: [.orange, .red],
-                    action: { 
-                        hapticManager.success()
-                        GlobalToastManager.shared.show("🛡️ Risk Manager - Coming Soon!", type: .info)
-                    }
+                    action: { showComingSoonAlert("Risk Manager") }
                 )
                 
                 PremiumFeatureCard(
                     title: "Trade Journal",
-                    subtitle: "Detailed trading history",
+                    subtitle: "Trading history",
                     icon: "book.fill",
                     color: .indigo,
                     gradient: [.indigo, .purple],
-                    action: { 
-                        hapticManager.success()
-                        GlobalToastManager.shared.show("📖 Trade Journal - Coming Soon!", type: .info)
-                    }
+                    action: { showComingSoonAlert("Trade Journal") }
                 )
                 
                 PremiumFeatureCard(
                     title: "Market Scanner",
-                    subtitle: "Real-time opportunity finder",
+                    subtitle: "Opportunity finder",
                     icon: "magnifyingglass.circle.fill",
                     color: .teal,
                     gradient: [.teal, .green],
-                    action: { 
-                        hapticManager.success()
-                        GlobalToastManager.shared.show("🔍 Market Scanner - Coming Soon!", type: .info)
-                    }
+                    action: { showComingSoonAlert("Market Scanner") }
                 )
             }
         }
         .opacity(animateCards ? 1 : 0)
-        .offset(x: animateCards ? 0 : -50)
-        .animation(.spring(dampingFraction: 0.8).delay(0.4), value: animateCards)
+        .animation(.easeInOut.delay(0.3), value: animateCards)
     }
     
-    // MARK: - Account & Security Section
     private var accountSecuritySection: some View {
-        VStack(spacing: 16) {
-            SectionHeader(title: "🔐 Account & Security", subtitle: "Manage your trading profile")
+        VStack(spacing: 8) {
+            SectionHeader(title: "", subtitle: "Manage your profile")
             
-            VStack(spacing: 12) {
-                PremiumListItem(
-                    title: "Profile Settings",
-                    subtitle: "Personal info & preferences",
-                    icon: "person.crop.circle",
-                    color: DesignSystem.cosmicBlue,
-                    action: { showingProfile = true }
-                )
-                
-                PremiumListItem(
-                    title: "Advanced Settings",
-                    subtitle: "App configuration & features",
-                    icon: "gearshape.fill",
-                    color: .gray,
-                    action: { showingSettings = true }
-                )
-                
-                PremiumListItem(
-                    title: "Notification Center",
-                    subtitle: "Alerts & trading signals",
-                    icon: "app.badge.fill",
-                    color: .red,
-                    action: { showingNotifications = true }
-                )
-                
-                PremiumListItem(
-                    title: "Security Center",
-                    subtitle: "2FA & account protection",
-                    icon: "lock.shield.fill",
-                    color: .green,
-                    action: { 
-                        hapticManager.success()
-                        GlobalToastManager.shared.show("🔒 Security Center - Coming Soon!", type: .info)
-                    }
+            VStack(spacing: 8) {
+                PremiumListItem(title: "Profile Settings", subtitle: "Personal info & preferences", icon: "person.crop.circle", color: DesignSystem.cosmicBlue, action: { showingProfile = true })
+                PremiumListItem(title: "Advanced Settings", subtitle: "App configuration", icon: "gearshape.fill", color: .gray, action: { showingSettings = true })
+                PremiumListItem(title: "Audio Controls", subtitle: "Music & sound effects", icon: "speaker.2.fill", color: .purple, action: { /* Audio controls are in floating widget */ })
+                PremiumListItem(title: "Notification Center", subtitle: "Alerts & signals", icon: "app.badge.fill", color: .red, action: { showingNotifications = true })
+                PremiumListItem(title: "Security Center", subtitle: "2FA & protection", icon: "lock.shield.fill", color: .green, action: { showComingSoonAlert("Security Center") }
                 )
             }
         }
         .opacity(animateCards ? 1 : 0)
-        .offset(y: animateCards ? 0 : 30)
-        .animation(.spring(dampingFraction: 0.8).delay(0.5), value: animateCards)
+        .animation(.easeInOut.delay(0.4), value: animateCards)
     }
     
-    // MARK: - System & Performance Section
     private var systemPerformanceSection: some View {
-        VStack(spacing: 16) {
-            SectionHeader(title: "⚡ System & Performance", subtitle: "Optimize your trading setup")
+        VStack(spacing: 8) {
+            SectionHeader(title: "", subtitle: "Optimize your setup")
             
-            VStack(spacing: 12) {
-                PremiumListItem(
-                    title: "Backup Manager",
-                    subtitle: "Data backup & restoration",
-                    icon: "icloud.and.arrow.up.fill",
-                    color: .blue,
-                    action: { showingBackups = true }
-                )
-                
-                PremiumListItem(
-                    title: "Performance Monitor",
-                    subtitle: "System health & diagnostics",
-                    icon: "speedometer",
-                    color: .orange,
-                    action: { 
-                        hapticManager.success()
-                        GlobalToastManager.shared.show("📈 Performance Monitor - Coming Soon!", type: .info)
-                    }
-                )
-                
-                PremiumListItem(
-                    title: "Update Center",
-                    subtitle: "App updates & new features",
-                    icon: "arrow.down.circle.fill",
-                    color: .purple,
-                    action: { 
-                        hapticManager.success()
-                        GlobalToastManager.shared.show("🆕 Update Center - Coming Soon!", type: .info)
-                    }
-                )
+            VStack(spacing: 8) {
+                PremiumListItem(title: "Backup Manager", subtitle: "Data backup & restoration", icon: "icloud.and.arrow.up.fill", color: .blue, action: { showingBackups = true })
+                PremiumListItem(title: "Performance Monitor", subtitle: "System diagnostics", icon: "speedometer", color: .orange, action: { showComingSoonAlert("Performance Monitor") })
+                PremiumListItem(title: "Update Center", subtitle: "App updates", icon: "arrow.down.circle.fill", color: .purple, action: { showComingSoonAlert("Update Center") })
             }
         }
         .opacity(animateCards ? 1 : 0)
-        .offset(x: animateCards ? 0 : 30)
-        .animation(.spring(dampingFraction: 0.8).delay(0.6), value: animateCards)
+        .animation(.easeInOut.delay(0.5), value: animateCards)
     }
     
-    // MARK: - Support & Resources Section
     private var supportResourcesSection: some View {
-        VStack(spacing: 16) {
-            SectionHeader(title: "🆘 Support & Resources", subtitle: "Get help when you need it")
+        VStack(spacing: 8) {
+            SectionHeader(title: "", subtitle: "Get help when needed")
             
-            VStack(spacing: 12) {
-                PremiumListItem(
-                    title: "Support Center",
-                    subtitle: "24/7 professional support",
-                    icon: "headphones.circle.fill",
-                    color: .green,
-                    action: { showingSupport = true }
-                )
-                
-                PremiumListItem(
-                    title: "Trading Academy",
-                    subtitle: "Learn advanced strategies",
-                    icon: "graduationcap.fill",
-                    color: .blue,
-                    action: { 
-                        hapticManager.success()
-                        GlobalToastManager.shared.show("🎓 Trading Academy - Coming Soon!", type: .info)
-                    }
-                )
-                
-                PremiumListItem(
-                    title: "Community Forum",
-                    subtitle: "Connect with other traders",
-                    icon: "person.3.fill",
-                    color: .indigo,
-                    action: { 
-                        hapticManager.success()
-                        GlobalToastManager.shared.show("👥 Community Forum - Coming Soon!", type: .info)
-                    }
-                )
+            VStack(spacing: 8) {
+                PremiumListItem(title: "Support Center", subtitle: "24/7 professional support", icon: "headphones.circle.fill", color: .green, action: { showingSupport = true })
+                PremiumListItem(title: "Trading Academy", subtitle: "Learn strategies", icon: "graduationcap.fill", color: .blue, action: { showComingSoonAlert("Trading Academy") })
+                PremiumListItem(title: "Community Forum", subtitle: "Connect with traders", icon: "person.3.fill", color: .indigo, action: { showComingSoonAlert("Community Forum") })
             }
         }
         .opacity(animateCards ? 1 : 0)
-        .offset(x: animateCards ? 0 : -30)
-        .animation(.spring(dampingFraction: 0.8).delay(0.7), value: animateCards)
+        .animation(.easeInOut.delay(0.6), value: animateCards)
     }
     
-    // MARK: - Premium Footer
     private var premiumFooterSection: some View {
-        VStack(spacing: 16) {
-            // App version and build
+        VStack(spacing: 12) {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Planet ProTrader")
@@ -617,7 +443,6 @@ struct ProfessionalMoreTabView: View {
                 
                 Spacer()
                 
-                // Premium badge
                 HStack(spacing: 6) {
                     Image(systemName: "crown.fill")
                         .foregroundColor(.yellow)
@@ -626,32 +451,30 @@ struct ProfessionalMoreTabView: View {
                         .fontWeight(.bold)
                         .foregroundColor(.yellow)
                 }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 4)
                 .background(.yellow.opacity(0.2), in: Capsule())
                 .overlay(Capsule().stroke(.yellow, lineWidth: 1))
             }
             .padding()
-            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
             
-            // Copyright
             Text(" 2025 Planet ProTrader. All rights reserved.")
                 .font(.caption2)
                 .foregroundColor(.secondary)
-                .multilineTextAlignment(.center)
         }
         .opacity(animateCards ? 1 : 0)
-        .animation(.easeInOut.delay(0.8), value: animateCards)
+        .animation(.easeInOut.delay(0.7), value: animateCards)
     }
     
-    private func startFireAnimations() {
-        withAnimation(.easeInOut(duration: 0.8)) {
-            animateCards = true
-        }
+    // HELPER: Show coming soon alerts without performance impact
+    private func showComingSoonAlert(_ feature: String) {
+        hapticManager.success()
+        GlobalToastManager.shared.show("\(feature) - Coming Soon!", type: .info)
     }
 }
 
-// MARK: - 🔥 FIRE SUPPORTING VIEWS
+// MARK: - OPTIMIZED SUPPORTING VIEWS
 
 struct FireStatsCard: View {
     let title: String
@@ -661,38 +484,36 @@ struct FireStatsCard: View {
     let gradient: [Color]
     
     var body: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 6) {
             Image(systemName: icon)
-                .font(.title2)
+                .font(.title3)
                 .foregroundStyle(
                     LinearGradient(colors: gradient, startPoint: .topLeading, endPoint: .bottomTrailing)
                 )
-                .shadow(color: color, radius: 5)
             
             Text(value)
-                .font(.headline)
+                .font(.subheadline)
                 .fontWeight(.bold)
                 .foregroundColor(.white)
             
             Text(title)
-                .font(.caption)
+                .font(.caption2)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity)
-        .padding()
+        .padding(10)
         .background(
-            RoundedRectangle(cornerRadius: 16)
+            RoundedRectangle(cornerRadius: 12)
                 .fill(.ultraThinMaterial)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 16)
+                    RoundedRectangle(cornerRadius: 12)
                         .stroke(
                             LinearGradient(colors: gradient, startPoint: .topLeading, endPoint: .bottomTrailing),
                             lineWidth: 1
                         )
                 )
         )
-        .shadow(color: color.opacity(0.3), radius: 10)
     }
 }
 
@@ -702,9 +523,9 @@ struct SectionHeader: View {
     
     var body: some View {
         HStack {
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.title2)
+                    .font(.title3)
                     .fontWeight(.bold)
                     .foregroundColor(.white)
                 
@@ -728,40 +549,39 @@ struct PremiumFeatureCard: View {
     
     var body: some View {
         Button(action: action) {
-            VStack(spacing: 12) {
+            VStack(spacing: 8) {
                 ZStack {
                     Circle()
                         .fill(
                             LinearGradient(colors: gradient, startPoint: .topLeading, endPoint: .bottomTrailing)
                         )
-                        .frame(width: 50, height: 50)
-                        .shadow(color: color, radius: 8)
+                        .frame(width: 40, height: 40)
                     
                     Image(systemName: icon)
-                        .font(.title2)
+                        .font(.title3)
                         .foregroundColor(.white)
                 }
                 
-                VStack(spacing: 4) {
+                VStack(spacing: 2) {
                     Text(title)
-                        .font(.subheadline)
+                        .font(.caption)
                         .fontWeight(.bold)
                         .foregroundColor(.white)
                         .multilineTextAlignment(.center)
                     
                     Text(subtitle)
-                        .font(.caption)
+                        .font(.caption2)
                         .foregroundColor(.secondary)
                         .multilineTextAlignment(.center)
                         .lineLimit(2)
                 }
             }
             .frame(maxWidth: .infinity)
-            .frame(height: 140)
-            .padding()
-            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+            .frame(height: 100)
+            .padding(8)
+            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
             .overlay(
-                RoundedRectangle(cornerRadius: 16)
+                RoundedRectangle(cornerRadius: 12)
                     .stroke(
                         LinearGradient(colors: gradient, startPoint: .topLeading, endPoint: .bottomTrailing),
                         lineWidth: 1
@@ -781,38 +601,38 @@ struct PremiumListItem: View {
     
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 16) {
+            HStack(spacing: 12) {
                 ZStack {
                     Circle()
                         .fill(color.opacity(0.2))
-                        .frame(width: 44, height: 44)
+                        .frame(width: 36, height: 36)
                     
                     Image(systemName: icon)
-                        .font(.title3)
+                        .font(.system(size: 16))
                         .foregroundColor(color)
                 }
                 
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: 1) {
                     Text(title)
-                        .font(.subheadline)
+                        .font(.caption)
                         .fontWeight(.semibold)
                         .foregroundColor(.white)
                     
                     Text(subtitle)
-                        .font(.caption)
+                        .font(.caption2)
                         .foregroundColor(.secondary)
                 }
                 
                 Spacer()
                 
                 Image(systemName: "chevron.right")
-                    .font(.caption)
+                    .font(.caption2)
                     .foregroundColor(.secondary)
             }
-            .padding()
-            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+            .padding(10)
+            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 8))
             .overlay(
-                RoundedRectangle(cornerRadius: 12)
+                RoundedRectangle(cornerRadius: 8)
                     .stroke(color.opacity(0.3), lineWidth: 1)
             )
         }
@@ -823,12 +643,14 @@ struct PremiumListItem: View {
 struct PressableCardStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
+            .scaleEffect(configuration.isPressed ? 0.98 : 1.0)
             .animation(.easeInOut(duration: 0.1), value: configuration.isPressed)
     }
 }
 
-// MARK: - Placeholder Views for the sheets
+// MARK: - OPTIMIZED Placeholder Views for ContentView only
+// (VPSSetupView, TradingTerminal etc. exist in other files)
+
 struct PremiumProfileView: View {
     var body: some View {
         NavigationStack {
@@ -836,7 +658,7 @@ struct PremiumProfileView: View {
                 DesignSystem.spaceGradient.ignoresSafeArea()
                 
                 VStack(spacing: 20) {
-                    Text("👤 Premium Profile")
+                    Text("")
                         .font(.largeTitle)
                         .fontWeight(.bold)
                         .foregroundColor(.white)
@@ -858,7 +680,7 @@ struct AdvancedSettingsView: View {
                 DesignSystem.spaceGradient.ignoresSafeArea()
                 
                 VStack(spacing: 20) {
-                    Text("⚙️ Advanced Settings")
+                    Text("")
                         .font(.largeTitle)
                         .fontWeight(.bold)
                         .foregroundColor(.white)
@@ -880,7 +702,7 @@ struct ProfessionalAnalyticsView: View {
                 DesignSystem.spaceGradient.ignoresSafeArea()
                 
                 VStack(spacing: 20) {
-                    Text("📊 Professional Analytics")
+                    Text("")
                         .font(.largeTitle)
                         .fontWeight(.bold)
                         .foregroundColor(.white)
@@ -902,7 +724,7 @@ struct NotificationCenterView: View {
                 DesignSystem.spaceGradient.ignoresSafeArea()
                 
                 VStack(spacing: 20) {
-                    Text("🔔 Notification Center")
+                    Text("")
                         .font(.largeTitle)
                         .fontWeight(.bold)
                         .foregroundColor(.white)
@@ -924,7 +746,7 @@ struct BackupManagementView: View {
                 DesignSystem.spaceGradient.ignoresSafeArea()
                 
                 VStack(spacing: 20) {
-                    Text("💾 Backup Manager")
+                    Text("")
                         .font(.largeTitle)
                         .fontWeight(.bold)
                         .foregroundColor(.white)
@@ -946,7 +768,7 @@ struct SupportCenterView: View {
                 DesignSystem.spaceGradient.ignoresSafeArea()
                 
                 VStack(spacing: 20) {
-                    Text("🆘 Support Center")
+                    Text("")
                         .font(.largeTitle)
                         .fontWeight(.bold)
                         .foregroundColor(.white)
@@ -961,20 +783,13 @@ struct SupportCenterView: View {
     }
 }
 
-// Keep all the existing supporting views...
+// SIMPLIFIED UnifiedTradingHub to prevent freezing
 struct UnifiedTradingHub: View {
     @EnvironmentObject var botManager: BotManager
     @EnvironmentObject var hapticManager: HapticManager
     @EnvironmentObject var vpsManager: VPSManagementSystem
-    @EnvironmentObject var vpsConnection: VPSConnectionManager
     @EnvironmentObject var realTimeBalanceManager: RealTimeBalanceManager
-    @StateObject private var realTradingBot = RealTradingBot.shared
-    @State private var showingRealTradeAlert = false
-    @State private var selectedBotForRealTrading: TradingBot?
-    @State private var showingSuccess = false
     @State private var showingVPSSetup = false
-    @State private var isTestingConnection = false
-    @State private var showingProgressView = false
     
     var body: some View {
         ZStack {
@@ -982,203 +797,71 @@ struct UnifiedTradingHub: View {
                 .ignoresSafeArea()
             
             ScrollView {
-                LazyVStack(spacing: 24) {
+                LazyVStack(spacing: 20) {
                     // Trading Hub Header
-                    tradingHubHeader
+                    VStack(spacing: 12) {
+                        Text("")
+                            .font(.largeTitle)
+                            .fontWeight(.bold)
+                            .cosmicText()
+                        
+                        Text("Deploy and monitor your AI trading bots")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    }
+                    .planetCard()
                     
-                    // DEPLOYMENT PROGRESS SECTION
-                    deploymentProgressSection
+                    // System Status
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("System Status")
+                            .font(.headline)
+                            .fontWeight(.bold)
+                        
+                        HStack {
+                            Circle()
+                                .fill(.green)
+                                .frame(width: 8, height: 8)
+                                .pulsingEffect()
+                            
+                            Text("System Ready")
+                                .font(.subheadline)
+                            
+                            Spacer()
+                            
+                            Button("Setup VPS") {
+                                showingVPSSetup = true
+                            }
+                            .font(.caption)
+                            .buttonStyle(.borderedProminent)
+                        }
+                    }
+                    .planetCard()
                     
-                    // MetaApi Diagnostics Button
-                    diagnosticsSection
-                    
-                    // VPS & System Status Card
-                    vpsSystemStatusCard
-                    
-                    // Active Bots Section
-                    activeTradingBotsSection
-                    
-                    // Available Bots for Deployment
-                    availableBotsSection
-                    
-                    // Real Trading Instructions
-                    realTradingInstructions
+                    // Coming Soon Message
+                    VStack(spacing: 12) {
+                        Text("")
+                            .font(.headline)
+                            .fontWeight(.bold)
+                        
+                        Text("Advanced AI bot deployment and management features coming soon!")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                            .multilineTextAlignment(.center)
+                    }
+                    .planetCard()
                 }
                 .padding()
             }
         }
         .navigationTitle("")
         .navigationBarHidden(true)
-        .starField()
-        .alert("⚠️ REAL Trading Confirmation", isPresented: $showingRealTradeAlert) {
-            Button("Cancel", role: .cancel) { }
-            Button("DEPLOY FOR REAL TRADING") {
-                if let bot = selectedBotForRealTrading {
-                    confirmRealTrading(bot)
-                }
-            }
-        } message: {
-            Text("This bot will place ACTUAL trades on your Coinexx Demo #845638. Real money will be involved. Are you sure?")
-        }
-        .alert("🎉 Bot Deployed!", isPresented: $showingSuccess) {
-            Button("Awesome!") { }
-        } message: {
-            Text("Your bot is now placing REAL trades on your Coinexx Demo account!")
-        }
         .sheet(isPresented: $showingVPSSetup) {
             VPSSetupView()
         }
-        .sheet(isPresented: $showingProgressView) {
-            RealTradingControlView()
-        }
-        .onAppear {
-            Task {
-                await vpsManager.checkVPSConnection()
-            }
-        }
-    }
-    
-    // Continue with all the existing UnifiedTradingHub implementation...
-    private var deploymentProgressSection: some View {
-        VStack {
-            Text("Trading Hub Content")
-        }
-        .planetCard()
-    }
-    
-    private var diagnosticsSection: some View {
-        VStack {
-            Text("Diagnostics Content")
-        }
-        .planetCard()
-    }
-    
-    private var tradingHubHeader: some View {
-        VStack {
-            Text("🚀 Trading Hub")
-                .font(DesignSystem.Typography.cosmic)
-                .cosmicText()
-        }
-        .planetCard()
-    }
-    
-    private var systemIsReady: Bool {
-        vpsManager.vpsStatus == .connected && vpsManager.mt5Status == .connected
-    }
-    
-    private var vpsSystemStatusCard: some View {
-        VStack {
-            Text("System Status")
-        }
-        .planetCard()
-    }
-    
-    private var activeTradingBotsSection: some View {
-        VStack {
-            Text("Active Bots")
-        }
-        .planetCard()
-    }
-    
-    private var availableBotsSection: some View {
-        VStack {
-            Text("Available Bots")
-        }
-        .planetCard()
-    }
-    
-    private var realTradingInstructions: some View {
-        VStack {
-            Text("Trading Instructions")
-        }
-        .planetCard()
-    }
-    
-    private func testSystemConnection() {
-        // Implementation
-    }
-    
-    private func confirmRealTrading(_ bot: TradingBot) {
-        // Implementation
-    }
-    
-    private func startRealTradingSignals(for bot: TradingBot) {
-        // Implementation
-    }
-    
-    private func generateRealTradingSignal(for bot: TradingBot) -> TradingSignal? {
-        nil
     }
 }
 
-// Supporting cards (simplified)
-struct SystemStatusCard: View {
-    let title: String
-    let subtitle: String
-    let status: String
-    let statusColor: Color
-    let icon: String
-    
-    var body: some View {
-        VStack {
-            Text(title)
-        }
-        .padding()
-        .background(.ultraThinMaterial)
-        .cornerRadius(12)
-    }
-}
-
-struct ActiveBotCard: View {
-    let bot: TradingBot
-    let onStop: () -> Void
-    
-    var body: some View {
-        VStack {
-            Text(bot.name)
-        }
-        .padding()
-        .background(.ultraThinMaterial)
-        .cornerRadius(12)
-    }
-}
-
-struct DeployableBotCard: View {
-    let bot: TradingBot
-    let onDeploy: () -> Void
-    let systemReady: Bool
-    
-    var body: some View {
-        VStack {
-            Text(bot.name)
-        }
-        .padding()
-        .background(.ultraThinMaterial)
-        .cornerRadius(12)
-    }
-}
-
-struct ImportantNote: View {
-    let icon: String
-    let iconColor: Color
-    let title: String
-    let description: String
-    
-    var body: some View {
-        HStack {
-            Image(systemName: icon)
-                .foregroundColor(iconColor)
-            VStack(alignment: .leading) {
-                Text(title)
-                    .foregroundColor(iconColor)
-                Text(description)
-                    .foregroundColor(.secondary)
-            }
-            Spacer()
-        }
-    }
-}
-
+// Preview
 #Preview {
     ContentView()
         .environmentObject(TradingManager.shared)

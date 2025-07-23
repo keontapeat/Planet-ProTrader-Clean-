@@ -56,14 +56,10 @@ struct HomeView: View {
                     let center = CGPoint(x: geometry.size.width / 2, y: geometry.size.height / 2)
                     
                     ZStack {
-                        // Central Sun (Core Trading Hub)
-                        centralSun
-                            .position(center)
-                        
-                        // Planet Orbits and Planets
+                        // Planet Orbits and Planets - NOW 6 PLANETS WITH BETTER SPACING
                         ForEach(Array(solarManager.planets.enumerated()), id: \.element.id) { index, planet in
-                            let radius = CGFloat(80 + (index * 60))
-                            let angle = rotationAngle + Double(index * 90)
+                            let radius = CGFloat(60 + (index * 35)) // Better spacing for 6 planets
+                            let angle = rotationAngle + Double(index * 60) // 360/6 = 60 degrees apart
                             let planetPosition = CGPoint(
                                 x: center.x + radius * cos(angle * .pi / 180),
                                 y: center.y + radius * sin(angle * .pi / 180)
@@ -71,7 +67,7 @@ struct HomeView: View {
                             
                             // Orbit path
                             Circle()
-                                .stroke(planet.color.opacity(0.2), lineWidth: 1)
+                                .stroke(planet.color.opacity(0.15), lineWidth: 1)
                                 .frame(width: radius * 2, height: radius * 2)
                                 .position(center)
                             
@@ -95,7 +91,7 @@ struct HomeView: View {
                         }
                     }
                 }
-                .frame(height: 280)
+                .frame(height: 320) // Increased height for better spacing
                 
                 // Selected Planet Info
                 selectedPlanetInfo
@@ -144,64 +140,10 @@ struct HomeView: View {
         .padding(.top, 20)
     }
     
-    private var centralSun: some View {
-        ZStack {
-            // Sun glow (reduced intensity)
-            Circle()
-                .fill(
-                    RadialGradient(
-                        gradient: Gradient(colors: [
-                            Color.yellow.opacity(0.4),
-                            Color.orange.opacity(0.2),
-                            Color.clear
-                        ]),
-                        center: .center,
-                        startRadius: 5,
-                        endRadius: 30
-                    )
-                )
-                .frame(width: 60, height: 60)
-                .scaleEffect(1.0 + sin(rotationAngle * .pi / 180) * 0.05)
-            
-            // Sun core with professional trading symbol
-            Circle()
-                .fill(
-                    LinearGradient(
-                        gradient: Gradient(colors: [Color.yellow, Color.orange]),
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-                .frame(width: 40, height: 40)
-                .overlay(
-                    Image(systemName: "chart.line.uptrend.xyaxis.circle.fill")
-                        .font(.title2)
-                        .foregroundColor(.white)
-                        .shadow(color: .black.opacity(0.3), radius: 2)
-                )
-        }
-    }
-    
     private var selectedPlanetInfo: some View {
         VStack(spacing: 16) {
             // Planet header
             HStack(spacing: 12) {
-                ZStack {
-                    Circle()
-                        .fill(
-                            LinearGradient(
-                                gradient: Gradient(colors: solarManager.selectedPlanet.gradientColors),
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                        .frame(width: 50, height: 50)
-                    
-                    Image(systemName: solarManager.selectedPlanet.icon)
-                        .font(.title2)
-                        .foregroundColor(.white)
-                }
-                
                 VStack(alignment: .leading, spacing: 4) {
                     Text(solarManager.selectedPlanet.name)
                         .font(.title2)
@@ -293,10 +235,45 @@ struct HomeView: View {
         .animation(.easeInOut(duration: 0.2), value: planetAnimations[solarManager.selectedPlanet.id])
     }
     
+    private var centralSun: some View {
+        ZStack {
+            // Sun glow (reduced intensity)
+            Circle()
+                .fill(
+                    RadialGradient(
+                        gradient: Gradient(colors: [
+                            Color.yellow.opacity(0.4),
+                            Color.orange.opacity(0.2),
+                            Color.clear
+                        ]),
+                        center: .center,
+                        startRadius: 5,
+                        endRadius: 30
+                    )
+                )
+                .frame(width: 60, height: 60)
+                .scaleEffect(1.0 + sin(rotationAngle * .pi / 180) * 0.05)
+            
+            // Sun core - CLEAN NO UGLY CHART SYMBOL
+            Circle()
+                .fill(
+                    LinearGradient(
+                        gradient: Gradient(colors: [Color.yellow, Color.orange]),
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .frame(width: 40, height: 40)
+        }
+    }
+    
     @ViewBuilder
     private var selectedPlanetDashboard: some View {
         switch solarManager.selectedPlanet.name {
         case "ProTrader":
+            ProTraderDashboardView()
+                .environmentObject(solarManager)
+        case "Golden Core":
             ProTraderDashboardView()
                 .environmentObject(solarManager)
         case "Discipline":
