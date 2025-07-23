@@ -170,31 +170,31 @@ struct MarketplaceBotDetailView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
             
             LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 16) {
-                StatCard(
+                MarketplaceStatCard(
                     title: "Total Return",
                     value: bot.stats.formattedTotalReturn,
-                    color: bot.stats.totalReturn >= 0 ? .green : .red,
+                    color: bot.stats.totalReturn >= 0 ? Color.green : Color.red,
                     icon: "chart.line.uptrend.xyaxis"
                 )
                 
-                StatCard(
+                MarketplaceStatCard(
                     title: "Win Rate",
                     value: String(format: "%.1f%%", bot.stats.winRate),
-                    color: .blue,
+                    color: Color.blue,
                     icon: "target"
                 )
                 
-                StatCard(
+                MarketplaceStatCard(
                     title: "Total Trades",
                     value: "\(bot.stats.totalTrades)",
-                    color: .purple,
+                    color: Color.purple,
                     icon: "arrow.left.arrow.right"
                 )
                 
-                StatCard(
+                MarketplaceStatCard(
                     title: "Max Drawdown",
                     value: String(format: "%.1f%%", bot.stats.maxDrawdown),
-                    color: .orange,
+                    color: Color.orange,
                     icon: "chart.line.downtrend.xyaxis"
                 )
             }
@@ -270,10 +270,10 @@ struct MarketplaceBotDetailView: View {
                 .padding(.top)
             
             VStack(alignment: .leading, spacing: 8) {
-                FeatureRow(icon: "brain.head.profile", text: "AI-powered decision making", color: .blue)
-                FeatureRow(icon: "shield.checkered", text: "Risk management built-in", color: .green)
-                FeatureRow(icon: "clock.arrow.circlepath", text: "24/7 automated trading", color: .orange)
-                FeatureRow(icon: "chart.bar.xaxis", text: "Real-time performance tracking", color: .purple)
+                MarketplaceFeatureRow(icon: "brain.head.profile", text: "AI-powered decision making", color: .blue)
+                MarketplaceFeatureRow(icon: "shield.checkered", text: "Risk management built-in", color: .green)
+                MarketplaceFeatureRow(icon: "clock.arrow.circlepath", text: "24/7 automated trading", color: .orange)
+                MarketplaceFeatureRow(icon: "chart.bar.xaxis", text: "Real-time performance tracking", color: .purple)
             }
         }
         .planetCard()
@@ -375,7 +375,7 @@ struct MarketplaceBotDetailView: View {
 
 // MARK: - Supporting Views
 
-struct StatCard: View {
+struct MarketplaceStatCard: View {
     let title: String
     let value: String
     let color: Color
@@ -403,7 +403,7 @@ struct StatCard: View {
     }
 }
 
-struct AFeatureRow: View {
+struct MarketplaceFeatureRow: View {
     let icon: String
     let text: String
     let color: Color

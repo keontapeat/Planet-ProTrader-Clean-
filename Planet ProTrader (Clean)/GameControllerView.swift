@@ -330,19 +330,15 @@ struct GameControllerView: View {
     
     private var gameStatsSection: some View {
         HStack(spacing: 16) {
-            StatCard(
+            GameStatCard(
                 title: "Trades",
-                value: "\(currentGame.trades.count)",
-                color: .blue,
-                icon: "arrow.left.arrow.right"
+                value: "\(currentGame.trades.count)"
             )
             
             let wins = currentGame.trades.filter { $0.outcome == .win }.count
-            StatCard(
+            GameStatCard(
                 title: "Win Rate",
-                value: currentGame.trades.isEmpty ? "0%" : "\(Int(Double(wins) / Double(currentGame.trades.count) * 100))%",
-                color: .green,
-                icon: "target"
+                value: currentGame.trades.isEmpty ? "0%" : "\(Int(Double(wins) / Double(currentGame.trades.count) * 100))%"
             )
         }
         .padding()
@@ -534,6 +530,27 @@ struct PressableButtonStyle: ButtonStyle {
         configuration.label
             .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
             .animation(.easeInOut(duration: 0.1), value: configuration.isPressed)
+    }
+}
+
+struct GameStatCard: View {
+    let title: String
+    let value: String
+    
+    var body: some View {
+        VStack(spacing: 8) {
+            Text(value)
+                .font(.title2.bold())
+                .foregroundColor(.white)
+            
+            Text(title)
+                .font(.caption)
+                .foregroundColor(.secondary)
+        }
+        .frame(maxWidth: .infinity)
+        .padding()
+        .background(Color(.systemGray6).opacity(0.5))
+        .cornerRadius(12)
     }
 }
 

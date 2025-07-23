@@ -83,25 +83,19 @@ struct MicroFlipGameView: View {
     
     private var headerStatsView: some View {
         HStack(spacing: 16) {
-            StatCard(
+            MicroFlipStatCard(
                 title: "Active Games",
-                value: activeGame != nil ? "1" : "0",
-                color: DesignSystem.cosmicBlue,
-                icon: "gamecontroller.fill"
+                value: activeGame != nil ? "1" : "0"
             )
             
-            StatCard(
+            MicroFlipStatCard(
                 title: "Win Rate",
-                value: "73.2%",
-                color: .green,
-                icon: "target"
+                value: "73.2%"
             )
             
-            StatCard(
-                title: "Best Streak",
-                value: "12",
-                color: DesignSystem.solarOrange,
-                icon: "flame.fill"
+            MicroFlipStatCard(
+                title: "Best Streak", 
+                value: "12"
             )
         }
         .opacity(animateElements ? 1 : 0)
@@ -561,6 +555,27 @@ struct RecentGameRow: View {
         .padding()
         .background(Color(.systemGray6).opacity(0.5))
         .cornerRadius(8)
+    }
+}
+
+struct MicroFlipStatCard: View {
+    let title: String
+    let value: String
+    
+    var body: some View {
+        VStack(spacing: 8) {
+            Text(value)
+                .font(.title2.bold())
+                .foregroundColor(DesignSystem.cosmicBlue)
+            
+            Text(title)
+                .font(.caption)
+                .foregroundColor(.secondary)
+        }
+        .frame(maxWidth: .infinity)
+        .padding()
+        .background(Color(.systemGray6).opacity(0.5))
+        .cornerRadius(12)
     }
 }
 

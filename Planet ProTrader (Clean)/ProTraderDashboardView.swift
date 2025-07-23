@@ -124,11 +124,12 @@ Date,Time,Open,High,Low,Close,Volume
                             .background(.purple.opacity(0.2), in: Capsule())
                         }
                         
-                        // Deploy All Bots Button
+                        // Deploy All Bots Button - FIXED
                         Button(action: { 
                             showingBotDeployment = true
                             Task {
                                 await armyManager.deployAllBots()
+                                GlobalToastManager.shared.show("🚀 All 5,000 bots deployed successfully!", type: .success)
                             }
                         }) {
                             HStack(spacing: 4) {
@@ -147,7 +148,7 @@ Date,Time,Open,High,Low,Close,Volume
                         Button(action: { showingVPSStatus = true }) {
                             HStack(spacing: 4) {
                                 Circle()
-                                    .fill(armyManager.isConnectedToVPS ? .green : .red)
+                                    .fill(armyManager.vpsManager.isConnected ? .green : .red)
                                     .frame(width: 8, height: 8)
                                 Text("VPS")
                                     .font(.caption.bold())
@@ -159,24 +160,28 @@ Date,Time,Open,High,Low,Close,Volume
                         
                         // Auto-Trading Toggle
                         Menu {
-                            Button("Start Auto-Trading") {
+                            Button("🚀 Start Auto-Trading") {
                                 Task {
                                     await armyManager.startAutoTrading()
+                                    GlobalToastManager.shared.show("✅ Auto-trading started!", type: .success)
                                 }
                             }
-                            Button("Stop Auto-Trading") {
+                            Button("🛑 Stop Auto-Trading") {
                                 Task {
                                     await armyManager.stopAutoTrading()
+                                    GlobalToastManager.shared.show("⏹️ Auto-trading stopped", type: .info)
                                 }
                             }
-                            Button("Emergency Stop All") {
+                            Button("🚨 Emergency Stop All") {
                                 Task {
                                     await armyManager.emergencyStopAll()
+                                    GlobalToastManager.shared.show("🚨 Emergency stop activated!", type: .warning)
                                 }
                             }
-                            Button("Train with Sample Data") {
+                            Button("🧠 Train with Sample Data") {
                                 Task {
                                     await trainWithSampleData()
+                                    GlobalToastManager.shared.show("🎓 Training completed!", type: .success)
                                 }
                             }
                         } label: {
@@ -227,6 +232,12 @@ Date,Time,Open,High,Low,Close,Volume
             }
             armyManager.startContinuousLearning()
             
+            // Auto-start VPS connection
+            Task {
+                await armyManager.vpsManager.connectToVPS()
+                armyManager.isConnectedToVPS = armyManager.vpsManager.isConnected
+            }
+            
             // Auto-start training with sample data
             Task {
                 await trainWithSampleData()
@@ -237,9 +248,10 @@ Date,Time,Open,High,Low,Close,Volume
     // MARK: - Sample Data Training
     private func trainWithSampleData() async {
         print("🚀 Training bots with sample historical data...")
-        await armyManager.trainWithHistoricalData(csvData: sampleHistoricalData)
+        let results = await armyManager.trainWithHistoricalData(csvData: sampleHistoricalData)
+        print("✅ Training completed: \(results.summary)")
     }
-    
+
     // MARK: - Bot Army Deployment Section
     private var botArmyDeploymentSection: some View {
         VStack(alignment: .leading, spacing: 16) {

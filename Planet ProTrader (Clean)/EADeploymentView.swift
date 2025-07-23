@@ -97,10 +97,10 @@ struct EADeploymentView: View {
                 .fontWeight(.bold)
             
             VStack(spacing: 10) {
-                InfoRow(title: "VPS Server", value: "172.234.201.231", icon: "server.rack")
-                InfoRow(title: "Coinexx Account", value: "Demo #845638", icon: "building.columns")
-                InfoRow(title: "Trading Platform", value: "MetaTrader 5", icon: "chart.line.uptrend.xyaxis")
-                InfoRow(title: "Base Currency", value: "USD", icon: "dollarsign.circle")
+                EAInfoRow(title: "VPS Server", value: "172.234.201.231", icon: "server.rack")
+                EAInfoRow(title: "Coinexx Account", value: "Demo #845638", icon: "building.columns")
+                EAInfoRow(title: "Trading Platform", value: "MetaTrader 5", icon: "chart.line.uptrend.xyaxis")
+                EAInfoRow(title: "Base Currency", value: "USD", icon: "dollarsign.circle")
             }
         }
         .padding()
@@ -237,6 +237,31 @@ struct DeploymentStep: Identifiable {
     }
 }
 
+struct EAInfoRow: View {
+    let title: String
+    let value: String
+    let icon: String
+    
+    var body: some View {
+        HStack {
+            Image(systemName: icon)
+                .font(.subheadline)
+                .foregroundColor(DesignSystem.primaryGold)
+                .frame(width: 20)
+            
+            Text(title)
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+            
+            Spacer()
+            
+            Text(value)
+                .font(.subheadline)
+                .fontWeight(.semibold)
+        }
+    }
+}
+
 struct DeploymentStepRow: View {
     let step: DeploymentStep
     
@@ -272,31 +297,6 @@ struct DeploymentStepRow: View {
             Spacer()
         }
         .padding(.vertical, 4)
-    }
-}
-
-struct InfoRow: View {
-    let title: String
-    let value: String
-    let icon: String
-    
-    var body: some View {
-        HStack {
-            Image(systemName: icon)
-                .font(.subheadline)
-                .foregroundColor(DesignSystem.primaryGold)
-                .frame(width: 20)
-            
-            Text(title)
-                .font(.subheadline)
-                .foregroundColor(.secondary)
-            
-            Spacer()
-            
-            Text(value)
-                .font(.subheadline)
-                .fontWeight(.semibold)
-        }
     }
 }
 
