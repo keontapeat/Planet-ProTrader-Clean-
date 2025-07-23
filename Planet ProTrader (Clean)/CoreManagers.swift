@@ -812,12 +812,8 @@ class AccountManager: ObservableObject {
     private init() {
         currentAccount = SampleData.demoAccount
         connectionStatus = .connected
-        setupTradingPlanets()
+        tradingPlanets = TradingPlanet.samplePlanets()
         generateRecentActivity()
-    }
-    
-    private func setupTradingPlanets() {
-        tradingPlanets = TradingPlanet.allPlanets
     }
     
     private func generateRecentActivity() {
