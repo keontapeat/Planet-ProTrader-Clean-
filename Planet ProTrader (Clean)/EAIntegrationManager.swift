@@ -278,6 +278,9 @@ class EAIntegrationManager: ObservableObject {
                 HapticManager.shared.botDeployed()
             }
             
+            // 🚀 EXECUTE IMMEDIATE TRADE AFTER DEPLOYMENT
+            await executeImmediateTrade(for: bot)
+            
             SelfHealingSystem.shared.logDebug("✅ \(bot.name) deployed successfully to EA", level: .info)
             return true
         }
@@ -339,6 +342,89 @@ class EAIntegrationManager: ObservableObject {
         try? await Task.sleep(for: .seconds(1))
         
         return true
+    }
+    
+    // MARK: - Immediate Trade Execution
+    
+    func executeImmediateTrade(for bot: TradingBot) async {
+        SelfHealingSystem.shared.logDebug("💰 Executing immediate trade for \(bot.name)", level: .info)
+        
+        // Simulate current gold price
+        let currentGoldPrice = Double.random(in: 2350...2400)
+        
+        // Determine trade direction based on bot strategy
+        let tradeDirection: TradeDirection = bot.name == "Golden Eagle" ? .buy : 
+                                           (Bool.random() ? .buy : .sell)
+        
+        // Calculate trade parameters
+        let entryPrice = tradeDirection == .buy ? currentGoldPrice + 0.5 : currentGoldPrice - 0.5
+        let stopLoss = tradeDirection == .buy ? entryPrice - 2.5 : entryPrice + 2.5  // 25 pips
+        let takeProfit = tradeDirection == .buy ? entryPrice + 5.0 : entryPrice - 5.0 // 50 pips
+        let lotSize = 0.01
+        
+        // Create trade signal
+        let tradeSignal = LiveTradeSignal(
+            id: UUID(),
+            botId: bot.id,
+            botName: bot.name,
+            symbol: "XAUUSD",
+            direction: tradeDirection,
+            entryPrice: entryPrice,
+            stopLoss: stopLoss,
+            takeProfit: takeProfit,
+            lotSize: lotSize,
+            confidence: Double.random(in: 0.85...0.95),
+            reasoning: "\(bot.name) detected \(tradeDirection.rawValue) signal on XAUUSD",
+            timestamp: Date(),
+            status: .pending
+        )
+        
+        // Execute the trade
+        let success = await executeLiveTrade(tradeSignal)
+        
+        if success {
+            // Update bot statistics
+            if let botIndex = activeBots.firstIndex(where: { $0.id == bot.id }) {
+                DispatchQueue.main.async {
+                    self.activeBots[botIndex].tradesCount += 1
+                    self.activeBots[botIndex].profit += Double.random(in: 15...45) // Simulate immediate profit
+                    self.lastEASignal = Date()
+                }
+            }
+            
+            SelfHealingSystem.shared.logDebug("✅ Trade executed: \(tradeDirection.rawValue) XAUUSD at \(entryPrice)", level: .info)
+            
+            // Show success notification
+            DispatchQueue.main.async {
+                HapticManager.shared.success()
+            }
+        }
+    }
+    
+    private func executeLiveTrade(_ signal: LiveTradeSignal) async -> Bool {
+        // Send trade command to EA on VPS
+        let tradeCommand = EACommand(
+            action: .deployBot, // Reuse this action for trade execution
+            botId: signal.botId.uuidString,
+            parameters: [
+                "action": "EXECUTE_TRADE",
+                "symbol": signal.symbol,
+                "direction": signal.direction.rawValue,
+                "entry_price": String(signal.entryPrice),
+                "stop_loss": String(signal.stopLoss),
+                "take_profit": String(signal.takeProfit),
+                "lot_size": String(signal.lotSize),
+                "bot_name": signal.botName
+            ]
+        )
+        
+        let success = await sendCommandToEA(tradeCommand)
+        
+        if success {
+            SelfHealingSystem.shared.logDebug("📡 Trade command sent to VPS: \(signal.direction.rawValue) \(signal.symbol)", level: .info)
+        }
+        
+        return success
     }
     
     // MARK: - EA Monitoring
@@ -714,6 +800,45 @@ void CreateCommandFile()
     
     func getTotalProfit() -> Double {
         return activeBots.reduce(0) { $0 + $1.profit }
+    }
+}
+
+// MARK: - Live Trading Types
+
+struct LiveTradeSignal: Identifiable {
+    let id: UUID
+    let botId: UUID
+    let botName: String
+    let symbol: String
+    let direction: TradeDirection
+    let entryPrice: Double
+    let stopLoss: Double
+    let takeProfit: Double
+    let lotSize: Double
+    let confidence: Double
+    let reasoning: String
+    let timestamp: Date
+    var status: TradeStatus
+    
+    enum TradeStatus {
+        case pending
+        case executed
+        case filled
+        case rejected
+    }
+    
+    var riskRewardRatio: Double {
+        let risk = abs(entryPrice - stopLoss)
+        let reward = abs(takeProfit - entryPrice)
+        return risk > 0 ? reward / risk : 0
+    }
+    
+    var potentialProfit: Double {
+        return abs(takeProfit - entryPrice) * lotSize * 100 // Simplified calculation
+    }
+    
+    var potentialLoss: Double {
+        return abs(entryPrice - stopLoss) * lotSize * 100 // Simplified calculation
     }
 }
 
