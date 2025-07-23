@@ -17,6 +17,12 @@ struct TradingTerminal: View {
     @State private var selectedSymbol = "XAUUSD"
     @State private var showingWatchlist = false
     @State private var showingTradePanel = false
+    @State private var showingToolbar = false
+    @State private var showingPositions = false
+    @State private var showingOrders = false
+    @State private var showingHistory = false
+    @State private var tradePanelOffset: CGFloat = 0
+    @State private var isFullScreen = false
     
     // Environment Objects
     @EnvironmentObject var tradingManager: TradingManager
@@ -28,29 +34,122 @@ struct TradingTerminal: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                // Clean Background
+                // Professional Background
                 Color.black.ignoresSafeArea()
                 
                 VStack(spacing: 0) {
-                    // Clean Header
-                    cleanHeader
+                    // Clean Header (hideable for full screen)
+                    if !isFullScreen {
+                        tradeLockerHeader
+                            .transition(.move(edge: .top).combined(with: .opacity))
+                    }
                     
-                    // Main Chart (Takes most space)
-                    cleanChart
+                    // Main Chart Area
+                    ZStack {
+                        cleanChart
+                            .onTapGesture(count: 2) {
+                                withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+                                    isFullScreen.toggle()
+                                }
+                                hapticManager.impact()
+                            }
+                        
+                        // Floating Toolbar (TradeLocker style)
+                        if showingToolbar || isFullScreen {
+                            VStack {
+                                HStack {
+                                    Spacer()
+                                    floatingToolbar
+                                        .padding(.trailing, 16)
+                                        .padding(.top, 16)
+                                }
+                                Spacer()
+                            }
+                            .transition(.move(edge: .trailing).combined(with: .opacity))
+                        }
+                        
+                        // Chart Controls Overlay
+                        VStack {
+                            HStack {
+                                if isFullScreen {
+                                    backToNormalButton
+                                        .padding(.leading, 16)
+                                        .padding(.top, 16)
+                                }
+                                Spacer()
+                            }
+                            Spacer()
+                            
+                            // Bottom Chart Controls
+                            if isFullScreen {
+                                fullScreenControls
+                                    .padding(.bottom, 20)
+                                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                            }
+                        }
+                        
+                        // Tap to show/hide toolbar in full screen
+                        if isFullScreen {
+                            Color.clear
+                                .contentShape(Rectangle())
+                                .onTapGesture {
+                                    withAnimation(.easeInOut(duration: 0.3)) {
+                                        showingToolbar.toggle()
+                                    }
+                                }
+                        }
+                    }
                     
-                    // Bottom Trading Panel
-                    bottomTradingPanel
+                    // Bottom Trading Panel (swipeable down)
+                    if !isFullScreen {
+                        tradeLockerBottomPanel
+                            .offset(y: tradePanelOffset)
+                            .gesture(
+                                DragGesture()
+                                    .onChanged { value in
+                                        if value.translation.height > 0 {
+                                            tradePanelOffset = min(value.translation.height, 200)
+                                        }
+                                    }
+                                    .onEnded { value in
+                                        withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+                                            if value.translation.height > 80 {
+                                                isFullScreen = true
+                                                tradePanelOffset = 0
+                                            } else {
+                                                tradePanelOffset = 0
+                                            }
+                                        }
+                                        hapticManager.impact()
+                                    }
+                            )
+                    }
                 }
                 
-                // Overlays
+                // Overlays (TradeLocker style)
                 if showingWatchlist {
-                    watchlistOverlay
-                        .zIndex(2)
+                    tradeLockerWatchlistOverlay
+                        .zIndex(10)
                 }
                 
                 if showingTradePanel {
-                    tradePanelOverlay
-                        .zIndex(2)
+                    tradeLockerTradePanelOverlay
+                        .zIndex(10)
+                }
+                
+                if showingPositions {
+                    tradeLockerPositionsOverlay
+                        .zIndex(10)
+                }
+                
+                if showingOrders {
+                    tradeLockerOrdersOverlay
+                        .zIndex(10)
+                }
+                
+                if showingHistory {
+                    tradeLockerHistoryOverlay
+                        .zIndex(10)
                 }
             }
             .navigationBarHidden(true)
@@ -59,93 +158,113 @@ struct TradingTerminal: View {
             }
             .overlay(alignment: .topTrailing) {
                 if toastManager.showToast {
-                    cleanToast
+                    tradeLockerToast
                 }
             }
         }
     }
     
-    // MARK: - Clean Header
+    // MARK: - TradeLocker Style Header
     
-    private var cleanHeader: some View {
+    private var tradeLockerHeader: some View {
         VStack(spacing: 12) {
-            // Top Row: Title & Connection
+            // Top Row: Title & Status
             HStack {
                 Text("ProTrader")
                     .font(.title2)
-                    .fontWeight(.bold)
-                    .foregroundStyle(LinearGradient(
-                        colors: [.yellow, .orange],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    ))
+                    .fontWeight(.black)
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [Color(red: 1.0, green: 0.8, blue: 0.0), Color(red: 1.0, green: 0.6, blue: 0.0)],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
                 
                 Spacer()
                 
-                // Connection Status
-                HStack(spacing: 4) {
-                    Circle()
-                        .fill(tradingManager.isConnected ? .green : .red)
-                        .frame(width: 6, height: 6)
-                    Text("LIVE")
-                        .font(.caption2)
-                        .fontWeight(.medium)
-                        .foregroundColor(tradingManager.isConnected ? .green : .red)
+                HStack(spacing: 12) {
+                    // Live Status
+                    HStack(spacing: 4) {
+                        Circle()
+                            .fill(.green)
+                            .frame(width: 6, height: 6)
+                            .scaleEffect(tradingManager.isConnected ? 1.0 : 0.6)
+                            .animation(.easeInOut(duration: 1.0).repeatForever(autoreverses: true), value: tradingManager.isConnected)
+                        
+                        Text("LIVE")
+                            .font(.caption2)
+                            .fontWeight(.black)
+                            .foregroundColor(.green)
+                    }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .background(.green.opacity(0.15), in: Capsule())
+                    
+                    // Settings
+                    Button(action: {}) {
+                        Image(systemName: "line.3.horizontal")
+                            .font(.system(size: 16, weight: .medium))
+                            .foregroundColor(.white)
+                    }
                 }
-                .padding(.horizontal, 8)
-                .padding(.vertical, 4)
-                .background(.ultraThinMaterial, in: Capsule())
             }
             
-            // Symbol Info Row
-            HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    HStack(spacing: 8) {
+            // Symbol & Price Row
+            HStack(alignment: .center) {
+                VStack(alignment: .leading, spacing: 3) {
+                    HStack(spacing: 6) {
                         Text(selectedSymbol)
-                            .font(.headline)
+                            .font(.title)
                             .fontWeight(.bold)
                             .foregroundColor(.white)
                         
-                        Button(action: { showingWatchlist = true }) {
-                            Image(systemName: "chevron.down")
-                                .font(.caption)
-                                .foregroundColor(.gray)
+                        Button(action: { 
+                            showingWatchlist = true 
+                            hapticManager.impact()
+                        }) {
+                            Image(systemName: "chevron.down.circle.fill")
+                                .font(.system(size: 18))
+                                .foregroundColor(.white.opacity(0.6))
                         }
                     }
                     
-                    Text("Gold Spot")
+                    Text("Gold Spot / US Dollar")
                         .font(.caption)
                         .foregroundColor(.gray)
                 }
                 
                 Spacer()
                 
-                VStack(alignment: .trailing, spacing: 2) {
+                VStack(alignment: .trailing, spacing: 3) {
                     Text("$2,374.85")
-                        .font(.title2)
-                        .fontWeight(.bold)
+                        .font(.system(size: 28, weight: .bold, design: .rounded))
                         .foregroundColor(.white)
                     
-                    HStack(spacing: 4) {
-                        Text("+12.45")
-                        Text("(+0.52%)")
+                    HStack(spacing: 6) {
+                        Image(systemName: "arrow.up.right")
+                            .font(.system(size: 10, weight: .bold))
+                        Text("+12.45 (+0.52%)")
                     }
-                    .font(.caption)
+                    .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(.green)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .background(.green.opacity(0.15), in: Capsule())
                 }
             }
             
-            // Timeframe Selector
+            // Timeframe Selector (TradeLocker style)
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
+                HStack(spacing: 6) {
                     ForEach(ChartTimeframe.allCases, id: \.self) { timeframe in
-                        CleanTimeframeButton(
+                        TradeLockerTimeframeButton(
                             timeframe: timeframe,
                             isSelected: selectedTimeframe == timeframe
                         ) {
                             selectedTimeframe = timeframe
                             tradingViewManager.changeTimeframe(timeframe.tradingViewInterval)
-                            hapticManager.selection()
+                            hapticManager.impact()
                         }
                     }
                 }
@@ -155,6 +274,158 @@ struct TradingTerminal: View {
         .padding(.horizontal, 20)
         .padding(.vertical, 16)
         .background(.regularMaterial)
+        .overlay(
+            Rectangle()
+                .fill(.white.opacity(0.1))
+                .frame(height: 1),
+            alignment: .bottom
+        )
+    }
+    
+    // MARK: - Floating Toolbar (TradeLocker style)
+    
+    private var floatingToolbar: some View {
+        VStack(spacing: 12) {
+            ToolbarButton(icon: "chart.line.uptrend.xyaxis", color: .blue) {
+                // Toggle indicators - user can choose
+            }
+            
+            ToolbarButton(icon: "pencil.and.ruler.trianglebadge.exclamationmark", color: .orange) {
+                // Drawing tools
+            }
+            
+            ToolbarButton(icon: "camera.fill", color: .purple) {
+                // Screenshot
+            }
+            
+            ToolbarButton(icon: "square.and.arrow.up", color: .green) {
+                // Share
+            }
+        }
+        .padding(.vertical, 12)
+        .padding(.horizontal, 8)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(.white.opacity(0.1), lineWidth: 1)
+        )
+    }
+    
+    // MARK: - Back to Normal Button
+    
+    private var backToNormalButton: some View {
+        Button(action: {
+            withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+                isFullScreen = false
+                showingToolbar = false
+            }
+            hapticManager.impact()
+        }) {
+            Image(systemName: "arrow.down.right.and.arrow.up.left")
+                .font(.system(size: 18, weight: .medium))
+                .foregroundColor(.white)
+                .padding(12)
+                .background(.ultraThinMaterial, in: Circle())
+                .overlay(
+                    Circle()
+                        .stroke(.white.opacity(0.2), lineWidth: 1)
+                )
+        }
+    }
+    
+    // MARK: - Full Screen Controls
+    
+    private var fullScreenControls: some View {
+        HStack {
+            // Quick Trade Buttons
+            Button(action: {
+                showingTradePanel = true
+                hapticManager.impact()
+            }) {
+                HStack(spacing: 6) {
+                    Image(systemName: "plus.circle.fill")
+                        .font(.system(size: 16, weight: .medium))
+                    Text("Trade")
+                        .font(.system(size: 14, weight: .semibold))
+                }
+                .foregroundColor(.white)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 10)
+                .background(.blue, in: Capsule())
+            }
+            
+            Spacer()
+            
+            // Timeframe Quick Selector
+            HStack(spacing: 4) {
+                ForEach([ChartTimeframe.m15, .h1, .h4, .d1], id: \.self) { timeframe in
+                    Button(timeframe.displayName) {
+                        selectedTimeframe = timeframe
+                        tradingViewManager.changeTimeframe(timeframe.tradingViewInterval)
+                        hapticManager.impact()
+                    }
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(selectedTimeframe == timeframe ? .black : .white)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 6)
+                    .background(
+                        selectedTimeframe == timeframe ? .white : .white.opacity(0.2),
+                        in: RoundedRectangle(cornerRadius: 6)
+                    )
+                }
+            }
+        }
+        .padding(.horizontal, 20)
+    }
+    
+    // MARK: - TradeLocker Bottom Panel
+    
+    private var tradeLockerBottomPanel: some View {
+        VStack(spacing: 0) {
+            // Drag Indicator
+            RoundedRectangle(cornerRadius: 2)
+                .fill(.white.opacity(0.3))
+                .frame(width: 36, height: 4)
+                .padding(.top, 8)
+            
+            VStack(spacing: 16) {
+                // Stats Row (TradeLocker style)
+                HStack(spacing: 12) {
+                    TradeLockerStatCard(title: "Balance", value: "$10,425", change: nil, color: .blue)
+                    TradeLockerStatCard(title: "Equity", value: "$10,687", change: "+$262", color: .green)
+                    TradeLockerStatCard(title: "Free Margin", value: "$10,191", change: nil, color: .cyan)
+                }
+                
+                // Action Buttons Row
+                HStack(spacing: 12) {
+                    TradeLockerActionButton(title: "New Trade", icon: "plus.circle.fill", color: .blue) {
+                        showingTradePanel = true
+                    }
+                    
+                    TradeLockerActionButton(title: "Deploy AI", icon: "brain.head.profile", color: .orange) {
+                        deployAIBot()
+                    }
+                }
+                
+                // Quick Access Tabs
+                HStack(spacing: 0) {
+                    TradeLockerTabButton(title: "Positions", count: "2", isActive: false) {
+                        showingPositions = true
+                    }
+                    TradeLockerTabButton(title: "Orders", count: "3", isActive: false) {
+                        showingOrders = true
+                    }
+                    TradeLockerTabButton(title: "History", count: "15", isActive: false) {
+                        showingHistory = true
+                    }
+                }
+                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+            }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 16)
+        }
+        .background(.regularMaterial)
+        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
     }
     
     // MARK: - Clean Chart
@@ -169,281 +440,610 @@ struct TradingTerminal: View {
         .clipShape(Rectangle())
     }
     
-    // MARK: - Bottom Trading Panel
+    // MARK: - TradeLocker Watchlist Overlay
     
-    private var bottomTradingPanel: some View {
-        VStack(spacing: 16) {
-            // Quick Stats Row
-            HStack(spacing: 20) {
-                StatCard(title: "Balance", value: "$10,425", color: .blue)
-                StatCard(title: "Equity", value: "$10,687", color: .green)
-                StatCard(title: "P&L", value: "+$262", color: .green)
-                StatCard(title: "Margin", value: "$234", color: .orange)
-            }
-            
-            // Trading Buttons Row
-            HStack(spacing: 12) {
-                // Trade Button
-                Button(action: { showingTradePanel = true }) {
-                    HStack(spacing: 8) {
-                        Image(systemName: "plus.circle.fill")
-                        Text("New Trade")
-                            .fontWeight(.semibold)
-                    }
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
-                    .background(
-                        LinearGradient(
-                            colors: [.blue, .cyan],
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        ),
-                        in: RoundedRectangle(cornerRadius: 12)
-                    )
-                }
-                
-                // AI Bot Button
-                Button(action: deployAIBot) {
-                    HStack(spacing: 8) {
-                        Image(systemName: "brain.head.profile")
-                        Text("Deploy AI")
-                            .fontWeight(.semibold)
-                    }
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
-                    .background(
-                        LinearGradient(
-                            colors: [.yellow, .orange],
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        ),
-                        in: RoundedRectangle(cornerRadius: 12)
-                    )
-                }
-            }
-            
-            // Quick Access Row
-            HStack(spacing: 20) {
-                QuickAccessButton(title: "Positions", icon: "briefcase", count: "2") {}
-                QuickAccessButton(title: "Orders", icon: "list.bullet", count: "3") {}
-                QuickAccessButton(title: "History", icon: "clock", count: "15") {}
-            }
-        }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 20)
-        .background(.regularMaterial)
-    }
-    
-    // MARK: - Watchlist Overlay
-    
-    private var watchlistOverlay: some View {
+    private var tradeLockerWatchlistOverlay: some View {
         ZStack {
-            // Background Blur
-            Color.black.opacity(0.7)
+            Color.black.opacity(0.8)
                 .ignoresSafeArea()
                 .onTapGesture {
-                    showingWatchlist = false
+                    withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
+                        showingWatchlist = false
+                    }
                 }
             
-            // Watchlist Panel
             VStack(spacing: 0) {
                 // Header
                 HStack {
                     Text("Select Symbol")
-                        .font(.headline)
+                        .font(.title2)
                         .fontWeight(.bold)
                         .foregroundColor(.white)
                     
                     Spacer()
                     
-                    Button("Close") {
-                        showingWatchlist = false
+                    Button(action: {
+                        withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
+                            showingWatchlist = false
+                        }
+                    }) {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.title2)
+                            .foregroundColor(.white.opacity(0.6))
                     }
-                    .foregroundColor(.gray)
                 }
-                .padding(.horizontal, 20)
+                .padding(.horizontal, 24)
+                .padding(.vertical, 20)
+                .background(.regularMaterial)
+                
+                // Search Bar
+                HStack {
+                    Image(systemName: "magnifyingglass")
+                        .foregroundColor(.gray)
+                    Text("Search symbols...")
+                        .foregroundColor(.gray)
+                    Spacer()
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 10))
+                .padding(.horizontal, 24)
                 .padding(.vertical, 16)
+                .background(.regularMaterial)
+                
+                // Symbol Categories
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 12) {
+                        ForEach(["All", "Forex", "Metals", "Crypto", "Indices"], id: \.self) { category in
+                            Text(category)
+                                .font(.subheadline)
+                                .fontWeight(.medium)
+                                .foregroundColor(category == "All" ? .black : .white)
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 8)
+                                .background(
+                                    category == "All" ? .white : .white.opacity(0.1),
+                                    in: Capsule()
+                                )
+                        }
+                    }
+                    .padding(.horizontal, 24)
+                }
+                .padding(.vertical, 12)
                 .background(.regularMaterial)
                 
                 // Symbol List
                 ScrollView {
                     LazyVStack(spacing: 0) {
                         ForEach(TradingSymbol.popularSymbols, id: \.symbol) { symbol in
-                            CleanSymbolRow(symbol: symbol) {
+                            TradeLockerSymbolRow(symbol: symbol, isSelected: selectedSymbol == symbol.symbol) {
                                 selectedSymbol = symbol.symbol
                                 tradingViewManager.changeSymbol(symbol.symbol)
-                                showingWatchlist = false
-                                hapticManager.selection()
+                                withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
+                                    showingWatchlist = false
+                                }
+                                hapticManager.impact()
                             }
                         }
                     }
                 }
+                .background(.regularMaterial)
             }
-            .frame(height: 500)
-            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20))
-            .padding(.horizontal, 20)
-            .transition(.move(edge: .bottom).combined(with: .opacity))
+            .frame(maxHeight: .infinity)
+            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+            .padding(.horizontal, 16)
+            .padding(.vertical, 40)
+            .transition(.move(edge: .bottom).combined(with: .scale(scale: 0.95)).combined(with: .opacity))
         }
     }
     
-    // MARK: - Trade Panel Overlay
+    // MARK: - TradeLocker Trade Panel Overlay
     
-    private var tradePanelOverlay: some View {
+    private var tradeLockerTradePanelOverlay: some View {
         ZStack {
-            // Background Blur
-            Color.black.opacity(0.7)
+            Color.black.opacity(0.8)
                 .ignoresSafeArea()
                 .onTapGesture {
-                    showingTradePanel = false
+                    withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
+                        showingTradePanel = false
+                    }
                 }
             
-            // Trade Panel
-            VStack(spacing: 20) {
+            VStack(spacing: 0) {
                 // Header
                 HStack {
-                    Text("New Trade")
-                        .font(.headline)
-                        .fontWeight(.bold)
-                        .foregroundColor(.white)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("New Order")
+                            .font(.title2)
+                            .fontWeight(.bold)
+                            .foregroundColor(.white)
+                        Text("Place your trade")
+                            .font(.caption)
+                            .foregroundColor(.gray)
+                    }
                     
                     Spacer()
                     
-                    Button("Close") {
-                        showingTradePanel = false
+                    Button(action: {
+                        withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
+                            showingTradePanel = false
+                        }
+                    }) {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.title2)
+                            .foregroundColor(.white.opacity(0.6))
                     }
-                    .foregroundColor(.gray)
                 }
+                .padding(.horizontal, 24)
+                .padding(.vertical, 20)
+                .background(.regularMaterial)
                 
-                // Symbol & Volume
-                VStack(spacing: 16) {
-                    HStack {
-                        Text("Symbol")
-                            .foregroundColor(.gray)
-                        Spacer()
-                        Text(selectedSymbol)
-                            .fontWeight(.semibold)
-                            .foregroundColor(.white)
-                    }
-                    
-                    HStack {
-                        Text("Volume")
-                            .foregroundColor(.gray)
-                        Spacer()
-                        HStack(spacing: 12) {
-                            Button("-") {
-                                hapticManager.selection()
-                            }
-                            .font(.title3)
-                            .foregroundColor(.gray)
+                // Trade Form
+                VStack(spacing: 20) {
+                    // Symbol & Volume Row
+                    HStack(spacing: 16) {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Symbol")
+                                .font(.caption)
+                                .foregroundColor(.gray)
                             
-                            Text("0.10")
+                            Text(selectedSymbol)
+                                .font(.headline)
                                 .fontWeight(.semibold)
                                 .foregroundColor(.white)
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 12)
+                                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 10))
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 12)
+                                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 10))
+                        }
+                        
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Volume")
+                                .font(.caption)
+                                .foregroundColor(.gray)
                             
-                            Button("+") {
-                                hapticManager.selection()
+                            HStack(spacing: 12) {
+                                Button("-") {
+                                    hapticManager.impact()
+                                }
+                                .font(.title2)
+                                .fontWeight(.medium)
+                                .foregroundColor(.white)
+                                .frame(width: 36, height: 36)
+                                .background(.ultraThinMaterial, in: Circle())
+                                
+                                Text("0.10")
+                                    .font(.headline)
+                                    .fontWeight(.semibold)
+                                    .foregroundColor(.white)
+                                
+                                Button("+") {
+                                    hapticManager.impact()
+                                }
+                                .font(.title2)
+                                .fontWeight(.medium)
+                                .foregroundColor(.white)
+                                .frame(width: 36, height: 36)
+                                .background(.ultraThinMaterial, in: Circle())
                             }
-                            .font(.title3)
-                            .foregroundColor(.gray)
                         }
-                    }
-                }
-                
-                // Price Display
-                HStack(spacing: 20) {
-                    VStack(spacing: 8) {
-                        Text("BID")
-                            .font(.caption)
-                            .foregroundColor(.gray)
-                        Text("2374.32")
-                            .font(.title3)
-                            .fontWeight(.bold)
-                            .foregroundColor(.red)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
-                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
-                    
-                    VStack(spacing: 8) {
-                        Text("ASK")
-                            .font(.caption)
-                            .foregroundColor(.gray)
-                        Text("2374.85")
-                            .font(.title3)
-                            .fontWeight(.bold)
-                            .foregroundColor(.green)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
-                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
-                }
-                
-                // Trade Buttons
-                HStack(spacing: 16) {
-                    Button(action: {
-                        executeSellOrder()
-                        showingTradePanel = false
-                    }) {
-                        VStack(spacing: 4) {
-                            Text("SELL")
-                                .font(.headline)
-                                .fontWeight(.bold)
-                            Text("2374.32")
-                                .font(.subheadline)
-                        }
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 20)
-                        .background(.red, in: RoundedRectangle(cornerRadius: 12))
                     }
                     
-                    Button(action: {
-                        executeBuyOrder()
-                        showingTradePanel = false
-                    }) {
-                        VStack(spacing: 4) {
-                            Text("BUY")
-                                .font(.headline)
-                                .fontWeight(.bold)
-                            Text("2374.85")
-                                .font(.subheadline)
+                    // Price Display (TradeLocker style)
+                    VStack(spacing: 16) {
+                        Text("Current Prices")
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                            .foregroundColor(.gray)
+                        
+                        HStack(spacing: 16) {
+                            // Sell Price
+                            VStack(spacing: 8) {
+                                Text("SELL")
+                                    .font(.caption)
+                                    .fontWeight(.bold)
+                                    .foregroundColor(.red)
+                                
+                                Text("2374.32")
+                                    .font(.title)
+                                    .fontWeight(.bold)
+                                    .foregroundColor(.white)
+                                
+                                Text("BID")
+                                    .font(.caption2)
+                                    .foregroundColor(.gray)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 16)
+                            .background(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(.red.opacity(0.1))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .stroke(.red.opacity(0.3), lineWidth: 1)
+                                    )
+                            )
+                            
+                            // Spread
+                            VStack(spacing: 4) {
+                                Text("SPREAD")
+                                    .font(.caption2)
+                                    .foregroundColor(.gray)
+                                Text("0.53")
+                                    .font(.caption)
+                                    .fontWeight(.semibold)
+                                    .foregroundColor(.orange)
+                            }
+                            
+                            // Buy Price
+                            VStack(spacing: 8) {
+                                Text("BUY")
+                                    .font(.caption)
+                                    .fontWeight(.bold)
+                                    .foregroundColor(.green)
+                                
+                                Text("2374.85")
+                                    .font(.title)
+                                    .fontWeight(.bold)
+                                    .foregroundColor(.white)
+                                
+                                Text("ASK")
+                                    .font(.caption2)
+                                    .foregroundColor(.gray)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 16)
+                            .background(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(.green.opacity(0.1))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .stroke(.green.opacity(0.3), lineWidth: 1)
+                                    )
+                            )
                         }
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 20)
-                        .background(.green, in: RoundedRectangle(cornerRadius: 12))
+                    }
+                    
+                    // Trade Buttons (TradeLocker style)
+                    HStack(spacing: 16) {
+                        Button(action: {
+                            executeSellOrder()
+                            withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
+                                showingTradePanel = false
+                            }
+                        }) {
+                            VStack(spacing: 6) {
+                                Text("SELL")
+                                    .font(.headline)
+                                    .fontWeight(.black)
+                                
+                                Text("2374.32")
+                                    .font(.subheadline)
+                                    .fontWeight(.semibold)
+                            }
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 20)
+                            .background(
+                                LinearGradient(
+                                    colors: [.red, .red.opacity(0.8)],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                in: RoundedRectangle(cornerRadius: 16)
+                            )
+                            .shadow(color: .red.opacity(0.3), radius: 8, x: 0, y: 4)
+                        }
+                        
+                        Button(action: {
+                            executeBuyOrder()
+                            withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
+                                showingTradePanel = false
+                            }
+                        }) {
+                            VStack(spacing: 6) {
+                                Text("BUY")
+                                    .font(.headline)
+                                    .fontWeight(.black)
+                                
+                                Text("2374.85")
+                                    .font(.subheadline)
+                                    .fontWeight(.semibold)
+                            }
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 20)
+                            .background(
+                                LinearGradient(
+                                    colors: [.green, .green.opacity(0.8)],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                in: RoundedRectangle(cornerRadius: 16)
+                            )
+                            .shadow(color: .green.opacity(0.3), radius: 8, x: 0, y: 4)
+                        }
+                    }
+                    
+                    // Risk Management
+                    VStack(spacing: 12) {
+                        HStack {
+                            Text("Risk Management")
+                                .font(.subheadline)
+                                .fontWeight(.semibold)
+                                .foregroundColor(.white)
+                            Spacer()
+                        }
+                        
+                        HStack(spacing: 16) {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Stop Loss")
+                                    .font(.caption)
+                                    .foregroundColor(.gray)
+                                Text("2349.50")
+                                    .font(.subheadline)
+                                    .fontWeight(.semibold)
+                                    .foregroundColor(.red)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding()
+                            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 10))
+                            
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Take Profit")
+                                    .font(.caption)
+                                    .foregroundColor(.gray)
+                                Text("2399.50")
+                                    .font(.subheadline)
+                                    .fontWeight(.semibold)
+                                    .foregroundColor(.green)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding()
+                            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 10))
+                        }
                     }
                 }
-                
-                Spacer()
+                .padding(.horizontal, 24)
+                .padding(.vertical, 24)
+                .background(.regularMaterial)
             }
-            .padding(20)
-            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20))
-            .padding(.horizontal, 20)
-            .transition(.move(edge: .bottom).combined(with: .opacity))
+            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+            .padding(.horizontal, 16)
+            .padding(.vertical, 40)
+            .transition(.move(edge: .bottom).combined(with: .scale(scale: 0.95)).combined(with: .opacity))
         }
     }
     
-    // MARK: - Clean Toast
+    // MARK: - TradeLocker Positions Overlay
     
-    private var cleanToast: some View {
+    private var tradeLockerPositionsOverlay: some View {
+        ZStack {
+            Color.black.opacity(0.8)
+                .ignoresSafeArea()
+                .onTapGesture {
+                    withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
+                        showingPositions = false
+                    }
+                }
+            
+            VStack(spacing: 0) {
+                // Header
+                HStack {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Positions")
+                            .font(.title2)
+                            .fontWeight(.bold)
+                            .foregroundColor(.white)
+                        Text("2 active positions")
+                            .font(.caption)
+                            .foregroundColor(.gray)
+                    }
+                    
+                    Spacer()
+                    
+                    Button(action: {
+                        withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
+                            showingPositions = false
+                        }
+                    }) {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.title2)
+                            .foregroundColor(.white.opacity(0.6))
+                    }
+                }
+                .padding(.horizontal, 24)
+                .padding(.vertical, 20)
+                .background(.regularMaterial)
+                
+                // Positions List
+                ScrollView {
+                    LazyVStack(spacing: 12) {
+                        ForEach(0..<3) { index in
+                            TradeLockerPositionCard(
+                                symbol: "XAUUSD",
+                                type: index % 2 == 0 ? "BUY" : "SELL",
+                                volume: "0.10",
+                                entryPrice: "2374.50",
+                                currentPrice: "2376.25",
+                                profit: index % 3 == 0 ? "-45.20" : "+67.85",
+                                isProfit: index % 3 != 0
+                            )
+                        }
+                    }
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 16)
+                }
+                .background(.regularMaterial)
+            }
+            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+            .padding(.horizontal, 16)
+            .padding(.vertical, 60)
+            .transition(.move(edge: .bottom).combined(with: .scale(scale: 0.95)).combined(with: .opacity))
+        }
+    }
+    
+    // MARK: - TradeLocker Orders Overlay
+    
+    private var tradeLockerOrdersOverlay: some View {
+        ZStack {
+            Color.black.opacity(0.8)
+                .ignoresSafeArea()
+                .onTapGesture {
+                    withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
+                        showingOrders = false
+                    }
+                }
+            
+            VStack(spacing: 0) {
+                // Header
+                HStack {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Orders")
+                            .font(.title2)
+                            .fontWeight(.bold)
+                            .foregroundColor(.white)
+                        Text("3 pending orders")
+                            .font(.caption)
+                            .foregroundColor(.gray)
+                    }
+                    
+                    Spacer()
+                    
+                    Button(action: {
+                        withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
+                            showingOrders = false
+                        }
+                    }) {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.title2)
+                            .foregroundColor(.white.opacity(0.6))
+                    }
+                }
+                .padding(.horizontal, 24)
+                .padding(.vertical, 20)
+                .background(.regularMaterial)
+                
+                // Orders List
+                ScrollView {
+                    LazyVStack(spacing: 12) {
+                        ForEach(0..<4) { index in
+                            TradeLockerOrderCard(
+                                symbol: "XAUUSD",
+                                type: index % 2 == 0 ? "BUY LIMIT" : "SELL STOP",
+                                volume: "0.05",
+                                targetPrice: index % 2 == 0 ? "2370.00" : "2380.00"
+                            )
+                        }
+                    }
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 16)
+                }
+                .background(.regularMaterial)
+            }
+            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+            .padding(.horizontal, 16)
+            .padding(.vertical, 60)
+            .transition(.move(edge: .bottom).combined(with: .scale(scale: 0.95)).combined(with: .opacity))
+        }
+    }
+    
+    // MARK: - TradeLocker History Overlay
+    
+    private var tradeLockerHistoryOverlay: some View {
+        ZStack {
+            Color.black.opacity(0.8)
+                .ignoresSafeArea()
+                .onTapGesture {
+                    withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
+                        showingHistory = false
+                    }
+                }
+            
+            VStack(spacing: 0) {
+                // Header
+                HStack {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("History")
+                            .font(.title2)
+                            .fontWeight(.bold)
+                            .foregroundColor(.white)
+                        Text("Today's trades")
+                            .font(.caption)
+                            .foregroundColor(.gray)
+                    }
+                    
+                    Spacer()
+                    
+                    Button(action: {
+                        withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
+                            showingHistory = false
+                        }
+                    }) {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.title2)
+                            .foregroundColor(.white.opacity(0.6))
+                    }
+                }
+                .padding(.horizontal, 24)
+                .padding(.vertical, 20)
+                .background(.regularMaterial)
+                
+                // History List
+                ScrollView {
+                    LazyVStack(spacing: 12) {
+                        ForEach(0..<8) { index in
+                            TradeLockerHistoryCard(
+                                symbol: "XAUUSD",
+                                type: index % 2 == 0 ? "BUY" : "SELL",
+                                volume: "0.10",
+                                profit: index % 3 == 0 ? "-23.45" : "+45.67",
+                                time: "14:3\(index % 10)",
+                                duration: "\(index + 1)m \(index * 15 % 60)s"
+                            )
+                        }
+                    }
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 16)
+                }
+                .background(.regularMaterial)
+            }
+            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+            .padding(.horizontal, 16)
+            .padding(.vertical, 60)
+            .transition(.move(edge: .bottom).combined(with: .scale(scale: 0.95)).combined(with: .opacity))
+        }
+    }
+    
+    // MARK: - TradeLocker Toast
+    
+    private var tradeLockerToast: some View {
         HStack(spacing: 12) {
             Image(systemName: toastManager.toastType.systemImage)
+                .font(.system(size: 16, weight: .medium))
                 .foregroundColor(toastManager.toastType.color)
             
             Text(toastManager.toastMessage)
-                .fontWeight(.medium)
+                .font(.subheadline)
+                .fontWeight(.semibold)
                 .foregroundColor(.white)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
-        .padding()
-        .transition(.move(edge: .top).combined(with: .opacity))
+        .padding(.horizontal, 20)
+        .padding(.vertical, 16)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(toastManager.toastType.color.opacity(0.3), lineWidth: 1)
+        )
+        .shadow(color: .black.opacity(0.3), radius: 10, x: 0, y: 5)
+        .padding(.horizontal, 20)
+        .padding(.top, 60)
+        .transition(.move(edge: .top).combined(with: .scale(scale: 0.95)).combined(with: .opacity))
     }
-    
+
     // MARK: - Helper Methods
     
     private func setupTradingView() {
@@ -451,30 +1051,45 @@ struct TradingTerminal: View {
     }
     
     private func executeBuyOrder() {
-        toastManager.show("✅ BUY order executed", type: .success)
-        hapticManager.success()
+        toastManager.show("BUY order executed at \(selectedSymbol)", type: .success)
+        hapticManager.impact()
+        
+        // Add vibrant feedback
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            hapticManager.impact()
+        }
     }
     
     private func executeSellOrder() {
-        toastManager.show("✅ SELL order executed", type: .success)
-        hapticManager.success()
+        toastManager.show("SELL order executed at \(selectedSymbol)", type: .warning)
+        hapticManager.impact()
+        
+        // Add vibrant feedback
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            hapticManager.impact()
+        }
     }
     
     private func deployAIBot() {
-        toastManager.show("🤖 AI Bot deployed", type: .success)
-        hapticManager.success()
+        toastManager.show("Golden Eagle AI deployed successfully", type: .success)
+        hapticManager.impact()
         
         Task {
             if let goldBot = botManager.allBots.first(where: { $0.name.contains("Golden") }) {
                 await botManager.deployBot(goldBot)
             }
         }
+        
+        // Add celebration feedback
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            hapticManager.impact()
+        }
     }
 }
 
 // MARK: - Clean Components
 
-struct CleanTimeframeButton: View {
+struct TradeLockerTimeframeButton: View {
     let timeframe: ChartTimeframe
     let isSelected: Bool
     let action: () -> Void
@@ -482,122 +1097,121 @@ struct CleanTimeframeButton: View {
     var body: some View {
         Button(action: action) {
             Text(timeframe.displayName)
-                .font(.subheadline)
-                .fontWeight(.semibold)
-                .foregroundColor(isSelected ? .white : .gray)
-                .padding(.horizontal, 16)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundColor(isSelected ? .black : .white)
+                .padding(.horizontal, 14)
                 .padding(.vertical, 8)
                 .background(
                     isSelected ? 
-                    LinearGradient(colors: [.blue, .cyan], startPoint: .leading, endPoint: .trailing) :
+                    LinearGradient(colors: [.white, .white.opacity(0.9)], startPoint: .topLeading, endPoint: .bottomTrailing) :
                     LinearGradient(colors: [.clear], startPoint: .leading, endPoint: .trailing),
                     in: RoundedRectangle(cornerRadius: 8)
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: 8)
-                        .stroke(isSelected ? .clear : .gray.opacity(0.3), lineWidth: 1)
+                        .stroke(isSelected ? .clear : .white.opacity(0.2), lineWidth: 1)
                 )
         }
         .buttonStyle(PlainButtonStyle())
     }
 }
 
-struct StatCard: View {
+struct TradeLockerStatCard: View {
     let title: String
     let value: String
+    let change: String?
     let color: Color
     
     var body: some View {
-        VStack(spacing: 4) {
+        VStack(alignment: .leading, spacing: 6) {
             Text(title)
-                .font(.caption)
+                .font(.caption2)
+                .fontWeight(.medium)
                 .foregroundColor(.gray)
             
             Text(value)
-                .font(.subheadline)
-                .fontWeight(.bold)
-                .foregroundColor(color)
+                .font(.system(size: 16, weight: .bold, design: .rounded))
+                .foregroundColor(.white)
+            
+            if let change = change {
+                Text(change)
+                    .font(.caption2)
+                    .fontWeight(.semibold)
+                    .foregroundColor(change.contains("+") ? .green : .red)
+            }
         }
-        .frame(maxWidth: .infinity)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 12)
         .padding(.vertical, 12)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 8))
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 10))
+        .overlay(
+            RoundedRectangle(cornerRadius: 10)
+                .stroke(color.opacity(0.3), lineWidth: 1)
+        )
     }
 }
 
-struct QuickAccessButton: View {
+struct TradeLockerActionButton: View {
     let title: String
     let icon: String
+    let color: Color
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 8) {
+                Image(systemName: icon)
+                    .font(.system(size: 16, weight: .semibold))
+                Text(title)
+                    .font(.system(size: 15, weight: .bold))
+            }
+            .foregroundColor(.white)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 16)
+            .background(
+                LinearGradient(
+                    colors: [color, color.opacity(0.8)],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                ),
+                in: RoundedRectangle(cornerRadius: 12)
+            )
+            .shadow(color: color.opacity(0.3), radius: 6, x: 0, y: 3)
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+}
+
+struct TradeLockerTabButton: View {
+    let title: String
     let count: String
+    let isActive: Bool
     let action: () -> Void
     
     var body: some View {
         Button(action: action) {
             VStack(spacing: 6) {
-                HStack(spacing: 4) {
-                    Image(systemName: icon)
-                        .font(.caption)
+                HStack(spacing: 6) {
+                    Text(title)
+                        .font(.system(size: 13, weight: .medium))
+                    
                     Text(count)
-                        .font(.caption2)
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundColor(.white)
                         .padding(.horizontal, 6)
                         .padding(.vertical, 2)
                         .background(.blue, in: Capsule())
-                        .foregroundColor(.white)
                 }
-                
-                Text(title)
-                    .font(.caption2)
-                    .foregroundColor(.gray)
+                .foregroundColor(isActive ? .blue : .white)
             }
             .frame(maxWidth: .infinity)
-            .foregroundColor(.white)
+            .padding(.vertical, 12)
+            .background(
+                isActive ? .blue.opacity(0.1) : .clear,
+                in: RoundedRectangle(cornerRadius: 10)
+            )
         }
         .buttonStyle(PlainButtonStyle())
-    }
-}
-
-struct CleanSymbolRow: View {
-    let symbol: TradingSymbol
-    let action: () -> Void
-    
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 16) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(symbol.symbol)
-                        .font(.headline)
-                        .fontWeight(.semibold)
-                        .foregroundColor(.white)
-                    
-                    Text(symbol.name)
-                        .font(.caption)
-                        .foregroundColor(.gray)
-                }
-                
-                Spacer()
-                
-                VStack(alignment: .trailing, spacing: 4) {
-                    Text("2374.85")
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
-                        .foregroundColor(.white)
-                    
-                    Text("+0.52%")
-                        .font(.caption)
-                        .foregroundColor(.green)
-                }
-                
-                Image(systemName: "chevron.right")
-                    .font(.caption2)
-                    .foregroundColor(.gray)
-            }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 16)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(PlainButtonStyle())
-        
-        Divider()
-            .background(Color.white.opacity(0.1))
     }
 }
 
@@ -709,6 +1323,307 @@ struct TradingSymbol {
     ]
 }
 
+// MARK: - TradeLocker Symbol Row
+
+struct TradeLockerSymbolRow: View {
+    let symbol: TradingSymbol
+    let isSelected: Bool
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 16) {
+                // Symbol Icon
+                Circle()
+                    .fill(
+                        LinearGradient(
+                            colors: symbolColors,
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .frame(width: 40, height: 40)
+                    .overlay(
+                        Text(String(symbol.symbol.prefix(2)))
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundColor(.white)
+                    )
+                
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(symbol.symbol)
+                        .font(.headline)
+                        .fontWeight(.bold)
+                        .foregroundColor(isSelected ? .blue : .white)
+                    
+                    Text(symbol.name)
+                        .font(.caption)
+                        .foregroundColor(.gray)
+                }
+                
+                Spacer()
+                
+                VStack(alignment: .trailing, spacing: 4) {
+                    Text("2374.85")
+                        .font(.system(size: 16, weight: .bold, design: .rounded))
+                        .foregroundColor(.white)
+                    
+                    HStack(spacing: 4) {
+                        Image(systemName: "arrow.up.right")
+                            .font(.system(size: 10, weight: .bold))
+                        Text("+0.52%")
+                    }
+                    .font(.caption)
+                    .foregroundColor(.green)
+                }
+                
+                Image(systemName: "chevron.right")
+                    .font(.caption2)
+                    .foregroundColor(.gray)
+            }
+            .padding(.horizontal, 24)
+            .padding(.vertical, 16)
+            .background(isSelected ? .blue.opacity(0.1) : .clear)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+    
+    private var symbolColors: [Color] {
+        switch symbol.type {
+        case "METALS": return [.yellow, .orange]
+        case "FOREX": return [.blue, .cyan]
+        case "CRYPTO": return [.purple, .pink]
+        default: return [.gray, .gray.opacity(0.8)]
+        }
+    }
+}
+
+struct TradeLockerPositionCard: View {
+    let symbol: String
+    let type: String
+    let volume: String
+    let entryPrice: String
+    let currentPrice: String
+    let profit: String
+    let isProfit: Bool
+    
+    var body: some View {
+        VStack(spacing: 12) {
+            // Header Row
+            HStack {
+                HStack(spacing: 8) {
+                    Circle()
+                        .fill(type == "BUY" ? .green : .red)
+                        .frame(width: 8, height: 8)
+                    
+                    Text(symbol)
+                        .font(.headline)
+                        .fontWeight(.bold)
+                        .foregroundColor(.white)
+                    
+                    Text(type)
+                        .font(.caption)
+                        .fontWeight(.medium)
+                        .foregroundColor(type == "BUY" ? .green : .red)
+                }
+                
+                Spacer()
+                
+                Text(profit)
+                    .font(.title3)
+                    .fontWeight(.bold)
+                    .foregroundColor(isProfit ? .green : .red)
+            }
+            
+            // Details Row
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Volume")
+                        .font(.caption2)
+                        .foregroundColor(.gray)
+                    Text(volume)
+                        .font(.caption)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.white)
+                }
+                
+                Spacer()
+                
+                VStack(alignment: .center, spacing: 4) {
+                    Text("Entry Price")
+                        .font(.caption2)
+                        .foregroundColor(.gray)
+                    Text(entryPrice)
+                        .font(.caption)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.white)
+                }
+                
+                Spacer()
+                
+                VStack(alignment: .trailing, spacing: 4) {
+                    Text("Current Price")
+                        .font(.caption2)
+                        .foregroundColor(.gray)
+                    Text(currentPrice)
+                        .font(.caption)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.white)
+                }
+            }
+            
+            // Action Buttons
+            HStack(spacing: 12) {
+                Button("Modify") {
+                    HapticManager.shared.impact()
+                }
+                .font(.caption)
+                .fontWeight(.semibold)
+                .foregroundColor(.blue)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 8)
+                .background(.blue.opacity(0.1), in: RoundedRectangle(cornerRadius: 8))
+                
+                Button("Close") {
+                    HapticManager.shared.impact()
+                }
+                .font(.caption)
+                .fontWeight(.semibold)
+                .foregroundColor(.red)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 8)
+                .background(.red.opacity(0.1), in: RoundedRectangle(cornerRadius: 8))
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 16)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(isProfit ? .green.opacity(0.3) : .red.opacity(0.3), lineWidth: 1)
+        )
+    }
+}
+
+struct TradeLockerOrderCard: View {
+    let symbol: String
+    let type: String
+    let volume: String
+    let targetPrice: String
+    
+    var body: some View {
+        VStack(spacing: 12) {
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(symbol)
+                        .font(.headline)
+                        .fontWeight(.bold)
+                        .foregroundColor(.white)
+                    
+                    Text(type)
+                        .font(.caption)
+                        .fontWeight(.medium)
+                        .foregroundColor(.orange)
+                }
+                
+                Spacer()
+                
+                VStack(alignment: .trailing, spacing: 4) {
+                    Text(targetPrice)
+                        .font(.title3)
+                        .fontWeight(.bold)
+                        .foregroundColor(.white)
+                    
+                    Text("PENDING")
+                        .font(.caption2)
+                        .fontWeight(.bold)
+                        .foregroundColor(.orange)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(.orange.opacity(0.2), in: Capsule())
+                }
+            }
+            
+            HStack {
+                Text("Volume: \(volume)")
+                    .font(.caption)
+                    .foregroundColor(.gray)
+                
+                Spacer()
+                
+                Button("Cancel") {
+                    HapticManager.shared.impact()
+                }
+                .font(.caption)
+                .fontWeight(.semibold)
+                .foregroundColor(.red)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background(.red.opacity(0.1), in: Capsule())
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 16)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(.orange.opacity(0.3), lineWidth: 1)
+        )
+    }
+}
+
+struct TradeLockerHistoryCard: View {
+    let symbol: String
+    let type: String
+    let volume: String
+    let profit: String
+    let time: String
+    let duration: String
+    
+    var body: some View {
+        HStack(spacing: 16) {
+            // Trade Icon
+            Circle()
+                .fill(profit.contains("+") ? .green : .red)
+                .frame(width: 12, height: 12)
+            
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 8) {
+                    Text(symbol)
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.white)
+                    
+                    Text(type)
+                        .font(.caption2)
+                        .fontWeight(.medium)
+                        .foregroundColor(.gray)
+                }
+                
+                Text("Volume: \(volume) • \(duration)")
+                    .font(.caption2)
+                    .foregroundColor(.gray)
+            }
+            
+            Spacer()
+            
+            VStack(alignment: .trailing, spacing: 4) {
+                Text(profit)
+                    .font(.subheadline)
+                    .fontWeight(.bold)
+                    .foregroundColor(profit.contains("+") ? .green : .red)
+                
+                Text(time)
+                    .font(.caption2)
+                    .foregroundColor(.gray)
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+    }
+}
+
 // MARK: - TradingView WebView
 
 struct TradingViewWebView: UIViewRepresentable {
@@ -718,10 +1633,18 @@ struct TradingViewWebView: UIViewRepresentable {
     
     func makeUIView(context: Context) -> WKWebView {
         let configuration = WKWebViewConfiguration()
+        configuration.allowsInlineMediaPlayback = true
+        configuration.mediaTypesRequiringUserActionForPlayback = []
+        
         let webView = WKWebView(frame: .zero, configuration: configuration)
+        webView.navigationDelegate = context.coordinator
         webView.backgroundColor = UIColor.black
+        webView.isOpaque = false
         webView.scrollView.isScrollEnabled = false
         webView.scrollView.bounces = false
+        webView.scrollView.showsVerticalScrollIndicator = false
+        webView.scrollView.showsHorizontalScrollIndicator = false
+        
         return webView
     }
     
@@ -740,7 +1663,7 @@ struct TradingViewWebView: UIViewRepresentable {
         <!DOCTYPE html>
         <html>
         <head>
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=3.0, user-scalable=yes">
             <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
             <style>
                 body { 
@@ -748,10 +1671,14 @@ struct TradingViewWebView: UIViewRepresentable {
                     padding: 0; 
                     background-color: #000000; 
                     overflow: hidden;
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
                 }
                 #tradingview_chart { 
-                    width: 100%; 
+                    width: 100vw; 
                     height: 100vh; 
+                    position: fixed;
+                    top: 0;
+                    left: 0;
                 }
             </style>
         </head>
@@ -768,17 +1695,41 @@ struct TradingViewWebView: UIViewRepresentable {
                     "locale": "en",
                     "toolbar_bg": "#000000",
                     "enable_publishing": false,
+                    "allow_symbol_change": false,
                     "container_id": "tradingview_chart",
                     "hide_top_toolbar": true,
                     "hide_legend": false,
+                    "hide_side_toolbar": false,
+                    "save_image": false,
+                    "studies": [],
                     "overrides": {
                         "paneProperties.background": "#000000",
+                        "paneProperties.backgroundType": "solid",
                         "paneProperties.vertGridProperties.color": "#1a1a1a",
-                        "paneProperties.horzGridProperties.color": "#1a1a1a"
+                        "paneProperties.horzGridProperties.color": "#1a1a1a",
+                        "symbolWatermarkProperties.transparency": 90,
+                        "scalesProperties.textColor": "#AAAAAA",
+                        "scalesProperties.backgroundColor": "#000000",
+                        "mainSeriesProperties.candleStyle.upColor": "#00FF88",
+                        "mainSeriesProperties.candleStyle.downColor": "#FF4444",
+                        "mainSeriesProperties.candleStyle.borderUpColor": "#00FF88",
+                        "mainSeriesProperties.candleStyle.borderDownColor": "#FF4444",
+                        "mainSeriesProperties.candleStyle.wickUpColor": "#00FF88",
+                        "mainSeriesProperties.candleStyle.wickDownColor": "#FF4444"
                     },
-                    "studies": [
-                        "RSI@tv-basicstudies",
-                        "MACD@tv-basicstudies"
+                    "loading_screen": {
+                        "backgroundColor": "#000000",
+                        "foregroundColor": "#FFD700"
+                    },
+                    "disabled_features": [
+                        "use_localstorage_for_settings",
+                        "volume_force_overlay",
+                        "create_volume_indicator_by_default"
+                    ],
+                    "enabled_features": [
+                        "study_templates",
+                        "side_toolbar_in_fullscreen_mode",
+                        "header_in_fullscreen_mode"
                     ]
                 });
             </script>
@@ -795,8 +1746,35 @@ struct TradingViewWebView: UIViewRepresentable {
         }
         
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-            print("✅ TradingView chart loaded")
+            print("TradeLocker-style TradingView chart loaded successfully")
         }
+        
+        func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+            print("TradingView chart failed to load: \(error.localizedDescription)")
+        }
+    }
+}
+
+// MARK: - ToolbarButton
+
+struct ToolbarButton: View {
+    let icon: String
+    let color: Color
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: icon)
+                .font(.system(size: 18, weight: .medium))
+                .foregroundColor(color)
+                .frame(width: 40, height: 40)
+                .background(.ultraThinMaterial, in: Circle())
+                .overlay(
+                    Circle()
+                        .stroke(.white.opacity(0.1), lineWidth: 1)
+                )
+        }
+        .buttonStyle(PlainButtonStyle())
     }
 }
 
