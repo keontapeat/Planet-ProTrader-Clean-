@@ -89,7 +89,7 @@ struct VPSStatusView: View {
             showingDetails = true
         }
         .sheet(isPresented: $showingDetails) {
-            VPSDetailView(viewModel: vpsViewModel)
+            VPSStatusDetailView(viewModel: vpsViewModel)
         }
         .onAppear {
             if vpsViewModel.serverInfo == nil {
@@ -99,7 +99,7 @@ struct VPSStatusView: View {
     }
 }
 
-struct VPSDetailView: View {
+struct VPSStatusDetailView: View {
     @ObservedObject var viewModel: VPSStatusViewModel
     @Environment(\.dismiss) private var dismiss
     
@@ -138,25 +138,25 @@ struct VPSDetailView: View {
                                 .fontWeight(.bold)
                             
                             VStack(spacing: 12) {
-                                DetailRow(title: "IP Address", value: serverInfo.ip)
-                                DetailRow(title: "Region", value: serverInfo.region)
-                                DetailRow(title: "Uptime", value: serverInfo.uptime)
-                                DetailRow(title: "Health Status", value: serverInfo.healthStatus, valueColor: serverInfo.healthColor)
-                                DetailRow(title: "Active Connections", value: "\(serverInfo.activeConnections)")
+                                VPSDetailRow(title: "IP Address", value: serverInfo.ip)
+                                VPSDetailRow(title: "Region", value: serverInfo.region)
+                                VPSDetailRow(title: "Uptime", value: serverInfo.uptime)
+                                VPSDetailRow(title: "Health Status", value: serverInfo.healthStatus, valueColor: serverInfo.healthColor)
+                                VPSDetailRow(title: "Active Connections", value: "\(serverInfo.activeConnections)")
                             }
                         }
                         .standardCard()
                         
-                        // 
+                        // Performance Metrics
                         VStack(alignment: .leading, spacing: 16) {
                             Text("Performance Metrics")
                                 .font(.headline)
                                 .fontWeight(.bold)
                             
                             VStack(spacing: 12) {
-                                MetricRow(title: "CPU Usage", value: serverInfo.cpuUsage, unit: "%", maxValue: 100)
-                                MetricRow(title: "Memory Usage", value: serverInfo.memoryUsage, unit: "%", maxValue: 100)
-                                MetricRow(title: "Disk Usage", value: serverInfo.diskUsage, unit: "%", maxValue: 100)
+                                VPSMetricRow(title: "CPU Usage", value: serverInfo.cpuUsage, unit: "%", maxValue: 100)
+                                VPSMetricRow(title: "Memory Usage", value: serverInfo.memoryUsage, unit: "%", maxValue: 100)
+                                VPSMetricRow(title: "Disk Usage", value: serverInfo.diskUsage, unit: "%", maxValue: 100)
                             }
                         }
                         .standardCard()
@@ -203,7 +203,7 @@ struct VPSDetailView: View {
     }
 }
 
-struct DetailRow: View {
+struct VPSDetailRow: View {
     let title: String
     let value: String
     let valueColor: Color?
@@ -230,7 +230,7 @@ struct DetailRow: View {
     }
 }
 
-struct MetricRow: View {
+struct VPSMetricRow: View {
     let title: String
     let value: Double
     let unit: String

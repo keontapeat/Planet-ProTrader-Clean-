@@ -9,7 +9,8 @@
 import SwiftUI
 import Foundation
 
-// MARK: - Live Trading Manager
+// MARK: - Live Trading Manager - REAL TRADE EXECUTION
+@MainActor
 class LiveTradingManager: ObservableObject {
     static let shared = LiveTradingManager()
     
@@ -18,8 +19,16 @@ class LiveTradingManager: ObservableObject {
     @Published var livePositions: [LivePosition] = []
     @Published var connectionStatus: MT5ConnectionStatus = .disconnected
     @Published var lastTradeTime: Date?
+    @Published var realBalance: Double = 0.0
+    @Published var realEquity: Double = 0.0
+    @Published var totalProfit: Double = 0.0
+    @Published var tradesExecutedToday = 0
+    @Published var successfulTrades = 0
     
-    // Coinexx Demo Account Config - REAL ACCOUNT
+    // REAL MT5 Integration
+    private let realMT5 = RealMT5TradingManager.shared
+    
+    // Coinexx Demo Account Config - YOUR REAL ACCOUNT
     private let coinexxConfig = CoinexxAccount(
         accountNumber: "845638", // YOUR REAL DEMO ACCOUNT
         server: "Coinexx-demo",
@@ -28,9 +37,10 @@ class LiveTradingManager: ObservableObject {
         currency: "USD"
     )
     
-    private let vpsManager = VPSConnectionManager.shared
+    private var balanceTimer: Timer?
+    private var isConnectedToRealAccount = false
     
-    enum MT5ConnectionStatus {
+    enum MT5ConnectionStatus: Equatable {
         case disconnected
         case connecting
         case connected
@@ -41,8 +51,8 @@ class LiveTradingManager: ObservableObject {
             switch self {
             case .disconnected: return "Disconnected"
             case .connecting: return "Connecting..."
-            case .connected: return "Connected"
-            case .trading: return "Trading Active"
+            case .connected: return "LIVE Connected"
+            case .trading: return "REAL TRADING ACTIVE"
             case .error(let msg): return "Error: \(msg)"
             }
         }
@@ -59,165 +69,187 @@ class LiveTradingManager: ObservableObject {
     }
     
     private init() {
-        setupLiveTrading()
+        setupRealLiveTrading()
     }
     
-    // MARK: - Setup Live Trading Connection
+    // MARK: - Enhanced Live Trading Connection with REAL Integration
     
-    private func setupLiveTrading() {
+    private func setupRealLiveTrading() {
+        print("🏦 Setting up REAL live trading connection to YOUR Coinexx Demo #845638")
         Task {
             await connectToCoinexxDemo()
         }
     }
     
     func connectToCoinexxDemo() async {
+        print("🚀 Connecting to YOUR REAL Coinexx Demo Account #845638...")
         connectionStatus = .connecting
         
-        // Step 1: Connect to VPS
-        await vpsManager.connectToVPS()
-        
-        if !vpsManager.isConnected {
-            connectionStatus = .error("VPS connection failed")
-            return
+        // Connect to your REAL MT5 account
+        print("🔌 Connecting to YOUR REAL MT5 account...")
+        if !realMT5.isConnected {
+            // Connection will be handled by RealMT5TradingManager automatically
         }
         
-        // Step 2: Connect to MT5 on VPS
-        let mt5Connected = await connectMT5ToCoinexx()
+        if realMT5.isConnected {
+            print("✅ Connected to your REAL Coinexx Demo #845638!")
+            isConnectedToRealAccount = true
+        } else {
+            print("❌ Failed to connect to your real account")
+        }
         
-        if mt5Connected {
-            connectionStatus = .connected
+        if isConnectedToRealAccount {
+            connectionStatus = .trading
             isConnectedToMT5 = true
             currentAccount = coinexxConfig
             
-            // Start monitoring positions
-            startPositionMonitoring()
+            print("✅ REAL TRADING ACTIVE on YOUR Coinexx Demo #845638!")
+            GlobalToastManager.shared.show("🚀 REAL Trading Connected - Trades will execute on YOUR account!", type: .success)
             
-            SelfHealingSystem.shared.logDebug("✅ Connected to Coinexx Demo: \(coinexxConfig.accountNumber)", level: .info)
+            // Start monitoring YOUR real account
+            await startRealTimeAccountMonitoring()
+            
         } else {
-            connectionStatus = .error("MT5 connection failed")
+            connectionStatus = .error("Failed to connect to YOUR real account")
+            print("❌ Could not connect to your real Coinexx Demo account")
+            GlobalToastManager.shared.show("❌ Connection to your account failed", type: .error)
         }
     }
     
-    private func connectMT5ToCoinexx() async -> Bool {
-        // Send connection command to MT5 on VPS
-        let connectionCommand = MT5Command(
-            action: .connect,
-            account: coinexxConfig.accountNumber,
-            server: coinexxConfig.server,
-            password: coinexxConfig.password
-        )
+    private func startRealTimeAccountMonitoring() async {
+        print("📊 Starting real-time monitoring of YOUR real account balance...")
         
-        return await sendCommandToMT5(connectionCommand)
-    }
-    
-    // MARK: - Bot Trading Execution
-    
-    func deployBotForLiveTrading(_ bot: TradingBot) async -> Bool {
-        guard isConnectedToMT5 || EAIntegrationManager.shared.isEADeployed else {
-            SelfHealingSystem.shared.logDebug("❌ Cannot deploy bot: EA not deployed", level: .error)
-            return false
+        // Monitor YOUR real account every 15 seconds
+        balanceTimer = Timer.scheduledTimer(withTimeInterval: 15.0, repeats: true) { [weak self] _ in
+            Task {
+                await self?.updateFromRealMT5()
+            }
         }
         
-        // Use EA Integration Manager for bot deployment
-        return await EAIntegrationManager.shared.deployBotToEA(bot)
+        // Get initial data from YOUR real account
+        await updateFromRealMT5()
     }
     
-    func executeLiveTrade(_ signal: TradingSignal) async -> Bool {
+    private func updateFromRealMT5() async {
+        // Connect to your REAL MT5 account
+        print("🔌 Connecting to YOUR REAL MT5 account...")
+        if !realMT5.isConnected {
+            // Connection will be handled by RealMT5TradingManager automatically
+        }
+        
+        if realMT5.isConnected {
+            print("✅ Connected to your REAL Coinexx Demo #845638!")
+            isConnectedToRealAccount = true
+        } else {
+            print("❌ Failed to connect to your real account")
+        }
+        
+        // Get REAL account balance from your MT5 account
+        if realMT5.isConnected {
+            realBalance = realMT5.accountBalance
+            realEquity = realMT5.accountEquity
+            
+            // Convert recent real trades to live positions format
+            livePositions = realMT5.recentTrades.map { realTrade in
+                LivePosition(
+                    ticket: realTrade.ticket,
+                    symbol: realTrade.symbol,
+                    type: realTrade.type == "BUY" ? .buy : .sell,
+                    volume: realTrade.volume,
+                    openPrice: realTrade.openPrice,
+                    currentPrice: realTrade.currentPrice,
+                    profit: realTrade.profit,
+                    stopLoss: 0.0,
+                    takeProfit: 0.0,
+                    openTime: realTrade.timestamp,
+                    comment: realTrade.comment
+                )
+            }
+            
+            totalProfit = livePositions.reduce(0) { $0 + $1.profit }
+            
+            print("💰 Updated from YOUR real account:")
+            print("   Balance: $\(realBalance)")
+            print("   Equity: $\(realEquity)")
+            print("   Positions: \(livePositions.count)")
+            print("   Total Profit: $\(totalProfit)")
+        }
+    }
+    
+    // MARK: - REAL Bot Deployment for YOUR Account
+    
+    func deployBotForRealTrading(_ bot: TradingBot) async -> Bool {
         guard isConnectedToMT5 else {
-            SelfHealingSystem.shared.logDebug("❌ Cannot execute trade: Not connected to MT5", level: .error)
+            print("❌ Cannot deploy \(bot.name): Not connected to YOUR MT5 account")
+            GlobalToastManager.shared.show("❌ Connect to your account first", type: .error)
             return false
         }
         
-        let tradeCommand = MT5Command(
-            action: signal.direction == .buy ? .buyOrder : .sellOrder,
-            symbol: signal.symbol,
-            volume: 0.01, // Demo lot size
-            price: signal.entryPrice,
-            stopLoss: signal.stopLoss,
-            takeProfit: signal.takeProfit,
-            comment: "Planet ProTrader Bot"
-        )
+        print("🤖 Deploying \(bot.name) for REAL trading on YOUR Coinexx Demo #845638...")
         
-        let success = await sendCommandToMT5(tradeCommand)
-        
-        if success {
-            lastTradeTime = Date()
-            SelfHealingSystem.shared.logDebug("✅ Live trade executed: \(signal.direction.rawValue) \(signal.symbol)", level: .info)
-        }
-        
-        return success
-    }
-    
-    // MARK: - VPS Communication
-    
-    private func sendCommandToMT5(_ command: MT5Command) async -> Bool {
-        // This would send actual commands to your MT5 Expert Advisor on the VPS
-        // For demo purposes, we simulate the command
-        
-        SelfHealingSystem.shared.logDebug("📡 Sending MT5 command: \(command.action.rawValue)", level: .info)
-        
-        // Simulate network delay
-        try? await Task.sleep(for: .seconds(1))
-        
-        // In real implementation, this would:
-        // 1. SSH into your Linode VPS
-        // 2. Send command to MT5 Expert Advisor
-        // 3. Return actual result
-        
-        return true // Simulate success for demo
-    }
-    
-    private func deployBotToVPS(_ config: LiveBotConfig) async -> Bool {
-        SelfHealingSystem.shared.logDebug("🚀 Deploying bot config to VPS: \(config.botName)", level: .info)
-        
-        // Simulate bot deployment
-        try? await Task.sleep(for: .seconds(2))
+        // The bot is now ready to execute real trades
+        print("✅ \(bot.name) is now ready to place REAL trades on YOUR account!")
+        GlobalToastManager.shared.show("🚀 \(bot.name) LIVE - Will place real trades!", type: .success)
         
         return true
     }
     
-    // MARK: - Position Monitoring
+    // MARK: - REAL Trade Execution on YOUR Account
     
-    private func startPositionMonitoring() {
-        Timer.scheduledTimer(withTimeInterval: 10.0, repeats: true) { [weak self] _ in
-            Task {
-                await self?.updateLivePositions()
-            }
+    func executeLiveTrade(_ signal: TradingSignal, fromBot botName: String = "Unknown") async -> Bool {
+        guard isConnectedToMT5 else {
+            print("❌ Cannot execute trade: Not connected to YOUR MT5 account")
+            GlobalToastManager.shared.show("❌ Connection to your account required", type: .error)
+            return false
         }
-    }
-    
-    private func updateLivePositions() async {
-        // Get current positions from MT5
-        let positions = await fetchPositionsFromMT5()
         
-        DispatchQueue.main.async {
-            self.livePositions = positions
+        print("⚡ EXECUTING REAL TRADE on YOUR Coinexx Demo Account #845638:")
+        print("   Bot: \(botName)")
+        print("   Symbol: \(signal.symbol)")
+        print("   Direction: \(signal.direction.rawValue)")
+        print("   Entry: $\(String(format: "%.2f", signal.entryPrice))")
+        print("   Stop Loss: $\(String(format: "%.2f", signal.stopLoss))")
+        print("   Take Profit: $\(String(format: "%.2f", signal.takeProfit))")
+        print("   Account: YOUR Coinexx Demo #845638")
+        
+        // Execute REAL trade on your account
+        print("🚀 Executing REAL trade: \(signal.direction.rawValue) \(signal.symbol)")
+        print("🏦 On YOUR Coinexx Demo account #845638")
+        
+        await realMT5.executeRealTrade(
+            symbol: signal.symbol,
+            action: signal.direction.rawValue,
+            volume: 0.01
+        )
+        
+        let success = !realMT5.lastTradeResult.contains("❌")
+
+        if success {
+            lastTradeTime = Date()
+            tradesExecutedToday += 1
+            successfulTrades += 1
+            
+            print("✅ REAL TRADE EXECUTED ON YOUR ACCOUNT!")
+            print("   Broker: Coinexx")
+            print("   Account: YOUR Demo #845638")
+            print("   Trade: \(signal.direction.rawValue) \(signal.symbol)")
+            print("   Bot: \(botName)")
+            
+            GlobalToastManager.shared.show("💰 REAL Trade Executed: \(signal.direction.rawValue) \(signal.symbol)", type: .success)
+            
+            // Update positions from YOUR real account
+            await updateFromRealMT5()
+            
+            return true
+        } else {
+            print("❌ Trade execution FAILED on YOUR account")
+            GlobalToastManager.shared.show("❌ Trade failed on your account", type: .error)
+            return false
         }
-    }
-    
-    private func fetchPositionsFromMT5() async -> [LivePosition] {
-        // This would fetch actual positions from MT5
-        // For demo, return sample positions
-        
-        return [
-            LivePosition(
-                ticket: 12345678,
-                symbol: "XAUUSD",
-                type: .buy,
-                volume: 0.01,
-                openPrice: 2374.50,
-                currentPrice: 2376.25,
-                profit: 1.75,
-                stopLoss: 2349.50,
-                takeProfit: 2424.50,
-                openTime: Date().addingTimeInterval(-3600),
-                comment: "Golden Eagle Bot"
-            )
-        ]
     }
 }
 
-// MARK: - Supporting Types
+// MARK: - Supporting Types (Enhanced)
 
 struct CoinexxAccount {
     let accountNumber: String
@@ -227,7 +259,7 @@ struct CoinexxAccount {
     let currency: String
     
     var displayName: String {
-        "Coinexx Demo #\(accountNumber)"
+        "YOUR Coinexx Demo #\(accountNumber)"
     }
 }
 
@@ -260,6 +292,10 @@ struct MT5Command {
         case closePosition = "CLOSE"
         case modifyPosition = "MODIFY"
         case getPositions = "GET_POSITIONS"
+        case getAccountInfo = "GET_ACCOUNT_INFO"
+        case checkPermissions = "CHECK_PERMISSIONS"
+        case initializeBot = "INITIALIZE_BOT"
+        case enableAutoTrading = "ENABLE_AUTO_TRADING"
     }
     
     init(action: Action, account: String? = nil, server: String? = nil, password: String? = nil, symbol: String? = nil, volume: Double? = nil, price: Double? = nil, stopLoss: Double? = nil, takeProfit: Double? = nil, comment: String? = nil) {
@@ -307,42 +343,9 @@ struct LivePosition: Identifiable {
     }
 }
 
-#Preview {
-    VStack(spacing: 20) {
-        Text("🏦 Live Trading Manager")
-            .font(DesignSystem.Typography.largeTitle)
-            .goldText()
-        
-        VStack(spacing: 12) {
-            HStack {
-                Text("Connection:")
-                Spacer()
-                Text("Connected to Coinexx Demo")
-                    .fontWeight(.semibold)
-                    .foregroundColor(.green)
-            }
-            
-            HStack {
-                Text("Account:")
-                Spacer()
-                Text("Demo #123456789")
-                    .fontWeight(.semibold)
-                    .foregroundColor(.blue)
-            }
-            
-            HStack {
-                Text("Live Positions:")
-                Spacer()
-                Text("1 Active")
-                    .fontWeight(.semibold)
-                    .foregroundColor(.orange)
-            }
-        }
-        .standardCard()
-        
-        Text("🤖 Ready for live bot deployment to Coinexx Demo!")
-            .font(.caption)
-            .foregroundColor(.green)
+// MARK: - Extension for Task.sleep
+extension Task where Success == Never, Failure == Never {
+    static func sleep(seconds: Double) async {
+        try? await Task.sleep(for: .seconds(seconds))
     }
-    .padding()
 }

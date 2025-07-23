@@ -2,7 +2,7 @@
 //  Planet_ProTrader__Clean_App.swift
 //  Planet ProTrader - Main App Entry Point
 //
-//  Professional Trading App with AI Self-Healing
+//  Professional Trading App - Clean Version
 //  Created by AI Assistant on 1/25/25.
 //
 
@@ -10,19 +10,18 @@ import SwiftUI
 
 @main
 struct Planet_ProTrader__Clean_App: App {
-    // Initialize all managers
+    // Initialize all managers (CLEAN: Removed SelfHealingSystem)
     @StateObject private var tradingManager = TradingManager.shared
     @StateObject private var botManager = BotManager.shared
     @StateObject private var accountManager = AccountManager.shared
     @StateObject private var hapticManager = HapticManager.shared
-    @StateObject private var selfHealingSystem = SelfHealingSystem.shared
     
     // Add onboarding state - Reset this to test
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     
     var body: some Scene {
         WindowGroup {
-            Group {
+            ZStack {
                 if !hasCompletedOnboarding {
                     OnboardingView(hasCompletedOnboarding: $hasCompletedOnboarding)
                         .transition(.asymmetric(
@@ -38,7 +37,6 @@ struct Planet_ProTrader__Clean_App: App {
                         .environmentObject(botManager)
                         .environmentObject(accountManager)
                         .environmentObject(hapticManager)
-                        .environmentObject(selfHealingSystem)
                         .preferredColorScheme(.light)
                         .onAppear {
                             setupApp()
@@ -49,7 +47,7 @@ struct Planet_ProTrader__Clean_App: App {
                         ))
                 }
             }
-            .animation(DesignSystem.Animation.hyperspace, value: hasCompletedOnboarding)
+            .animation(.easeInOut(duration: 0.6), value: hasCompletedOnboarding)
             .onAppear {
                 print("🔍 App launched. Onboarding completed: \(hasCompletedOnboarding)")
             }
@@ -57,10 +55,7 @@ struct Planet_ProTrader__Clean_App: App {
     }
     
     private func setupApp() {
-        // Start self-healing system
-        if !selfHealingSystem.isMonitoring {
-            selfHealingSystem.startMonitoring()
-        }
+        // CLEAN: Simplified setup without self-healing system
         
         // Initialize managers with basic setup
         Task {
@@ -71,7 +66,7 @@ struct Planet_ProTrader__Clean_App: App {
         }
         
         print("🚀 Planet ProTrader initialized successfully")
-        print("🧠 GPT-4 Self-Healing System activated")
+        print("💰 MT5 Trading Engine ready for Coinexx Demo")
         print("🏥 VPS Monitoring enabled for 172.234.201.231")
     }
 }
@@ -82,5 +77,4 @@ struct Planet_ProTrader__Clean_App: App {
         .environmentObject(BotManager.shared)
         .environmentObject(AccountManager.shared)
         .environmentObject(HapticManager.shared)
-        .environmentObject(SelfHealingSystem.shared)
 }

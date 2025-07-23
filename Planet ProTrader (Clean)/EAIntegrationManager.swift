@@ -179,14 +179,14 @@ class EAIntegrationManager: ObservableObject {
             HapticManager.shared.success()
         }
         
-        SelfHealingSystem.shared.logDebug("✅ EA fully deployed and running on Coinexx Demo", level: .info)
+        print("✅ EA fully deployed and running on Coinexx Demo")
         return true
     }
     
     // MARK: - EA File Management
     
     private func uploadEAToVPS() async -> Bool {
-        SelfHealingSystem.shared.logDebug("📤 Uploading EA to VPS...", level: .info)
+        print("📤 Uploading EA to VPS...")
         
         // Generate the complete EA file content
         let eaContent = generatePlanetProTraderEA()
@@ -195,23 +195,23 @@ class EAIntegrationManager: ObservableObject {
         // For now, simulate the upload process
         try? await Task.sleep(for: .seconds(3))
         
-        SelfHealingSystem.shared.logDebug("✅ EA uploaded successfully", level: .info)
+        print("✅ EA uploaded successfully")
         return true
     }
     
     private func compileEAOnVPS() async -> Bool {
-        SelfHealingSystem.shared.logDebug("🔨 Compiling EA on VPS...", level: .info)
+        print("🔨 Compiling EA on VPS...")
         
         // This would execute: metaeditor64.exe /compile:EA_PATH /inc:MQL5_INCLUDES
         // Simulating compilation
         try? await Task.sleep(for: .seconds(5))
         
-        SelfHealingSystem.shared.logDebug("✅ EA compiled successfully", level: .info)
+        print("✅ EA compiled successfully")
         return true
     }
     
     private func setupMT5Connection() async -> Bool {
-        SelfHealingSystem.shared.logDebug("🔗 Setting up MT5 connection...", level: .info)
+        print("🔗 Setting up MT5 connection...")
         
         // Connect MT5 to Coinexx demo
         let connection = MT5ConnectionCommand(
@@ -223,17 +223,17 @@ class EAIntegrationManager: ObservableObject {
         // Send connection command to MT5 on VPS
         try? await Task.sleep(for: .seconds(3))
         
-        SelfHealingSystem.shared.logDebug("✅ Connected to Coinexx Demo: \(coinexxAccount.accountNumber)", level: .info)
+        print("✅ Connected to Coinexx Demo: \(coinexxAccount.accountNumber)")
         return true
     }
     
     private func startEAOnMT5() async -> Bool {
-        SelfHealingSystem.shared.logDebug("🚀 Starting EA on MT5...", level: .info)
+        print("🚀 Starting EA on MT5...")
         
         // Attach EA to chart and start trading
         try? await Task.sleep(for: .seconds(2))
         
-        SelfHealingSystem.shared.logDebug("✅ EA is now running and ready for trading", level: .info)
+        print("✅ EA is now running and ready for trading")
         return true
     }
     
@@ -241,11 +241,11 @@ class EAIntegrationManager: ObservableObject {
     
     func deployBotToEA(_ bot: TradingBot) async -> Bool {
         guard isEADeployed && eaStatus == .running else {
-            SelfHealingSystem.shared.logDebug("❌ Cannot deploy bot: EA not running", level: .error)
+            print("❌ Cannot deploy bot: EA not running")
             return false
         }
         
-        SelfHealingSystem.shared.logDebug("🤖 Deploying \(bot.name) to EA on VPS", level: .info)
+        print("🤖 Deploying \(bot.name) to EA on VPS")
         
         let botConfig = EABotConfiguration(
             botId: bot.id.uuidString,
@@ -281,7 +281,7 @@ class EAIntegrationManager: ObservableObject {
             // 🚀 EXECUTE IMMEDIATE TRADE AFTER DEPLOYMENT
             await executeImmediateTrade(for: bot)
             
-            SelfHealingSystem.shared.logDebug("✅ \(bot.name) deployed successfully to EA", level: .info)
+            print("✅ \(bot.name) deployed successfully to EA")
             return true
         }
         
@@ -292,7 +292,7 @@ class EAIntegrationManager: ObservableObject {
         guard let botIndex = activeBots.firstIndex(where: { $0.id == botId }) else { return false }
         
         let bot = activeBots[botIndex]
-        SelfHealingSystem.shared.logDebug("🛑 Stopping bot: \(bot.name)", level: .info)
+        print("🛑 Stopping bot: \(bot.name)")
         
         let stopCommand = EACommand(
             action: .stopBot,
@@ -336,7 +336,7 @@ class EAIntegrationManager: ObservableObject {
         // This would send HTTP/socket commands to EA on VPS
         // The EA would have a built-in web server or file monitoring system
         
-        SelfHealingSystem.shared.logDebug("📡 Sending command to EA: \(command.action.rawValue)", level: .info)
+        print("📡 Sending command to EA: \(command.action.rawValue)")
         
         // Simulate network communication
         try? await Task.sleep(for: .seconds(1))
@@ -347,7 +347,7 @@ class EAIntegrationManager: ObservableObject {
     // MARK: - Immediate Trade Execution
     
     func executeImmediateTrade(for bot: TradingBot) async {
-        SelfHealingSystem.shared.logDebug("💰 Executing immediate trade for \(bot.name)", level: .info)
+        print("💰 Executing immediate trade for \(bot.name)")
         
         // Simulate current gold price
         let currentGoldPrice = Double.random(in: 2350...2400)
@@ -392,7 +392,7 @@ class EAIntegrationManager: ObservableObject {
                 }
             }
             
-            SelfHealingSystem.shared.logDebug("✅ Trade executed: \(tradeDirection.rawValue) XAUUSD at \(entryPrice)", level: .info)
+            print("✅ Trade executed: \(tradeDirection.rawValue) XAUUSD at \(entryPrice)")
             
             // Show success notification
             DispatchQueue.main.async {
@@ -421,7 +421,7 @@ class EAIntegrationManager: ObservableObject {
         let success = await sendCommandToEA(tradeCommand)
         
         if success {
-            SelfHealingSystem.shared.logDebug("📡 Trade command sent to VPS: \(signal.direction.rawValue) \(signal.symbol)", level: .info)
+            print("📡 Trade command sent to VPS: \(signal.direction.rawValue) \(signal.symbol)")
         }
         
         return success
@@ -482,7 +482,7 @@ class EAIntegrationManager: ObservableObject {
                 self.lastEASignal = Date()
             }
             
-            SelfHealingSystem.shared.logDebug("📡 EA generated new trading signal", level: .info)
+            print("📡 EA generated new trading signal")
         }
     }
     

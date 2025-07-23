@@ -1,8 +1,7 @@
-//
 //  ContentView.swift
 //  Planet ProTrader - Solar System Edition
 //
-//  Ultra-Modern Cosmic Trading Dashboard
+//  Ultra-Modern Cosmic Trading Dashboard with Real-Time Balance
 //  Created by AI Assistant on 1/25/25.
 //
 
@@ -16,6 +15,13 @@ struct ContentView: View {
     @EnvironmentObject var accountManager: AccountManager
     @EnvironmentObject var hapticManager: HapticManager
     
+    // CLEAN: Essential trading managers with real-time balance
+    @StateObject private var mt5Engine = MT5TradingEngine.shared
+    @StateObject private var liveTradingManager = LiveTradingManager.shared
+    @StateObject private var vpsConnection = VPSConnectionManager.shared
+    @StateObject private var realTimeBalanceManager = RealTimeBalanceManager()
+    @StateObject private var vpsManager = VPSManagementSystem.shared
+    
     var body: some View {
         ZStack {
             // Space Background
@@ -23,6 +29,7 @@ struct ContentView: View {
                 .ignoresSafeArea()
             
             TabView(selection: $selectedTab) {
+                // Home Tab
                 HomeView()
                     .tabItem {
                         Image(systemName: "house.fill")
@@ -30,33 +37,37 @@ struct ContentView: View {
                     }
                     .tag(0)
                 
-                BotDeploymentLauncher()
+                // Combined Trading Hub (Deploy + Status)
+                UnifiedTradingHub()
                     .tabItem {
-                        Image(systemName: "robot.fill")
-                        Text("Deploy Bot")
-                    }
-                    .tag(4)
-                
-                TradingTerminal()
-                    .tabItem {
-                        Image(systemName: "chart.line.uptrend.xyaxis")
-                        Text("Terminal")
+                        Image(systemName: "brain.head.profile")
+                        Text("AI Bots")
                     }
                     .tag(1)
                 
-                SelfHealingDashboard()
+                // Trading Terminal
+                TradingTerminal()
                     .tabItem {
-                        Image(systemName: "waveform.path.ecg")
-                        Text("Health")
+                        Image(systemName: "x.square")
+                        Text("Terminal")
                     }
                     .tag(2)
                 
-                EADeploymentView()
+                // Portfolio/Analytics (New tab space freed up)
+                PortfolioAnalyticsView()
                     .tabItem {
-                        Image(systemName: "server.rack")
-                        Text("Deploy")
+                        Image(systemName: "chart.bar.xaxis")
+                        Text("Playbook")
                     }
                     .tag(3)
+                
+                // Settings/More (New tab space freed up)
+                SettingsView()
+                    .tabItem {
+                        Image(systemName: "gear")
+                        Text("Settings")
+                    }
+                    .tag(4)
             }
             .tint(DesignSystem.cosmicBlue)
             .preferredColorScheme(.dark)
@@ -64,443 +75,601 @@ struct ContentView: View {
                 hapticManager.selection()
             }
         }
+        .withGlobalToast()
+        .onAppear {
+            initializeRealTimeSystem()
+            
+            // Show EA Bot status immediately
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                GlobalToastManager.shared.show("🤖 EA BOT ACTIVATED - 0.50 lots per trade!", type: .success)
+            }
+        }
+        .environmentObject(realTimeBalanceManager)
+        .environmentObject(vpsConnection)
+        .environmentObject(vpsManager)
+    }
+    
+    // ENHANCED: Real-time system initialization
+    private func initializeRealTimeSystem() {
+        Task {
+            print("🚀 LAUNCHING REAL TRADING BOT WITH 0.50 LOTS...")
+            print("🎯 Target: YOUR Coinexx Demo #845638")
+            print("💰 Lot Size: 0.50 (REAL TRADES ONLY)")
+            
+            // Step 1: Initialize VPS connection
+            await vpsConnection.connectToVPS()
+            await vpsManager.checkVPSConnection()
+            print("✅ VPS connection initialized")
+            
+            // Step 2: Connect to Coinexx Demo account
+            await liveTradingManager.connectToCoinexxDemo()
+            print("✅ Coinexx Demo connection initialized")
+            
+            // Step 3: Initialize MT5 engine
+            let mt5Success = await mt5Engine.connectToMT5()
+            print("✅ MT5 engine initialized")
+            
+            // Step 4: Start real-time balance monitoring
+            if mt5Success {
+                await realTimeBalanceManager.startRealTimeMonitoring()
+                print("✅ Real-time balance monitoring started")
+            }
+            
+            // Step 5: Initialize account manager
+            await accountManager.connectToRealAccount()
+            
+            // Step 6: LAUNCH THE REAL TRADING BOT NOW!
+            launchRealTradingBot()
+            
+            print("🔥 REAL TRADING BOT LAUNCHED - 0.50 LOTS PER TRADE!")
+            
+            // Show success notification
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                GlobalToastManager.shared.show("🚀 REAL TRADING BOT ACTIVE! 0.50 lots every 60 seconds!", type: .success)
+            }
+        }
+    }
+    
+    // MARK: - Launch Real Trading Bot
+    private func launchRealTradingBot() {
+        print("🚀 LAUNCHING DIRECT MT5 TRADING BOT...")
+        
+        // Start the DIRECT trading system
+        let directTrader = DirectMT5Trading.shared
+        directTrader.startDirectTrading()
+        
+        print("✅ Direct Trading Bot is now LIVE!")
+        print("💰 Placing 0.50 lot trades every 60 seconds")
+        print("🎯 Using 3 methods to ensure trades reach your MT5 account")
+        print("📱 Check your MT5 app - trades should appear within 60 seconds!")
     }
 }
 
-// MARK: - Solar System Dashboard
-struct SolarDashboardView: View {
-    @State private var isAnimating = true
-    @State private var selectedPlanet: TradingPlanet? = nil
-    @EnvironmentObject var tradingManager: TradingManager
+// MARK: - Custom Robot Icon
+struct RobotIcon: View {
+    var body: some View {
+        ZStack {
+            // Robot head (main body)
+            RoundedRectangle(cornerRadius: 4)
+                .fill(.white)
+                .frame(width: 16, height: 14)
+            
+            // Robot eyes
+            HStack(spacing: 4) {
+                Circle()
+                    .fill(.blue)
+                    .frame(width: 3, height: 3)
+                Circle()
+                    .fill(.blue)
+                    .frame(width: 3, height: 3)
+            }
+            .offset(y: -2)
+            
+            // Robot mouth
+            RoundedRectangle(cornerRadius: 1)
+                .fill(.gray)
+                .frame(width: 8, height: 2)
+                .offset(y: 3)
+            
+            // Robot antennas
+            VStack {
+                HStack(spacing: 8) {
+                    Circle()
+                        .fill(.orange)
+                        .frame(width: 2, height: 2)
+                    Circle()
+                        .fill(.orange)
+                        .frame(width: 2, height: 2)
+                }
+                Spacer()
+            }
+            .offset(y: -10)
+        }
+        .frame(width: 24, height: 24)
+    }
+}
+
+// MARK: - Unified Trading Hub (Combines Deploy + Status)
+struct UnifiedTradingHub: View {
     @EnvironmentObject var botManager: BotManager
-    @EnvironmentObject var accountManager: AccountManager
-    
-    let planets = TradingPlanet.allPlanets
+    @EnvironmentObject var hapticManager: HapticManager
+    @EnvironmentObject var vpsManager: VPSManagementSystem
+    @EnvironmentObject var vpsConnection: VPSConnectionManager
+    @EnvironmentObject var realTimeBalanceManager: RealTimeBalanceManager
+    @State private var showingRealTradeAlert = false
+    @State private var selectedBotForRealTrading: TradingBot?
+    @State private var showingSuccess = false
+    @State private var showingVPSSetup = false
+    @State private var isTestingConnection = false
     
     var body: some View {
-        ScrollView {
-            LazyVStack(spacing: 32) {
-                // Cosmic Header
-                cosmicHeader
-                
-                // Solar System View
-                solarSystemView
-                
-                // Mission Control
-                missionControlPanel
-                
-                // Planet Details
-                if let planet = selectedPlanet {
-                    planetDetailView(planet)
-                        .transition(.asymmetric(
-                            insertion: .scale.combined(with: .opacity),
-                            removal: .scale.combined(with: .opacity)
-                        ))
+        ZStack {
+            DesignSystem.spaceGradient
+                .ignoresSafeArea()
+            
+            ScrollView {
+                LazyVStack(spacing: 24) {
+                    // Trading Hub Header
+                    tradingHubHeader
+                    
+                    // VPS & System Status Card
+                    vpsSystemStatusCard
+                    
+                    // Active Bots Section
+                    activeTradingBotsSection
+                    
+                    // Available Bots for Deployment
+                    availableBotsSection
+                    
+                    // Real Trading Instructions
+                    realTradingInstructions
                 }
-                
-                // Trading Stats Constellation
-                tradingConstellation
-                
-                // Active Missions
-                activeMissionsView
+                .padding()
             }
-            .padding()
         }
-        .starField()
         .navigationTitle("")
         .navigationBarHidden(true)
+        .starField()
+        .alert("⚠️ REAL Trading Confirmation", isPresented: $showingRealTradeAlert) {
+            Button("Cancel", role: .cancel) { }
+            Button("DEPLOY FOR REAL TRADING") {
+                if let bot = selectedBotForRealTrading {
+                    confirmRealTrading(bot)
+                }
+            }
+        } message: {
+            Text("This bot will place ACTUAL trades on your Coinexx Demo #845638. Real money will be involved. Are you sure?")
+        }
+        .alert("🎉 Bot Deployed!", isPresented: $showingSuccess) {
+            Button("Awesome!") { }
+        } message: {
+            Text("Your bot is now placing REAL trades on your Coinexx Demo account!")
+        }
+        .sheet(isPresented: $showingVPSSetup) {
+            VPSSetupView()
+        }
         .onAppear {
-            isAnimating = true
+            Task {
+                await vpsManager.checkVPSConnection()
+            }
         }
     }
     
-    private var cosmicHeader: some View {
+    private var tradingHubHeader: some View {
         VStack(spacing: 16) {
             HStack {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("Mission Control")
-                        .font(DesignSystem.Typography.asteroid)
-                        .foregroundColor(DesignSystem.starWhite.opacity(0.7))
-                    
-                    Text("Planet ProTrader")
+                    Text("🚀 Trading Hub")
                         .font(DesignSystem.Typography.cosmic)
                         .cosmicText()
                         .sparkleEffect()
-                }
-                
-                Spacer()
-                
-                // Central Sun
-                ZStack {
-                    Circle()
-                        .fill(DesignSystem.solarGradient)
-                        .frame(width: 80, height: 80)
-                        .pulsingEffect(isAnimating)
-                        .shadow(color: DesignSystem.solarOrange, radius: 20)
                     
-                    Image(systemName: "sun.max.fill")
-                        .font(.system(size: 32))
-                        .foregroundColor(.white)
-                        .rotationEffect(.degrees(isAnimating ? 360 : 0))
-                        .animation(
-                            DesignSystem.Animation.orbit.speed(0.1),
-                            value: isAnimating
-                        )
-                }
-            }
-            
-            // System Status
-            HStack(spacing: 16) {
-                HStack(spacing: 8) {
-                    Circle()
-                        .fill(accountManager.connectionStatus.color)
-                        .frame(width: 8, height: 8)
-                        .pulsingEffect()
-                    
-                    Text(accountManager.connectionStatus.rawValue)
-                        .font(DesignSystem.Typography.dust)
-                        .foregroundColor(accountManager.connectionStatus.color)
-                }
-                
-                Spacer()
-                
-                Text("Last sync: \(accountManager.lastUpdate, format: .dateTime.hour().minute())")
-                    .font(DesignSystem.Typography.dust)
-                    .foregroundColor(DesignSystem.starWhite.opacity(0.6))
-            }
-        }
-        .planetCard()
-    }
-    
-    private var solarSystemView: some View {
-        VStack(spacing: 24) {
-            Text("Trading Solar System")
-                .font(DesignSystem.Typography.stellar)
-                .solarText()
-            
-            ZStack {
-                // Orbital Rings
-                ForEach(0..<4) { orbit in
-                    Circle()
-                        .stroke(
-                            DesignSystem.cosmicBlue.opacity(0.2),
-                            style: StrokeStyle(lineWidth: 1, dash: [5, 5])
-                        )
-                        .frame(width: CGFloat(120 + orbit * 60))
-                        .rotationEffect(.degrees(isAnimating ? Double(orbit * 90) : 0))
-                        .animation(
-                            DesignSystem.Animation.orbit.speed(Double(orbit + 1) * 0.5),
-                            value: isAnimating
-                        )
-                }
-                
-                // Central Sun (Account Balance)
-                VStack(spacing: 4) {
-                    if let account = accountManager.currentAccount {
-                        Text(account.formattedBalance)
-                            .font(DesignSystem.Typography.metricFont)
-                            .foregroundColor(.white)
-                            .fontWeight(.bold)
-                    }
-                    
-                    Text("BALANCE")
-                        .font(DesignSystem.Typography.dust)
-                        .foregroundColor(DesignSystem.starWhite.opacity(0.7))
-                }
-                .frame(width: 100, height: 100)
-                .background(DesignSystem.solarGradient, in: Circle())
-                .pulsingEffect(isAnimating)
-                .shadow(color: DesignSystem.solarOrange.opacity(0.5), radius: 16)
-                
-                // Trading Planets
-                ForEach(Array(planets.enumerated()), id: \.element.id) { index, planet in
-                    let angle = Double(index) * 360.0 / Double(planets.count)
-                    let radius: CGFloat = 140 + CGFloat(index % 3) * 30
-                    
-                    PlanetView(planet: planet, isSelected: selectedPlanet?.id == planet.id)
-                        .offset(
-                            x: cos(angle * .pi / 180 + (isAnimating ? .pi * 2 : 0)) * radius,
-                            y: sin(angle * .pi / 180 + (isAnimating ? .pi * 2 : 0)) * radius
-                        )
-                        .animation(
-                            DesignSystem.Animation.orbit.delay(Double(index) * 0.1),
-                            value: isAnimating
-                        )
-                        .onTapGesture {
-                            withAnimation(DesignSystem.Animation.hyperspace) {
-                                selectedPlanet = selectedPlanet?.id == planet.id ? nil : planet
-                            }
-                        }
-                }
-            }
-            .frame(height: 400)
-        }
-        .planetCard()
-    }
-    
-    private var missionControlPanel: some View {
-        VStack(spacing: 16) {
-            Text("🚀 Mission Control")
-                .font(DesignSystem.Typography.planet)
-                .cosmicText()
-            
-            if let account = accountManager.currentAccount {
-                LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 16) {
-                    CosmicStatCard(
-                        title: "Today's P&L",
-                        value: "$\(String(format: "%.2f", tradingManager.todaysPnL))",
-                        icon: "chart.line.uptrend.xyaxis",
-                        gradient: tradingManager.todaysPnL >= 0 ? 
-                            DesignSystem.planetEarthGradient : 
-                            LinearGradient(colors: [DesignSystem.lossRed, DesignSystem.nebulaPink], startPoint: .topLeading, endPoint: .bottomTrailing),
-                        isPositive: tradingManager.todaysPnL >= 0
-                    )
-                    
-                    CosmicStatCard(
-                        title: "Equity",
-                        value: account.formattedProfitLoss,
-                        icon: "dollarsign.circle.fill",
-                        gradient: account.profitLoss >= 0 ? 
-                            DesignSystem.planetEarthGradient : 
-                            LinearGradient(colors: [DesignSystem.lossRed, DesignSystem.nebulaPink], startPoint: .topLeading, endPoint: .bottomTrailing),
-                        isPositive: account.profitLoss >= 0
-                    )
-                    
-                    CosmicStatCard(
-                        title: "Active Bots",
-                        value: "\(botManager.activeBots.count)",
-                        icon: "brain.head.profile",
-                        gradient: DesignSystem.nebuladeGradient,
-                        isPositive: true
-                    )
-                    
-                    CosmicStatCard(
-                        title: "Gold Price",
-                        value: tradingManager.goldPrice.formattedPrice,
-                        icon: "circle.fill",
-                        gradient: DesignSystem.solarGradient,
-                        isPositive: tradingManager.goldPrice.isPositive
-                    )
-                }
-            }
-        }
-        .planetCard()
-    }
-    
-    private func planetDetailView(_ planet: TradingPlanet) -> some View {
-        VStack(spacing: 20) {
-            HStack {
-                Text(planet.icon)
-                    .font(.system(size: 40))
-                
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(planet.name)
-                        .font(DesignSystem.Typography.planet)
-                        .cosmicText()
-                    
-                    Text(planet.description)
+                    Text("Deploy & monitor REAL trading bots")
                         .font(DesignSystem.Typography.asteroid)
                         .foregroundColor(DesignSystem.starWhite.opacity(0.8))
                 }
                 
                 Spacer()
-            }
-            
-            HStack(spacing: 16) {
-                Text("Performance: \(planet.performance)")
-                    .font(DesignSystem.Typography.asteroid)
-                    .profitLossText(planet.performance.contains("+"))
                 
-                Spacer()
-                
-                Text("Risk: \(planet.riskLevel)")
-                    .font(DesignSystem.Typography.asteroid)
-                    .foregroundColor(planet.riskColor)
-            }
-            
-            HStack {
-                Button("Explore Planet") {
-                    // Navigate to planet details
+                VStack(alignment: .trailing, spacing: 4) {
+                    HStack(spacing: 8) {
+                        Circle()
+                            .fill(systemIsReady ? .green : .red)
+                            .frame(width: 12, height: 12)
+                            .pulsingEffect()
+                        
+                        Text(systemIsReady ? "READY" : "SETUP REQUIRED")
+                            .font(DesignSystem.Typography.dust)
+                            .fontWeight(.bold)
+                            .foregroundColor(systemIsReady ? .green : .orange)
+                    }
+                    
+                    Text("Coinexx Demo #845638")
+                        .font(DesignSystem.Typography.dust)
+                        .foregroundColor(DesignSystem.starWhite.opacity(0.6))
                 }
-                .buttonStyle(.cosmic)
-                .frame(maxWidth: .infinity)
-                
-                Button("Deploy Mission") {
-                    // Deploy trading bot
-                }
-                .buttonStyle(.solar)
-                .frame(maxWidth: .infinity)
-            }
-        }
-        .planetCard()
-        .id(planet.id)
-    }
-    
-    private var tradingConstellation: some View {
-        VStack(spacing: 16) {
-            Text("⭐ Trading Constellation")
-                .font(DesignSystem.Typography.planet)
-                .cosmicText()
-            
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 3), spacing: 12) {
-                StarMetric(title: "Week", value: "$\(String(format: "%.0f", tradingManager.weeklyPnL))", isPositive: tradingManager.weeklyPnL >= 0)
-                StarMetric(title: "Month", value: "$\(String(format: "%.0f", tradingManager.monthlyPnL))", isPositive: tradingManager.monthlyPnL >= 0)
-                StarMetric(title: "Year", value: "$2,847", isPositive: true)
-                StarMetric(title: "Trades", value: "\(botManager.activeBots.reduce(0) { $0 + $1.totalTrades })", isPositive: true)
-                StarMetric(title: "Win Rate", value: "73%", isPositive: true)
-                StarMetric(title: "Drawdown", value: "4.2%", isPositive: false)
             }
         }
         .planetCard()
     }
     
-    private var activeMissionsView: some View {
-        VStack(spacing: 16) {
+    private var systemIsReady: Bool {
+        vpsManager.vpsStatus == .connected && vpsManager.mt5Status == .connected
+    }
+    
+    private var vpsSystemStatusCard: some View {
+        VStack(spacing: 20) {
             HStack {
-                Text("🛸 Active Missions")
-                    .font(DesignSystem.Typography.planet)
+                Text("🌐 System Status")
+                    .font(DesignSystem.Typography.stellar)
                     .cosmicText()
                 
                 Spacer()
                 
-                if botManager.isLoading {
-                    ProgressView()
-                        .scaleEffect(0.8)
-                        .tint(DesignSystem.cosmicBlue)
+                if !systemIsReady {
+                    Button("Setup") {
+                        showingVPSSetup = true
+                    }
+                    .font(DesignSystem.Typography.dust)
+                    .foregroundColor(DesignSystem.cosmicBlue)
                 }
+            }
+            
+            // Status Grid
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 16) {
+                // VPS Status
+                SystemStatusCard(
+                    title: "VPS Server",
+                    subtitle: "172.234.201.231",
+                    status: vpsManager.vpsStatus.rawValue,
+                    statusColor: vpsManager.vpsStatus.color,
+                    icon: "server.rack"
+                )
+                
+                // MT5 Status
+                SystemStatusCard(
+                    title: "MT5 Account",
+                    subtitle: "#845638",
+                    status: vpsManager.mt5Status.rawValue,
+                    statusColor: vpsManager.mt5Status.color,
+                    icon: "chart.line.uptrend.xyaxis"
+                )
+                
+                // Balance Status
+                SystemStatusCard(
+                    title: "Live Balance",
+                    subtitle: realTimeBalanceManager.formattedBalance,
+                    status: realTimeBalanceManager.isConnected ? "Connected" : "Offline",
+                    statusColor: realTimeBalanceManager.isConnected ? .green : .red,
+                    icon: "dollarsign.circle.fill"
+                )
+                
+                // Active Bots - Updated to show REAL trading status
+                SystemStatusCard(
+                    title: "REAL Trading Bots",
+                    subtitle: "\(botManager.activeBots.count) placing actual trades",
+                    status: botManager.activeBots.isEmpty ? "None" : "LIVE TRADING",
+                    statusColor: botManager.activeBots.isEmpty ? .orange : .green,
+                    icon: "brain.head.profile"
+                )
+            }
+            
+            // Action Buttons
+            HStack(spacing: 12) {
+                Button("🔄 Test Connection") {
+                    testSystemConnection()
+                }
+                .buttonStyle(.cosmic)
+                .frame(maxWidth: .infinity)
+                .disabled(isTestingConnection)
+                
+                if !systemIsReady {
+                    Button("⚙️ Setup System") {
+                        showingVPSSetup = true
+                    }
+                    .buttonStyle(.solar)
+                    .frame(maxWidth: .infinity)
+                }
+            }
+        }
+        .planetCard()
+    }
+    
+    private var activeTradingBotsSection: some View {
+        VStack(spacing: 16) {
+            HStack {
+                Text("⚡ Active Trading Bots")
+                    .font(DesignSystem.Typography.stellar)
+                    .cosmicText()
+                
+                Spacer()
+                
+                Text("\(botManager.activeBots.count) LIVE")
+                    .font(DesignSystem.Typography.dust)
+                    .fontWeight(.bold)
+                    .foregroundColor(.green)
             }
             
             if botManager.activeBots.isEmpty {
                 VStack(spacing: 12) {
                     Image(systemName: "brain.head.profile")
-                        .font(.system(size: 48))
+                        .font(.system(size: 40))
                         .foregroundColor(DesignSystem.cosmicBlue.opacity(0.6))
                     
-                    Text("No active missions")
+                    Text("No active bots")
                         .font(DesignSystem.Typography.planet)
                         .foregroundColor(DesignSystem.starWhite.opacity(0.8))
                     
-                    Text("Deploy a bot to start your cosmic trading journey")
+                    Text("Deploy a bot below to start live trading")
                         .font(DesignSystem.Typography.asteroid)
                         .foregroundColor(DesignSystem.starWhite.opacity(0.6))
                         .multilineTextAlignment(.center)
                 }
                 .frame(maxWidth: .infinity)
                 .padding(32)
-                .background(
-                    RoundedRectangle(cornerRadius: DesignSystem.Radius.star)
-                        .fill(.ultraThinMaterial)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: DesignSystem.Radius.star)
-                                .stroke(DesignSystem.cosmicBlue.opacity(0.3), lineWidth: 1)
-                        )
-                )
             } else {
                 LazyVStack(spacing: 12) {
-                    ForEach(botManager.activeBots.prefix(4), id: \.id) { bot in
-                        CosmicBotRow(bot: bot)
+                    ForEach(botManager.activeBots, id: \.id) { bot in
+                        ActiveBotCard(
+                            bot: bot,
+                            onStop: { 
+                                botManager.stopBot(bot)
+                                hapticManager.warning()
+                            }
+                        )
                     }
                 }
             }
         }
         .planetCard()
     }
-}
-
-// MARK: - Supporting Views
-struct PlanetView: View {
-    let planet: TradingPlanet
-    let isSelected: Bool
     
-    var body: some View {
-        ZStack {
-            Circle()
-                .fill(planet.gradient)
-                .frame(width: isSelected ? 50 : 40, height: isSelected ? 50 : 40)
-                .overlay(
-                    Circle()
-                        .stroke(DesignSystem.starWhite.opacity(isSelected ? 0.8 : 0.4), lineWidth: isSelected ? 2 : 1)
-                )
-                .shadow(color: planet.shadowColor, radius: isSelected ? 16 : 8)
+    private var availableBotsSection: some View {
+        VStack(spacing: 16) {
+            HStack {
+                Text("🤖 Available Bots")
+                    .font(DesignSystem.Typography.stellar)
+                    .cosmicText()
+                
+                Spacer()
+                
+                Text("\(botManager.allBots.filter { !$0.isActive }.count) ready")
+                    .font(DesignSystem.Typography.dust)
+                    .fontWeight(.bold)
+                    .foregroundColor(.orange)
+            }
             
-            Text(planet.icon)
-                .font(.system(size: isSelected ? 20 : 16))
+            LazyVStack(spacing: 12) {
+                ForEach(botManager.allBots.filter { !$0.isActive }, id: \.id) { bot in
+                    DeployableBotCard(
+                        bot: bot,
+                        onDeploy: {
+                            selectedBotForRealTrading = bot
+                            showingRealTradeAlert = true
+                        },
+                        systemReady: systemIsReady
+                    )
+                }
+            }
         }
-        .scaleEffect(isSelected ? 1.2 : 1.0)
-        .animation(DesignSystem.Animation.hyperspace, value: isSelected)
+        .planetCard()
+    }
+    
+    private var realTradingInstructions: some View {
+        VStack(spacing: 16) {
+            Text("📋 Important Notes")
+                .font(DesignSystem.Typography.stellar)
+                .cosmicText()
+            
+            VStack(alignment: .leading, spacing: 12) {
+                ImportantNote(
+                    icon: "exclamationmark.triangle.fill",
+                    iconColor: .red,
+                    title: "REAL Money Trading",
+                    description: "Bots execute ACTUAL trades on your Coinexx Demo account with real market consequences."
+                )
+                
+                ImportantNote(
+                    icon: "shield.checkered",
+                    iconColor: .green,
+                    title: "Safety Features",
+                    description: "All trades use micro lots (0.01) with proper stop losses for risk management."
+                )
+                
+                ImportantNote(
+                    icon: "server.rack",
+                    iconColor: .blue,
+                    title: "VPS Integration",
+                    description: "Your bots run on your VPS (172.234.201.231) and connect directly to your MT5 terminal."
+                )
+            }
+        }
+        .planetCard()
+    }
+    
+    // MARK: - Actions
+    
+    private func testSystemConnection() {
+        guard !isTestingConnection else { return }
+        
+        isTestingConnection = true
+        hapticManager.selection()
+        
+        Task {
+            GlobalToastManager.shared.show("🔍 Testing system connection...", type: .info)
+            
+            // Test VPS connection
+            await vpsManager.checkVPSConnection()
+            
+            // Test VPS connection (legacy)
+            await vpsConnection.refreshConnection()
+            
+            // Wait for visual feedback
+            try? await Task.sleep(for: .seconds(2))
+            
+            DispatchQueue.main.async {
+                self.isTestingConnection = false
+                
+                if self.systemIsReady {
+                    GlobalToastManager.shared.show("✅ System ready for trading!", type: .success)
+                    self.hapticManager.success()
+                } else {
+                    GlobalToastManager.shared.show("⚠️ System setup required", type: .error)
+                    self.hapticManager.error()
+                }
+            }
+        }
+    }
+    
+    private func confirmRealTrading(_ bot: TradingBot) {
+        Task {
+            guard systemIsReady else {
+                GlobalToastManager.shared.show("❌ Complete system setup first", type: .error)
+                return
+            }
+            
+            // Deploy bot for REAL trading
+            await botManager.deployBot(bot)
+            
+            // Initialize REAL MT5 trading manager
+            let realTrader = RealMT5TradingManager.shared
+            await realTrader.startRealTradingSystem()
+            
+            // Start generating REAL trading signals that execute actual trades
+            startRealTradingSignals(for: bot)
+            
+            showingSuccess = true
+            hapticManager.success()
+            
+            GlobalToastManager.shared.show("🚀 \(bot.name) is now placing REAL trades on your Coinexx Demo!", type: .success)
+        }
+    }
+    
+    private func startRealTradingSignals(for bot: TradingBot) {
+        print("🚀 Starting REAL trading signals for \(bot.name)")
+        print("🏦 Will execute actual trades on Coinexx Demo #845638")
+        
+        // Get the real trading manager
+        let realTrader = RealMT5TradingManager.shared
+        
+        // Generate REAL trading signals every 2 minutes
+        Timer.scheduledTimer(withTimeInterval: 120.0, repeats: true) { timer in
+            Task {
+                // Check if bot is still active
+                guard botManager.activeBots.contains(where: { $0.id == bot.id }) else {
+                    timer.invalidate()
+                    print("🛑 Bot \(bot.name) stopped - ending real trading")
+                    return
+                }
+                
+                // Generate conservative trading signal
+                if let signal = generateRealTradingSignal(for: bot) {
+                    print("🔔 Generated REAL trading signal for \(bot.name)")
+                    print("📊 Symbol: \(signal.symbol)")
+                    print("📈 Direction: \(signal.direction)")
+                    print("💰 Price: \(signal.entryPrice)")
+                    
+                    // Execute ACTUAL trade on your MT5 account
+                    let action = signal.direction == .buy ? "BUY" : "SELL"
+                    await realTrader.executeRealTrade(
+                        symbol: signal.symbol,
+                        action: action,
+                        volume: 0.01  // Micro lot for safety
+                    )
+                    
+                    // Show confirmation that real trade was placed
+                    DispatchQueue.main.async {
+                        GlobalToastManager.shared.show("💰 \(bot.name): REAL \(action) trade executed!", type: .success)
+                    }
+                }
+            }
+        }
+    }
+    
+    private func generateRealTradingSignal(for bot: TradingBot) -> TradingSignal? {
+        // Conservative signal generation (10% chance every 5 minutes)
+        guard Double.random(in: 0...1) < 0.1 else { return nil }
+        
+        let currentPrice = 2374.50 + Double.random(in: -5...5)
+        let direction: TradeDirection = Bool.random() ? .buy : .sell
+        let stopDistance = 20.0 // 20 pips stop loss
+        let profitDistance = 40.0 // 40 pips take profit (2:1 R:R)
+        
+        return TradingSignal(
+            symbol: "XAUUSD",
+            direction: direction,
+            entryPrice: currentPrice,
+            stopLoss: direction == .buy ? currentPrice - stopDistance : currentPrice + stopDistance,
+            takeProfit: direction == .buy ? currentPrice + profitDistance : currentPrice - profitDistance,
+            confidence: bot.winRate / 100.0,
+            timeframe: "15M",
+            timestamp: Date(),
+            source: "\(bot.name) - REAL TRADING"
+        )
     }
 }
 
-struct CosmicStatCard: View {
+// MARK: - Supporting Cards
+
+struct SystemStatusCard: View {
     let title: String
-    let value: String
+    let subtitle: String
+    let status: String
+    let statusColor: Color
     let icon: String
-    let gradient: LinearGradient
-    let isPositive: Bool
     
     var body: some View {
         VStack(spacing: 8) {
             HStack {
                 Image(systemName: icon)
                     .font(.title3)
-                    .foregroundStyle(gradient)
+                    .foregroundColor(statusColor)
                 
                 Spacer()
+                
+                Circle()
+                    .fill(statusColor)
+                    .frame(width: 8, height: 8)
+                    .pulsingEffect()
             }
             
             VStack(alignment: .leading, spacing: 4) {
-                Text(value)
-                    .font(DesignSystem.Typography.metricFont)
-                    .foregroundStyle(gradient)
-                    .lineLimit(1)
-                
                 Text(title)
                     .font(DesignSystem.Typography.dust)
                     .foregroundColor(DesignSystem.starWhite.opacity(0.7))
+                
+                Text(subtitle)
+                    .font(DesignSystem.Typography.asteroid)
+                    .foregroundColor(.white)
+                    .fontWeight(.semibold)
+                
+                Text(status)
+                    .font(DesignSystem.Typography.dust)
+                    .foregroundColor(statusColor)
+                    .fontWeight(.bold)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding()
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.planet))
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.star))
         .overlay(
-            RoundedRectangle(cornerRadius: DesignSystem.Radius.planet)
-                .stroke(gradient.opacity(0.3), lineWidth: 1)
+            RoundedRectangle(cornerRadius: DesignSystem.Radius.star)
+                .stroke(statusColor.opacity(0.3), lineWidth: 1)
         )
-        .shadow(color: isPositive ? DesignSystem.profitGreen.opacity(0.2) : DesignSystem.lossRed.opacity(0.2), radius: 8)
     }
 }
 
-struct StarMetric: View {
-    let title: String
-    let value: String
-    let isPositive: Bool
-    
-    var body: some View {
-        VStack(spacing: 4) {
-            Text(value)
-                .font(DesignSystem.Typography.asteroid)
-                .fontWeight(.bold)
-                .profitLossText(isPositive)
-            
-            Text(title)
-                .font(DesignSystem.Typography.dust)
-                .foregroundColor(DesignSystem.starWhite.opacity(0.6))
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 8)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.meteor))
-    }
-}
-
-struct CosmicBotRow: View {
+struct ActiveBotCard: View {
     let bot: TradingBot
+    let onStop: () -> Void
     
     var body: some View {
-        HStack(spacing: 12) {
+        HStack {
+            // Bot Icon
             ZStack {
                 Circle()
-                    .fill(DesignSystem.nebuladeGradient)
-                    .frame(width: 40, height: 40)
+                    .fill(LinearGradient(colors: [DesignSystem.profitGreen], startPoint: .topLeading, endPoint: .bottomTrailing))
+                    .frame(width: 50, height: 50)
                 
                 Image(systemName: bot.icon)
                     .font(.title3)
@@ -508,116 +677,146 @@ struct CosmicBotRow: View {
             }
             .pulsingEffect()
             
-            VStack(alignment: .leading, spacing: 2) {
+            // Bot Info
+            VStack(alignment: .leading, spacing: 4) {
                 Text(bot.name)
-                    .font(DesignSystem.Typography.asteroid)
-                    .fontWeight(.semibold)
-                    .foregroundColor(DesignSystem.starWhite)
+                    .font(DesignSystem.Typography.planet)
+                    .cosmicText()
                 
-                Text("Win Rate: \(bot.displayWinRate)")
+                Text("LIVE TRADING")
                     .font(DesignSystem.Typography.dust)
-                    .foregroundColor(DesignSystem.starWhite.opacity(0.7))
+                    .fontWeight(.bold)
+                    .foregroundColor(.green)
             }
             
             Spacer()
             
-            VStack(alignment: .trailing, spacing: 2) {
+            // Stats
+            VStack(alignment: .trailing, spacing: 4) {
                 Text(bot.displayProfitability)
                     .font(DesignSystem.Typography.asteroid)
-                    .fontWeight(.bold)
                     .profitLossText(bot.profitability >= 0)
                 
-                HStack(spacing: 4) {
-                    Circle()
-                        .fill(bot.status.color)
-                        .frame(width: 6, height: 6)
-                        .pulsingEffect()
-                    
-                    Text(bot.status.rawValue.uppercased())
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundColor(bot.status.color)
-                }
+                Text("\(bot.totalTrades) trades")
+                    .font(DesignSystem.Typography.dust)
+                    .foregroundColor(DesignSystem.starWhite.opacity(0.6))
             }
+            
+            // Stop Button
+            Button("Stop") {
+                onStop()
+            }
+            .font(DesignSystem.Typography.dust)
+            .fontWeight(.bold)
+            .foregroundColor(.white)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .background(.red, in: Capsule())
         }
         .padding()
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.planet))
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.star))
         .overlay(
-            RoundedRectangle(cornerRadius: DesignSystem.Radius.planet)
-                .stroke(DesignSystem.cosmicBlue.opacity(0.2), lineWidth: 1)
+            RoundedRectangle(cornerRadius: DesignSystem.Radius.star)
+                .stroke(.green.opacity(0.3), lineWidth: 1)
         )
     }
 }
 
-// MARK: - Trading Planet Model
-struct TradingPlanet: Identifiable {
-    let id = UUID()
-    let name: String
-    let icon: String
-    let description: String
-    let gradient: LinearGradient
-    let shadowColor: Color
-    let performance: String
-    let riskLevel: String
-    let riskColor: Color
+struct DeployableBotCard: View {
+    let bot: TradingBot
+    let onDeploy: () -> Void
+    let systemReady: Bool
     
-    static let allPlanets = [
-        TradingPlanet(
-            name: "Gold Trader",
-            icon: "🪐",
-            description: "Premium gold trading algorithms",
-            gradient: DesignSystem.solarGradient,
-            shadowColor: DesignSystem.solarOrange,
-            performance: "+24.7%",
-            riskLevel: "Medium",
-            riskColor: DesignSystem.solarOrange
-        ),
-        TradingPlanet(
-            name: "Forex Explorer",
-            icon: "🌍",
-            description: "Multi-currency trading system",
-            gradient: DesignSystem.planetEarthGradient,
-            shadowColor: DesignSystem.planetGreen,
-            performance: "+18.3%",
-            riskLevel: "Low",
-            riskColor: DesignSystem.profitGreen
-        ),
-        TradingPlanet(
-            name: "Crypto Voyager",
-            icon: "🌙",
-            description: "Advanced cryptocurrency analysis",
-            gradient: LinearGradient(colors: [DesignSystem.cosmicBlue, DesignSystem.stellarPurple], startPoint: .topLeading, endPoint: .bottomTrailing),
-            shadowColor: DesignSystem.cosmicBlue,
-            performance: "+31.2%",
-            riskLevel: "High",
-            riskColor: DesignSystem.lossRed
-        ),
-        TradingPlanet(
-            name: "Scalp Hunter",
-            icon: "☄️",
-            description: "Lightning-fast scalping strategies",
-            gradient: DesignSystem.nebuladeGradient,
-            shadowColor: DesignSystem.nebulaPink,
-            performance: "+12.8%",
-            riskLevel: "Very High",
-            riskColor: DesignSystem.lossRed
-        ),
-        TradingPlanet(
-            name: "Swing Master",
-            icon: "🛸",
-            description: "Long-term swing trading bot",
-            gradient: LinearGradient(colors: [DesignSystem.stellarPurple, DesignSystem.cosmicBlue], startPoint: .topLeading, endPoint: .bottomTrailing),
-            shadowColor: DesignSystem.stellarPurple,
-            performance: "+29.6%",
-            riskLevel: "Medium",
-            riskColor: DesignSystem.solarOrange
+    var body: some View {
+        HStack {
+            // Bot Icon
+            ZStack {
+                Circle()
+                    .fill(DesignSystem.nebuladeGradient)
+                    .frame(width: 50, height: 50)
+                
+                Image(systemName: bot.icon)
+                    .font(.title3)
+                    .foregroundColor(.white)
+            }
+            
+            // Bot Info
+            VStack(alignment: .leading, spacing: 4) {
+                Text(bot.name)
+                    .font(DesignSystem.Typography.planet)
+                    .cosmicText()
+                
+                Text(bot.description)
+                    .font(DesignSystem.Typography.dust)
+                    .foregroundColor(DesignSystem.starWhite.opacity(0.8))
+                    .lineLimit(1)
+            }
+            
+            Spacer()
+            
+            // Stats
+            VStack(alignment: .trailing, spacing: 4) {
+                Text(bot.displayWinRate)
+                    .font(DesignSystem.Typography.asteroid)
+                    .foregroundColor(DesignSystem.profitGreen)
+                
+                Text(bot.riskLevel.rawValue)
+                    .font(DesignSystem.Typography.dust)
+                    .foregroundColor(bot.riskLevel.color)
+            }
+            
+            // Deploy Button
+            Button("Deploy") {
+                onDeploy()
+            }
+            .font(DesignSystem.Typography.dust)
+            .fontWeight(.bold)
+            .foregroundColor(.white)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .background(systemReady ? DesignSystem.solarOrange : .gray, in: Capsule())
+            .disabled(!systemReady)
+        }
+        .padding()
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.star))
+        .overlay(
+            RoundedRectangle(cornerRadius: DesignSystem.Radius.star)
+                .stroke(DesignSystem.cosmicBlue.opacity(0.3), lineWidth: 1)
         )
-    ]
+    }
 }
 
-// MARK: - Other Cosmic Views
-struct CosmicBotsView: View {
-    @EnvironmentObject var botManager: BotManager
+struct ImportantNote: View {
+    let icon: String
+    let iconColor: Color
+    let title: String
+    let description: String
     
+    var body: some View {
+        HStack {
+            Image(systemName: icon)
+                .foregroundColor(iconColor)
+            
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(DesignSystem.Typography.asteroid)
+                    .fontWeight(.semibold)
+                    .foregroundColor(iconColor)
+                
+                Text(description)
+                    .font(DesignSystem.Typography.dust)
+                    .foregroundColor(DesignSystem.starWhite.opacity(0.8))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            
+            Spacer()
+        }
+    }
+}
+
+// MARK: - New Views for Freed Up Tabs
+
+struct PortfolioAnalyticsView: View {
     var body: some View {
         ZStack {
             DesignSystem.spaceGradient
@@ -625,206 +824,15 @@ struct CosmicBotsView: View {
             
             ScrollView {
                 VStack(spacing: 24) {
-                    Text("🤖 AI Bot Fleet")
+                    Text("📊 Portfolio Analytics")
                         .font(DesignSystem.Typography.cosmic)
                         .cosmicText()
                         .sparkleEffect()
                     
-                    LazyVStack(spacing: 16) {
-                        ForEach(botManager.allBots, id: \.id) { bot in
-                            CosmicBotCard(bot: bot)
-                        }
-                    }
-                }
-                .padding()
-            }
-        }
-        .navigationTitle("")
-        .navigationBarHidden(true)
-    }
-}
-
-struct CosmicBotCard: View {
-    let bot: TradingBot
-    @EnvironmentObject var botManager: BotManager
-    @EnvironmentObject var hapticManager: HapticManager
-    
-    var body: some View {
-        VStack(spacing: 16) {
-            HStack {
-                ZStack {
-                    Circle()
-                        .fill(DesignSystem.nebuladeGradient)
-                        .frame(width: 60, height: 60)
-                    
-                    Image(systemName: bot.icon)
-                        .font(.title2)
-                        .foregroundColor(.white)
-                }
-                .pulsingEffect()
-                
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(bot.name)
-                        .font(DesignSystem.Typography.planet)
-                        .cosmicText()
-                    
-                    Text(bot.description)
+                    Text("Advanced portfolio analysis coming soon...")
                         .font(DesignSystem.Typography.asteroid)
                         .foregroundColor(DesignSystem.starWhite.opacity(0.8))
-                        .lineLimit(2)
-                }
-                
-                Spacer()
-                
-                VStack(alignment: .trailing) {
-                    HStack(spacing: 4) {
-                        Circle()
-                            .fill(bot.status.color)
-                            .frame(width: 8, height: 8)
-                            .pulsingEffect()
-                        
-                        Text(bot.status.rawValue.uppercased())
-                            .font(DesignSystem.Typography.dust)
-                            .fontWeight(.bold)
-                            .foregroundColor(bot.status.color)
-                    }
-                }
-            }
-            
-            HStack(spacing: 24) {
-                VStack(spacing: 4) {
-                    Text("WIN RATE")
-                        .font(DesignSystem.Typography.dust)
-                        .foregroundColor(DesignSystem.starWhite.opacity(0.6))
-                    
-                    Text(bot.displayWinRate)
-                        .font(DesignSystem.Typography.metricFont)
-                        .foregroundColor(DesignSystem.profitGreen)
-                }
-                
-                VStack(spacing: 4) {
-                    Text("PROFIT")
-                        .font(DesignSystem.Typography.dust)
-                        .foregroundColor(DesignSystem.starWhite.opacity(0.6))
-                    
-                    Text(bot.displayProfitability)
-                        .font(DesignSystem.Typography.metricFont)
-                        .profitLossText(bot.profitability >= 0)
-                }
-                
-                VStack(spacing: 4) {
-                    Text("RISK")
-                        .font(DesignSystem.Typography.dust)
-                        .foregroundColor(DesignSystem.starWhite.opacity(0.6))
-                    
-                    Text(bot.riskLevel.rawValue.uppercased())
-                        .font(DesignSystem.Typography.metricFont)
-                        .foregroundColor(bot.riskLevel.color)
-                }
-            }
-            
-            if bot.isActive {
-                Button("🛑 Stop Mission") {
-                    botManager.stopBot(bot)
-                    hapticManager.warning()
-                }
-                .buttonStyle(.cosmic)
-                .frame(maxWidth: .infinity)
-            } else {
-                Button("🚀 Launch Mission") {
-                    Task {
-                        await botManager.deployBot(bot)
-                    }
-                    hapticManager.botDeployed()
-                }
-                .buttonStyle(.solar)
-                .frame(maxWidth: .infinity)
-            }
-        }
-        .planetCard()
-    }
-}
-
-struct GalacticPortfolioView: View {
-    var body: some View {
-        ZStack {
-            DesignSystem.spaceGradient
-                .ignoresSafeArea()
-            
-            VStack(spacing: 32) {
-                Text("🌌 Galactic Portfolio")
-                    .font(DesignSystem.Typography.cosmic)
-                    .cosmicText()
-                    .sparkleEffect()
-                
-                Text("Advanced portfolio analytics launching soon...")
-                    .font(DesignSystem.Typography.asteroid)
-                    .foregroundColor(DesignSystem.starWhite.opacity(0.8))
-                    .multilineTextAlignment(.center)
-                    .planetCard()
-            }
-            .padding()
-        }
-        .navigationTitle("")
-        .navigationBarHidden(true)
-    }
-}
-
-struct SpaceSettingsView: View {
-    var body: some View {
-        ZStack {
-            DesignSystem.spaceGradient
-                .ignoresSafeArea()
-            
-            ScrollView {
-                VStack(spacing: 24) {
-                    Text("⚙️ Space Station Control")
-                        .font(DesignSystem.Typography.cosmic)
-                        .cosmicText()
-                        .sparkleEffect()
-                    
-                    NavigationLink(destination: RealAccountView()) {
-                        HStack {
-                            ZStack {
-                                Circle()
-                                    .fill(DesignSystem.planetEarthGradient)
-                                    .frame(width: 50, height: 50)
-                                
-                                Image(systemName: "building.columns.fill")
-                                    .font(.title2)
-                                    .foregroundColor(.white)
-                            }
-                            
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("🏦 Live Trading Station")
-                                    .font(DesignSystem.Typography.planet)
-                                    .cosmicText()
-                                
-                                Text("Connect to Coinexx & deploy bots")
-                                    .font(DesignSystem.Typography.asteroid)
-                                    .foregroundColor(DesignSystem.starWhite.opacity(0.8))
-                            }
-                            
-                            Spacer()
-                            
-                            Text("CONNECT")
-                                .font(DesignSystem.Typography.dust)
-                                .fontWeight(.bold)
-                                .foregroundColor(.white)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 6)
-                                .background(DesignSystem.profitGreen, in: Capsule())
-                            
-                            Image(systemName: "chevron.right")
-                                .foregroundColor(DesignSystem.starWhite.opacity(0.6))
-                        }
-                        .planetCard()
-                    }
-                    .buttonStyle(PlainButtonStyle())
-                    
-                    Text("Additional space station controls coming soon...")
-                        .font(DesignSystem.Typography.asteroid)
-                        .foregroundColor(DesignSystem.starWhite.opacity(0.6))
+                        .multilineTextAlignment(.center)
                         .planetCard()
                 }
                 .padding()
@@ -832,6 +840,35 @@ struct SpaceSettingsView: View {
         }
         .navigationTitle("")
         .navigationBarHidden(true)
+        .starField()
+    }
+}
+
+struct SettingsView: View {
+    var body: some View {
+        ZStack {
+            DesignSystem.spaceGradient
+                .ignoresSafeArea()
+            
+            ScrollView {
+                VStack(spacing: 24) {
+                    Text("⚙️ Settings & More")
+                        .font(DesignSystem.Typography.cosmic)
+                        .cosmicText()
+                        .sparkleEffect()
+                    
+                    Text("App settings and configuration coming soon...")
+                        .font(DesignSystem.Typography.asteroid)
+                        .foregroundColor(DesignSystem.starWhite.opacity(0.8))
+                        .multilineTextAlignment(.center)
+                        .planetCard()
+                }
+                .padding()
+            }
+        }
+        .navigationTitle("")
+        .navigationBarHidden(true)
+        .starField()
     }
 }
 

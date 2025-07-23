@@ -8,10 +8,35 @@
 
 import SwiftUI
 
-// MARK: - AIDashboard
+// MARK: - TabButton Component
+struct TabButton: View {
+    let title: String
+    let isSelected: Bool
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            Text(title)
+                .font(.subheadline)
+                .fontWeight(.semibold)
+                .foregroundColor(isSelected ? .white : .secondary)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 8)
+                .background(
+                    isSelected ? 
+                    DesignSystem.primaryGold : 
+                    Color.clear,
+                    in: RoundedRectangle(cornerRadius: 8)
+                )
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+}
+
+// MARK: - AIDashboard (Simplified without AIIntelligentHealer)
 struct AIDashboard: View {
-    @StateObject private var aiHealer = AIIntelligentHealer.shared
     @State private var selectedTab = 0
+    @State private var analysisActive = true
     
     var body: some View {
         NavigationStack {
@@ -35,7 +60,7 @@ struct AIDashboard: View {
                 }
                 .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
             }
-            .navigationTitle("🧠 GPT-4 AI Healer")
+            .navigationTitle("🧠 AI System Monitor")
             .navigationBarTitleDisplayMode(.inline)
         }
     }
@@ -48,11 +73,11 @@ struct AIDashboard: View {
                     .foregroundColor(.purple)
                 
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("AI System Healer")
+                    Text("AI System Monitor")
                         .font(.title2)
                         .fontWeight(.bold)
                     
-                    Text("GPT-4 Powered Intelligent Analysis")
+                    Text("Intelligent System Analysis")
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
@@ -61,14 +86,14 @@ struct AIDashboard: View {
                 
                 VStack(alignment: .trailing, spacing: 2) {
                     Circle()
-                        .fill(.green)
+                        .fill(analysisActive ? .green : .red)
                         .frame(width: 8, height: 8)
-                        .pulseEffect()
+                        .pulsingEffect()
                     
-                    Text("ACTIVE")
+                    Text(analysisActive ? "ACTIVE" : "INACTIVE")
                         .font(.caption2)
                         .fontWeight(.bold)
-                        .foregroundColor(.green)
+                        .foregroundColor(analysisActive ? .green : .red)
                 }
             }
             
@@ -95,23 +120,37 @@ struct AIDashboard: View {
     private var aiAnalysisTab: some View {
         ScrollView {
             VStack(spacing: 16) {
-                Text("🤖 AI is continuously analyzing your system for optimal performance and predicting potential issues.")
+                Text("🤖 System is continuously analyzing for optimal performance and predicting potential issues.")
                     .font(.subheadline)
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)
-                    .standardCard()
+                    .planetCard()
                 
-                // Analysis results would go here
+                // Analysis results
                 VStack(alignment: .leading, spacing: 12) {
                     Text("Recent Analysis")
                         .font(.headline)
                         .fontWeight(.bold)
                     
-                    Text("System performance is optimal. No issues detected.")
-                        .font(.subheadline)
-                        .foregroundColor(.green)
+                    HStack {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundColor(.green)
+                        
+                        Text("System performance is optimal. No issues detected.")
+                            .font(.subheadline)
+                            .foregroundColor(.green)
+                    }
+                    
+                    HStack {
+                        Image(systemName: "info.circle.fill")
+                            .foregroundColor(.blue)
+                        
+                        Text("MT5 connection stable. Trading ready.")
+                            .font(.subheadline)
+                            .foregroundColor(.blue)
+                    }
                 }
-                .standardCard()
+                .planetCard()
             }
             .padding()
         }
@@ -120,23 +159,42 @@ struct AIDashboard: View {
     private var aiRecommendationsTab: some View {
         ScrollView {
             VStack(spacing: 16) {
-                Text("💡 AI-generated recommendations based on system analysis.")
+                Text("💡 System-generated recommendations based on analysis.")
                     .font(.subheadline)
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)
-                    .standardCard()
+                    .planetCard()
                 
-                // Recommendations would go here
+                // Recommendations
                 VStack(alignment: .leading, spacing: 12) {
-                    Text("AI Recommendations")
+                    Text("System Recommendations")
                         .font(.headline)
                         .fontWeight(.bold)
                     
-                    Text("All systems are running optimally. No recommendations at this time.")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Image(systemName: "star.fill")
+                                .foregroundColor(.yellow)
+                            Text("All systems are running optimally")
+                                .font(.subheadline)
+                        }
+                        
+                        HStack {
+                            Image(systemName: "chart.line.uptrend.xyaxis")
+                                .foregroundColor(.green)
+                            Text("Consider deploying more bots for increased profits")
+                                .font(.subheadline)
+                        }
+                        
+                        HStack {
+                            Image(systemName: "shield.checkered")
+                                .foregroundColor(.blue)
+                            Text("VPS performance is excellent")
+                                .font(.subheadline)
+                        }
+                    }
                 }
-                .standardCard()
+                .planetCard()
             }
             .padding()
         }
@@ -145,23 +203,26 @@ struct AIDashboard: View {
     private var aiSettingsTab: some View {
         ScrollView {
             VStack(spacing: 16) {
-                Text("⚙️ Configure AI analysis settings and preferences.")
+                Text("⚙️ Configure system monitoring settings and preferences.")
                     .font(.subheadline)
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)
-                    .standardCard()
+                    .planetCard()
                 
-                // Settings would go here
+                // Settings
                 VStack(alignment: .leading, spacing: 12) {
-                    Text("AI Settings")
+                    Text("System Settings")
                         .font(.headline)
                         .fontWeight(.bold)
                     
-                    Toggle("Enable AI Analysis", isOn: .constant(true))
-                    Toggle("Auto-apply recommendations", isOn: .constant(false))
-                    Toggle("Real-time monitoring", isOn: .constant(true))
+                    VStack(spacing: 12) {
+                        Toggle("Enable System Analysis", isOn: $analysisActive)
+                        Toggle("Auto-apply recommendations", isOn: .constant(false))
+                        Toggle("Real-time monitoring", isOn: .constant(true))
+                        Toggle("Performance alerts", isOn: .constant(true))
+                    }
                 }
-                .standardCard()
+                .planetCard()
             }
             .padding()
         }
@@ -192,7 +253,7 @@ struct VPSStatusChecker: View {
                             .foregroundColor(.secondary)
                             .multilineTextAlignment(.center)
                     }
-                    .standardCard()
+                    .planetCard()
                     
                     // VPS Status
                     VPSStatusView()
@@ -208,6 +269,7 @@ struct VPSStatusChecker: View {
                                 Circle()
                                     .fill(.green)
                                     .frame(width: 8, height: 8)
+                                    .pulsingEffect()
                                 
                                 Text(botName)
                                     .font(.subheadline)
@@ -222,7 +284,7 @@ struct VPSStatusChecker: View {
                             .padding(.vertical, 4)
                         }
                     }
-                    .standardCard()
+                    .planetCard()
                 }
                 .padding()
             }

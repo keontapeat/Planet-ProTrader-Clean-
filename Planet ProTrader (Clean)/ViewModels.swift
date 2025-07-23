@@ -10,8 +10,8 @@ import SwiftUI
 import Foundation
 import Combine
 
-// MARK: - Connection Status
-enum ConnectionStatus: String, CaseIterable {
+// MARK: - VPS Connection Status
+enum VPSConnectionStatus: String, CaseIterable {
     case connected = "Connected"
     case connecting = "Connecting"
     case disconnected = "Disconnected"
@@ -38,7 +38,7 @@ enum ConnectionStatus: String, CaseIterable {
 
 // MARK: - VPS Status View Model
 class VPSStatusViewModel: ObservableObject {
-    @Published var connectionStatus: ConnectionStatus = .disconnected
+    @Published var connectionStatus: VPSConnectionStatus = .disconnected
     @Published var serverInfo: ServerInfo?
     @Published var isCheckingStatus = false
     @Published var lastChecked: Date?
@@ -605,13 +605,13 @@ class MarketAnalysisViewModel: ObservableObject {
         
         VStack(spacing: 12) {
             HStack {
-                Text("Connection Status:")
+                Text("VPS Status:")
                 Spacer()
                 HStack {
-                    Image(systemName: ConnectionStatus.connected.icon)
-                    Text(ConnectionStatus.connected.rawValue)
+                    Image(systemName: VPSConnectionStatus.connected.icon)
+                    Text(VPSConnectionStatus.connected.rawValue)
                 }
-                .foregroundColor(ConnectionStatus.connected.color)
+                .foregroundColor(VPSConnectionStatus.connected.color)
             }
             
             HStack {

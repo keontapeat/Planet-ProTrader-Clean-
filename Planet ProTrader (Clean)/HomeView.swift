@@ -1,544 +1,422 @@
 //
 //  HomeView.swift
-//  Planet ProTrader - Enhanced Home Experience
+//  Planet ProTrader - Solar System Edition
 //
-//  Your original HomeView with all features restored
+//  Home View with Solar System Dashboard
 //  Created by AI Assistant on 1/25/25.
 //
 
 import SwiftUI
 
+// MARK: - Home View (Solar system with bot integration)
 struct HomeView: View {
-    @StateObject private var tradingManager = TradingManager.shared
-    @StateObject private var aiEngine = AIEngine.shared
-    @StateObject private var botManager = BotManager.shared
-    @State private var refreshTimer = Timer.publish(every: 1.0, on: .main, in: .common).autoconnect()
+    @EnvironmentObject var realTimeBalanceManager: RealTimeBalanceManager
+    @EnvironmentObject var tradingManager: TradingManager
+    @EnvironmentObject var botManager: BotManager
+    @EnvironmentObject var accountManager: AccountManager
+    @EnvironmentObject var vpsConnection: VPSConnectionManager
+    @State private var isAnimating = true
+    @State private var showingVPSSetup = false
     
     var body: some View {
-        NavigationView {
+        ZStack {
+            // Space Background (Dark Theme)
+            DesignSystem.spaceGradient
+                .ignoresSafeArea()
+            
             ScrollView {
-                VStack(spacing: 20) {
-                    // Welcome Header
-                    welcomeHeader
+                LazyVStack(spacing: 32) {
+                    // Real-Time Balance Header (Enhanced with VPS status)
+                    enhancedBalanceHeader
                     
-                    // Netflix-Style Bot Reel
-                    botReelSection
+                    // Solar System Dashboard
+                    solarSystemView
                     
-                    // Quick Stats Cards
-                    quickStatsGrid
+                    // Live Trading Stats
+                    liveTradingStats
                     
-                    // Real-Time Gold Price
-                    goldPriceCard
+                    // Active Bots with Real Performance
+                    activeBotsList
                     
-                    // AI Trading Status
-                    aiTradingStatusCard
-                    
-                    // Recent Performance
-                    recentPerformanceCard
-                    
-                    // Quick Actions
-                    quickActionsGrid
-                    
-                    Spacer(minLength: 100)
+                    // Recent Activity
+                    recentActivityView
                 }
                 .padding()
             }
-            .navigationTitle("Planet ProTrader")
-            .navigationBarTitleDisplayMode(.large)
-            .refreshable {
-                await refreshData()
-            }
-            .onReceive(refreshTimer) { _ in
-                Task {
-                    await refreshData()
-                }
-            }
+        }
+        .starField()
+        .navigationTitle("")
+        .navigationBarHidden(true)
+        .preferredColorScheme(.dark)
+        .onAppear {
+            isAnimating = true
+        }
+        .sheet(isPresented: $showingVPSSetup) {
+            VPSSetupOptionsView()
         }
     }
     
-    private var welcomeHeader: some View {
-        UltraPremiumCard {
-            VStack(alignment: .leading, spacing: 12) {
+    // MARK: - Enhanced Balance Header with VPS Status
+    private var enhancedBalanceHeader: some View {
+        VStack(spacing: 20) {
+            HStack {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Mission Control")
+                        .font(DesignSystem.Typography.asteroid)
+                        .foregroundColor(DesignSystem.starWhite.opacity(0.7))
+                    
+                    Text("Planet ProTrader")
+                        .font(DesignSystem.Typography.cosmic)
+                        .cosmicText()
+                        .sparkleEffect()
+                }
+                
+                Spacer()
+                
+                // Live Status Indicator
+                VStack(alignment: .trailing, spacing: 4) {
+                    HStack(spacing: 8) {
+                        Circle()
+                            .fill(vpsConnection.isConnected && vpsConnection.mt5Status.isConnected ? .green : .red)
+                            .frame(width: 12, height: 12)
+                            .pulsingEffect()
+                        
+                        Text(vpsConnection.isConnected && vpsConnection.mt5Status.isConnected ? "🟢 LIVE" : "🔴 OFFLINE")
+                            .font(DesignSystem.Typography.dust)
+                            .fontWeight(.bold)
+                            .foregroundColor(vpsConnection.isConnected && vpsConnection.mt5Status.isConnected ? .green : .red)
+                    }
+                    
+                    Text("Coinexx Demo #845638")
+                        .font(DesignSystem.Typography.dust)
+                        .foregroundColor(DesignSystem.starWhite.opacity(0.6))
+                }
+            }
+            
+            // Enhanced Balance Display
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Live Balance")
+                        .font(DesignSystem.Typography.dust)
+                        .foregroundColor(DesignSystem.starWhite.opacity(0.6))
+                    
+                    if vpsConnection.mt5Status.isConnected {
+                        Text("$\(vpsConnection.mt5Status.balance.formatted(.number.precision(.fractionLength(2))))")
+                            .font(DesignSystem.Typography.metricFont)
+                            .fontWeight(.bold)
+                            .cosmicText()
+                            .sparkleEffect()
+                    } else {
+                        Text(realTimeBalanceManager.formattedBalance)
+                            .font(DesignSystem.Typography.metricFont)
+                            .fontWeight(.bold)
+                            .cosmicText()
+                            .sparkleEffect()
+                    }
+                }
+                
+                Spacer()
+                
+                VStack(alignment: .trailing, spacing: 4) {
+                    Text("Today's Change")
+                        .font(DesignSystem.Typography.dust)
+                        .foregroundColor(DesignSystem.starWhite.opacity(0.6))
+                    
+                    Text(realTimeBalanceManager.formattedTodaysChange)
+                        .font(DesignSystem.Typography.asteroid)
+                        .profitLossText(realTimeBalanceManager.todaysChange >= 0)
+                }
+            }
+            
+            // Last update time
+            if realTimeBalanceManager.todaysChange != 0 {
+                HStack {
+                    Spacer()
+                    Text("Last update: \(realTimeBalanceManager.lastUpdate, format: .dateTime.hour().minute().second())")
+                        .font(DesignSystem.Typography.dust)
+                        .foregroundColor(DesignSystem.starWhite.opacity(0.6))
+                }
+            }
+        }
+        .planetCard()
+    }
+    
+    private var solarSystemView: some View {
+        VStack(spacing: 24) {
+            Text("Trading Solar System")
+                .font(DesignSystem.Typography.stellar)
+                .solarText()
+            
+            ZStack {
+                // Orbital Rings
+                ForEach(0..<4) { orbit in
+                    Circle()
+                        .stroke(
+                            DesignSystem.cosmicBlue.opacity(0.2),
+                            style: StrokeStyle(lineWidth: 1, dash: [5, 5])
+                        )
+                        .frame(width: CGFloat(120 + orbit * 60))
+                        .rotationEffect(.degrees(isAnimating ? Double(orbit * 90) : 0))
+                        .animation(
+                            DesignSystem.Animation.orbit.speed(Double(orbit + 1) * 0.5),
+                            value: isAnimating
+                        )
+                }
+                
+                // Central Sun (Account Balance)
+                VStack(spacing: 4) {
+                    if let account = accountManager.currentAccount {
+                        Text(account.formattedBalance)
+                            .font(DesignSystem.Typography.metricFont)
+                            .foregroundColor(.white)
+                            .fontWeight(.bold)
+                    }
+                    
+                    Text("BALANCE")
+                        .font(DesignSystem.Typography.dust)
+                        .foregroundColor(DesignSystem.starWhite.opacity(0.7))
+                }
+                .frame(width: 100, height: 100)
+                .background(DesignSystem.solarGradient, in: Circle())
+                .pulsingEffect(isAnimating)
+                .shadow(color: DesignSystem.solarOrange.opacity(0.5), radius: 16)
+                
+                // Trading Planets
+                ForEach(Array(accountManager.tradingPlanets.enumerated()), id: \.element.id) { index, planet in
+                    let angle = Double(index) * 360.0 / Double(accountManager.tradingPlanets.count)
+                    let radius: CGFloat = 140 + CGFloat(index % 3) * 30
+                    
+                    PlanetView(planet: planet, isSelected: false)
+                        .offset(
+                            x: cos(angle * .pi / 180 + (isAnimating ? .pi * 2 : 0)) * radius,
+                            y: sin(angle * .pi / 180 + (isAnimating ? .pi * 2 : 0)) * radius
+                        )
+                        .animation(
+                            DesignSystem.Animation.orbit.delay(Double(index) * 0.1),
+                            value: isAnimating
+                        )
+                }
+            }
+            .frame(height: 400)
+        }
+        .planetCard()
+    }
+    
+    private var liveTradingStats: some View {
+        VStack(spacing: 20) {
+            HStack {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Live Trading Stats")
+                        .font(DesignSystem.Typography.asteroid)
+                        .foregroundColor(DesignSystem.starWhite.opacity(0.7))
+                    
+                    Text("Monitor your trading performance")
+                        .font(DesignSystem.Typography.cosmic)
+                        .cosmicText()
+                }
+                
+                Spacer()
+            }
+            
+            // Trading Stats
+            HStack {
+                VStack(spacing: 4) {
+                    Text("Total P&L")
+                        .font(DesignSystem.Typography.dust)
+                        .foregroundColor(DesignSystem.starWhite.opacity(0.6))
+                    
+                    Text("23.45%")
+                        .font(DesignSystem.Typography.metricFont)
+                        .profitLossText(true)
+                    
+                }
+                
+                Spacer()
+                
+                VStack(spacing: 4) {
+                    Text("Total Trades")
+                        .font(DesignSystem.Typography.dust)
+                        .foregroundColor(DesignSystem.starWhite.opacity(0.6))
+                    
+                    Text("127")
+                        .font(DesignSystem.Typography.metricFont)
+                }
+                
+                Spacer()
+                
+                VStack(spacing: 4) {
+                    Text("Win Rate")
+                        .font(DesignSystem.Typography.dust)
+                        .foregroundColor(DesignSystem.starWhite.opacity(0.6))
+                    
+                    Text("73.12%")
+                        .font(DesignSystem.Typography.metricFont)
+                        .profitLossText(true)
+                }
+            }
+        }
+        .planetCard()
+    }
+    
+    private var activeBotsList: some View {
+        VStack(spacing: 14) {
+            Text("Active Trading Bots")
+                .font(DesignSystem.Typography.asteroid)
+                .cosmicText()
+            
+            ForEach(botManager.activeBots, id: \.id) { bot in
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("Welcome back!")
-                            .font(.headline)
-                            .foregroundColor(.secondary)
-                        
-                        Text("Elite Trader")
-                            .font(.title2)
-                            .fontWeight(.bold)
-                            .foregroundColor(.primary)
-                    }
-                    
-                    Spacer()
-                    
-                    ZStack {
-                        Circle()
-                            .fill(DesignSystem.goldGradient)
-                            .frame(width: 60, height: 60)
-                        
-                        Image(systemName: "crown.fill")
-                            .font(.title2)
-                            .foregroundColor(.white)
-                    }
-                }
-                
-                HStack {
-                    Text("AI Status:")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                    
-                    HStack(spacing: 6) {
-                        Circle()
-                            .fill(aiEngine.isActive ? .green : .red)
-                            .frame(width: 8, height: 8)
-                        
-                        Text(aiEngine.isActive ? "ACTIVE" : "INACTIVE")
-                            .font(.caption)
-                            .fontWeight(.bold)
-                            .foregroundColor(aiEngine.isActive ? .green : .red)
-                    }
-                }
-            }
-        }
-    }
-    
-    private var botReelSection: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack {
-                Text("🤖 Your Bot Army")
-                    .font(.title2)
-                    .fontWeight(.bold)
-                    .goldText()
-                
-                Spacer()
-                
-                Text("\(botManager.allBots.count) Total Bots")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            }
-            
-            // Netflix-style horizontal scrolling reel
-            ScrollView(.horizontal, showsIndicators: false) {
-                LazyHStack(spacing: 16) {
-                    ForEach(botManager.allBots, id: \.id) { bot in
-                        NetflixBotCard(bot: bot) {
-                            // Deploy or view bot details
-                            Task {
-                                if bot.isActive {
-                                    botManager.stopBot(bot)
-                                } else {
-                                    await botManager.deployBot(bot)
-                                }
-                            }
-                        }
-                    }
-                    
-                    // Add new bot card
-                    AddNewBotCard {
-                        // Navigate to bot store or creation
-                    }
-                }
-                .padding(.horizontal)
-            }
-        }
-    }
-    
-    private var quickStatsGrid: some View {
-        LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 16) {
-            QuickStatCard(
-                title: "Today's P&L",
-                value: "$+\(tradingManager.todaysPnL.formatted(.number.precision(.fractionLength(2))))",
-                change: "\(tradingManager.todaysChangePercent > 0 ? "+" : "")\(tradingManager.todaysChangePercent.formatted(.number.precision(.fractionLength(1))))%",
-                color: tradingManager.todaysPnL >= 0 ? .green : .red,
-                icon: "chart.line.uptrend.xyaxis"
-            )
-            
-            QuickStatCard(
-                title: "Win Rate",
-                value: "\(tradingManager.winRate.formatted(.number.precision(.fractionLength(1))))%",
-                change: "Last 7 days",
-                color: tradingManager.winRate >= 70 ? .green : tradingManager.winRate >= 50 ? .orange : .red,
-                icon: "target"
-            )
-            
-            QuickStatCard(
-                title: "Active Trades",
-                value: "\(tradingManager.activeTrades.count)",
-                change: "\(tradingManager.pendingOrders.count) pending",
-                color: .blue,
-                icon: "chart.bar.doc.horizontal"
-            )
-            
-            QuickStatCard(
-                title: "AI Signals",
-                value: "\(aiEngine.todaysSignals)",
-                change: "\(aiEngine.accuracy.formatted(.number.precision(.fractionLength(1))))% accuracy",
-                color: .purple,
-                icon: "brain.head.profile"
-            )
-        }
-    }
-    
-    private var goldPriceCard: some View {
-        UltraPremiumCard {
-            VStack(alignment: .leading, spacing: 16) {
-                HStack {
-                    Text("XAU/USD")
-                        .font(.title2)
-                        .fontWeight(.bold)
-                        .foregroundColor(.primary)
-                    
-                    Spacer()
-                    
-                    HStack(spacing: 4) {
-                        Circle()
-                            .fill(.green)
-                            .frame(width: 8, height: 8)
-                        
-                        Text("LIVE")
-                            .font(.caption)
-                            .fontWeight(.bold)
-                            .foregroundColor(.green)
-                    }
-                }
-                
-                HStack(alignment: .bottom) {
-                    Text("$\(tradingManager.currentGoldPrice.formatted(.number.precision(.fractionLength(2))))")
-                        .font(.system(size: 28, weight: .bold, design: .monospaced))
-                        .foregroundColor(.primary)
-                    
-                    Spacer()
-                    
-                    VStack(alignment: .trailing, spacing: 4) {
-                        HStack {
-                            Image(systemName: tradingManager.goldPriceChange >= 0 ? "arrow.up.right" : "arrow.down.right")
-                                .font(.caption)
-                                .foregroundColor(tradingManager.goldPriceChange >= 0 ? .green : .red)
-                            
-                            Text("\(tradingManager.goldPriceChange >= 0 ? "+" : "")\(tradingManager.goldPriceChange.formatted(.number.precision(.fractionLength(2))))")
-                                .font(.subheadline)
-                                .fontWeight(.semibold)
-                                .foregroundColor(tradingManager.goldPriceChange >= 0 ? .green : .red)
-                        }
-                        
-                        Text("\(tradingManager.goldPriceChangePercent >= 0 ? "+" : "")\(tradingManager.goldPriceChangePercent.formatted(.number.precision(.fractionLength(2))))%")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
-                }
-                
-                // Mini chart placeholder
-                Rectangle()
-                    .fill(DesignSystem.primaryGold.opacity(0.1))
-                    .frame(height: 60)
-                    .cornerRadius(8)
-                    .overlay(
-                        Text("📈 Real-time chart coming soon")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    )
-            }
-        }
-    }
-    
-    private var aiTradingStatusCard: some View {
-        UltraPremiumCard {
-            VStack(alignment: .leading, spacing: 16) {
-                HStack {
-                    Image(systemName: "brain.head.profile.fill")
-                        .font(.title2)
-                        .foregroundColor(DesignSystem.primaryGold)
-                    
-                    Text("AI Trading Engine")
-                        .font(.headline)
-                        .fontWeight(.bold)
-                        .foregroundColor(.primary)
-                    
-                    Spacer()
-                    
-                    Toggle("", isOn: .constant(aiEngine.isActive))
-                        .labelsHidden()
-                        .scaleEffect(0.8)
-                }
-                
-                VStack(spacing: 8) {
-                    HStack {
-                        Text("Status:")
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-                        
-                        Spacer()
-                        
-                        Text(aiEngine.currentStatus)
-                            .font(.subheadline)
-                            .fontWeight(.medium)
-                            .foregroundColor(aiEngine.isActive ? .green : .orange)
-                    }
-                    
-                    HStack {
-                        Text("Market Sentiment:")
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-                        
-                        Spacer()
-                        
-                        HStack {
-                            Circle()
-                                .fill(aiEngine.marketSentiment == "Bullish" ? .green : 
-                                     aiEngine.marketSentiment == "Bearish" ? .red : .orange)
-                                .frame(width: 8, height: 8)
-                            
-                            Text(aiEngine.marketSentiment)
-                                .font(.subheadline)
-                                .fontWeight(.medium)
-                                .foregroundColor(.primary)
-                        }
-                    }
-                    
-                    HStack {
-                        Text("Confidence:")
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-                        
-                        Spacer()
-                        
-                        Text("\(aiEngine.confidence.formatted(.number.precision(.fractionLength(0))))%")
-                            .font(.subheadline)
-                            .fontWeight(.medium)
-                            .foregroundColor(.primary)
-                    }
-                }
-            }
-        }
-    }
-    
-    private var recentPerformanceCard: some View {
-        UltraPremiumCard {
-            VStack(alignment: .leading, spacing: 16) {
-                Text("Recent Performance")
-                    .font(.headline)
-                    .fontWeight(.bold)
-                    .foregroundColor(.primary)
-                
-                VStack(spacing: 12) {
-                    PerformanceRow(
-                        period: "Today",
-                        value: "$\(tradingManager.todaysPnL.formatted(.number.precision(.fractionLength(2))))",
-                        percentage: "\(tradingManager.todaysChangePercent.formatted(.number.precision(.fractionLength(1))))%",
-                        isPositive: tradingManager.todaysPnL >= 0
-                    )
-                    
-                    PerformanceRow(
-                        period: "This Week",
-                        value: "$\(tradingManager.weeklyPnL.formatted(.number.precision(.fractionLength(2))))",
-                        percentage: "\(tradingManager.weeklyChangePercent.formatted(.number.precision(.fractionLength(1))))%",
-                        isPositive: tradingManager.weeklyPnL >= 0
-                    )
-                    
-                    PerformanceRow(
-                        period: "This Month",
-                        value: "$\(tradingManager.monthlyPnL.formatted(.number.precision(.fractionLength(2))))",
-                        percentage: "\(tradingManager.monthlyChangePercent.formatted(.number.precision(.fractionLength(1))))%",
-                        isPositive: tradingManager.monthlyPnL >= 0
-                    )
-                }
-            }
-        }
-    }
-    
-    private var quickActionsGrid: some View {
-        LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 16) {
-            QuickActionButton(
-                title: "New Trade",
-                icon: "plus.circle.fill",
-                color: .green
-            ) {
-                // Navigate to new trade
-            }
-            
-            QuickActionButton(
-                title: "Portfolio",
-                icon: "chart.pie.fill",
-                color: .blue
-            ) {
-                // Navigate to portfolio
-            }
-            
-            QuickActionButton(
-                title: "Signals",
-                icon: "bell.fill",
-                color: .orange
-            ) {
-                // Navigate to signals
-            }
-            
-            QuickActionButton(
-                title: "Settings",
-                icon: "gear.circle.fill",
-                color: .gray
-            ) {
-                // Navigate to settings
-            }
-        }
-    }
-    
-    private func refreshData() async {
-        await tradingManager.refreshData()
-        await aiEngine.updateStatus()
-    }
-}
-
-struct QuickStatCard: View {
-    let title: String
-    let value: String
-    let change: String
-    let color: Color
-    let icon: String
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Image(systemName: icon)
-                    .font(.title3)
-                    .foregroundColor(color)
-                
-                Spacer()
-            }
-            
-            VStack(alignment: .leading, spacing: 2) {
-                Text(value)
-                    .font(.title3)
-                    .fontWeight(.bold)
-                    .foregroundColor(.primary)
-                
-                Text(title)
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                
-                Text(change)
-                    .font(.caption2)
-                    .foregroundColor(color)
-            }
-        }
-        .padding()
-        .background(.ultraThinMaterial)
-        .cornerRadius(12)
-        .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
-    }
-}
-
-struct QuickActionButton: View {
-    let title: String
-    let icon: String
-    let color: Color
-    let action: () -> Void
-    
-    var body: some View {
-        Button(action: action) {
-            VStack(spacing: 8) {
-                Image(systemName: icon)
-                    .font(.title2)
-                    .foregroundColor(color)
-                
-                Text(title)
-                    .font(.subheadline)
-                    .fontWeight(.medium)
-                    .foregroundColor(.primary)
-            }
-            .frame(maxWidth: .infinity)
-            .padding()
-            .background(.ultraThinMaterial)
-            .cornerRadius(12)
-            .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
-        }
-        .buttonStyle(PlainButtonStyle())
-    }
-}
-
-// MARK: - Netflix-Style Bot Card
-struct NetflixBotCard: View {
-    let bot: TradingBot
-    let onTap: () -> Void
-    
-    var body: some View {
-        Button(action: onTap) {
-            VStack(spacing: 12) {
-                // Bot Avatar with Status
-                ZStack {
-                    RoundedRectangle(cornerRadius: 16)
-                        .fill(DesignSystem.goldGradient)
-                        .frame(width: 140, height: 180)
-                    
-                    VStack(spacing: 8) {
-                        Image(systemName: bot.icon)
-                            .font(.system(size: 36))
-                            .foregroundColor(.white)
-                        
                         Text(bot.name)
-                            .font(.caption)
-                            .fontWeight(.bold)
+                            .font(DesignSystem.Typography.metricFont)
                             .foregroundColor(.white)
-                            .multilineTextAlignment(.center)
-                            .lineLimit(2)
-                        
-                        // Performance badge
-                        VStack(spacing: 2) {
-                            Text(bot.displayWinRate)
-                                .font(.caption2)
-                                .fontWeight(.bold)
-                                .foregroundColor(.white)
-                            
-                            Text("Win Rate")
-                                .font(.caption2)
-                                .foregroundColor(.white.opacity(0.8))
-                        }
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(.black.opacity(0.3), in: RoundedRectangle(cornerRadius: 8))
+                            .fontWeight(.bold)
+                        Text(bot.description)
+                            .font(DesignSystem.Typography.dust)
+                            .foregroundColor(DesignSystem.starWhite.opacity(0.6))
+                            .lineLimit(1)
                     }
                     
-                    // Status indicator
-                    VStack {
-                        HStack {
-                            Spacer()
-                            Circle()
-                                .fill(bot.status.color)
-                                .frame(width: 12, height: 12)
-                                .pulseEffect(bot.status == .active)
-                        }
+                    Spacer()
+                    
+                    Circle()
+                        .fill(bot.status.color)
+                        .frame(width: 10, height: 10)
+                    
+                    Text(bot.displayProfitability)
+                        .font(DesignSystem.Typography.asteroid)
+                        .profitLossText(bot.profitability >= 0)
+                }
+                .padding(.vertical, 6)
+                .background(Color.white.opacity(0.05))
+                .cornerRadius(8)
+            }
+        }
+        .planetCard()
+    }
+    
+    private var recentActivityView: some View {
+        VStack(spacing: 24) {
+            Text("Recent Activity")
+                .font(DesignSystem.Typography.asteroid)
+                .cosmicText()
+            
+            // Display recent activity list
+            LazyVStack(alignment: .leading, spacing: 12) {
+                ForEach(accountManager.recentActivity, id: \.id) { activity in
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(activity.dateTime, format: .dateTime.hour().minute())
+                            .font(DesignSystem.Typography.dust)
+                            .foregroundColor(DesignSystem.starWhite.opacity(0.6))
+                        
+                        Text(activity.description)
+                            .font(DesignSystem.Typography.metricFont)
+                            .foregroundColor(.white)
+                            .lineLimit(2)
                     }
                 }
             }
         }
+        .planetCard()
     }
 }
 
-// MARK: - Add New Bot Card
-struct AddNewBotCard: View {
-    let action: () -> Void
+// MARK: - Supporting Views
+
+struct PlanetView: View {
+    let planet: TradingPlanet
+    let isSelected: Bool
     
     var body: some View {
-        Button(action: action) {
-            VStack(spacing: 12) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 16)
-                        .fill(DesignSystem.primaryGold.opacity(0.2))
-                        .frame(width: 140, height: 180)
-                    
-                    Image(systemName: "plus")
-                        .font(.system(size: 36))
-                        .foregroundColor(.white)
-                    Text("Add New Bot")
-                        .font(.caption)
-                        .foregroundColor(.white)
-                }
-            }
+        ZStack {
+            Circle()
+                .fill(planet.gradient)
+                .frame(width: isSelected ? 50 : 40, height: isSelected ? 50 : 40)
+                .overlay(
+                    Circle()
+                        .stroke(DesignSystem.starWhite.opacity(isSelected ? 0.8 : 0.4), lineWidth: isSelected ? 2 : 1)
+                )
+                .shadow(color: planet.shadowColor, radius: isSelected ? 16 : 8)
+            
+            Text(planet.icon)
+                .font(.system(size: isSelected ? 20 : 16))
         }
+        .scaleEffect(isSelected ? 1.2 : 1.0)
+        .animation(DesignSystem.Animation.hyperspace, value: isSelected)
     }
+}
+
+struct TradingPlanet: Identifiable {
+    let id = UUID()
+    let name: String
+    let icon: String
+    let description: String
+    let gradient: LinearGradient
+    let shadowColor: Color
+    let performance: String
+    let riskLevel: String
+    let riskColor: Color
+    
+    static let allPlanets = [
+        TradingPlanet(
+            name: "Gold Trader",
+            icon: "🪐",
+            description: "Premium gold trading algorithms",
+            gradient: DesignSystem.solarGradient,
+            shadowColor: DesignSystem.solarOrange,
+            performance: "+24.7%",
+            riskLevel: "Medium",
+            riskColor: DesignSystem.solarOrange
+        ),
+        TradingPlanet(
+            name: "Forex Explorer",
+            icon: "🌍",
+            description: "Multi-currency trading system",
+            gradient: DesignSystem.planetEarthGradient,
+            shadowColor: DesignSystem.planetGreen,
+            performance: "+18.3%",
+            riskLevel: "Low",
+            riskColor: DesignSystem.profitGreen
+        ),
+        TradingPlanet(
+            name: "Crypto Voyager",
+            icon: "🌙",
+            description: "Advanced cryptocurrency analysis",
+            gradient: LinearGradient(colors: [DesignSystem.cosmicBlue, DesignSystem.stellarPurple], startPoint: .topLeading, endPoint: .bottomTrailing),
+            shadowColor: DesignSystem.cosmicBlue,
+            performance: "+31.2%",
+            riskLevel: "High",
+            riskColor: DesignSystem.lossRed
+        ),
+        TradingPlanet(
+            name: "Scalp Hunter",
+            icon: "☄️",
+            description: "Lightning-fast scalping strategies",
+            gradient: DesignSystem.nebuladeGradient,
+            shadowColor: DesignSystem.nebulaPink,
+            performance: "+12.8%",
+            riskLevel: "Very High",
+            riskColor: DesignSystem.lossRed
+        ),
+        TradingPlanet(
+            name: "Swing Master",
+            icon: "🛸",
+            description: "Long-term swing trading bot",
+            gradient: LinearGradient(colors: [DesignSystem.stellarPurple, DesignSystem.cosmicBlue], startPoint: .topLeading, endPoint: .bottomTrailing),
+            shadowColor: DesignSystem.stellarPurple,
+            performance: "+29.6%",
+            riskLevel: "Medium",
+            riskColor: DesignSystem.solarOrange
+        )
+    ]
 }
 
 #Preview {
     HomeView()
+        .environmentObject(TradingManager.shared)
+        .environmentObject(BotManager.shared)
+        .environmentObject(AccountManager.shared)
+        .environmentObject(HapticManager.shared)
+        .environmentObject(RealTimeBalanceManager())
+        .environmentObject(VPSConnectionManager.shared)
 }
