@@ -45,27 +45,27 @@ struct ContentView: View {
                     }
                     .tag(1)
                 
-                // Trading Terminal
-                TradingTerminal()
+                // MicroFlip Gaming Arena - NEW!
+                MicroFlipGameView()
                     .tabItem {
-                        Image(systemName: "x.square")
-                        Text("Terminal")
+                        Image(systemName: "gamecontroller.fill")
+                        Text("Gaming")
                     }
                     .tag(2)
                 
-                // Portfolio/Analytics (New tab space freed up)
-                PortfolioAnalyticsView()
+                // Bot Store - NEW!
+                BotStoreView()
                     .tabItem {
-                        Image(systemName: "chart.bar.xaxis")
-                        Text("Playbook")
+                        Image(systemName: "storefront.fill")
+                        Text("Store")
                     }
                     .tag(3)
                 
-                // Settings/More (New tab space freed up)
-                SettingsView()
+                // Trading Terminal
+                TradingTerminal()
                     .tabItem {
-                        Image(systemName: "gear")
-                        Text("Settings")
+                        Image(systemName: "chart.line.uptrend.xyaxis")
+                        Text("Terminal")
                     }
                     .tag(4)
             }
@@ -73,6 +73,13 @@ struct ContentView: View {
             .preferredColorScheme(.dark)
             .onChange(of: selectedTab) { oldValue, newValue in
                 hapticManager.selection()
+                
+                // Show special notifications for new features
+                if newValue == 2 {
+                    GlobalToastManager.shared.show("🎮 Welcome to MicroFlip Arena! Start gaming!", type: .success)
+                } else if newValue == 3 {
+                    GlobalToastManager.shared.show("🛒 Bot Store loaded! Discover powerful trading bots!", type: .info)
+                }
             }
         }
         .withGlobalToast()
@@ -89,6 +96,11 @@ struct ContentView: View {
             // Show EA Bot status immediately
             DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
                 GlobalToastManager.shared.show("🤖 EA BOT ACTIVATED - 0.50 lots per trade!", type: .success)
+            }
+            
+            // Show welcome message about new features
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
+                GlobalToastManager.shared.show("🎮 NEW: Gaming & Bot Store tabs added!", type: .info)
             }
         }
         .environmentObject(realTimeBalanceManager)
@@ -1034,64 +1046,6 @@ struct ImportantNote: View {
             
             Spacer()
         }
-    }
-}
-
-// MARK: - New Views for Freed Up Tabs
-
-struct PortfolioAnalyticsView: View {
-    var body: some View {
-        ZStack {
-            DesignSystem.spaceGradient
-                .ignoresSafeArea()
-            
-            ScrollView {
-                VStack(spacing: 24) {
-                    Text("📊 Portfolio Analytics")
-                        .font(DesignSystem.Typography.cosmic)
-                        .cosmicText()
-                        .sparkleEffect()
-                    
-                    Text("Advanced portfolio analysis coming soon...")
-                        .font(DesignSystem.Typography.asteroid)
-                        .foregroundColor(DesignSystem.starWhite.opacity(0.8))
-                        .multilineTextAlignment(.center)
-                        .planetCard()
-                }
-                .padding()
-            }
-        }
-        .navigationTitle("")
-        .navigationBarHidden(true)
-        .starField()
-    }
-}
-
-struct SettingsView: View {
-    var body: some View {
-        ZStack {
-            DesignSystem.spaceGradient
-                .ignoresSafeArea()
-            
-            ScrollView {
-                VStack(spacing: 24) {
-                    Text("⚙️ Settings & More")
-                        .font(DesignSystem.Typography.cosmic)
-                        .cosmicText()
-                        .sparkleEffect()
-                    
-                    Text("App settings and configuration coming soon...")
-                        .font(DesignSystem.Typography.asteroid)
-                        .foregroundColor(DesignSystem.starWhite.opacity(0.8))
-                        .multilineTextAlignment(.center)
-                        .planetCard()
-                }
-                .padding()
-            }
-        }
-        .navigationTitle("")
-        .navigationBarHidden(true)
-        .starField()
     }
 }
 
