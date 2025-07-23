@@ -132,16 +132,16 @@ struct ContentView: View {
     
     // MARK: - Launch Real Trading Bot
     private func launchRealTradingBot() {
-        print("🚀 LAUNCHING DIRECT MT5 TRADING BOT...")
+        print("🚀 LAUNCHING REAL TRADING BOT WITH PROGRESS BAR...")
         
-        // Start the DIRECT trading system
-        let directTrader = DirectMT5Trading.shared
-        directTrader.startDirectTrading()
+        // Start the REAL trading bot with deployment progress
+        let realTradingBot = RealTradingBot.shared
+        realTradingBot.startLiveTrading()
         
-        print("✅ Direct Trading Bot is now LIVE!")
-        print("💰 Placing 0.50 lot trades every 60 seconds")
-        print("🎯 Using 3 methods to ensure trades reach your MT5 account")
-        print("📱 Check your MT5 app - trades should appear within 60 seconds!")
+        print("✅ Real Trading Bot with progress tracking is now LIVE!")
+        print("💰 Will show deployment progress 0-100%")
+        print("📊 Placing 0.50 lot trades after deployment completes")
+        print("📱 Check your MT5 app after deployment finishes!")
     }
 }
 
@@ -196,11 +196,13 @@ struct UnifiedTradingHub: View {
     @EnvironmentObject var vpsManager: VPSManagementSystem
     @EnvironmentObject var vpsConnection: VPSConnectionManager
     @EnvironmentObject var realTimeBalanceManager: RealTimeBalanceManager
+    @StateObject private var realTradingBot = RealTradingBot.shared
     @State private var showingRealTradeAlert = false
     @State private var selectedBotForRealTrading: TradingBot?
     @State private var showingSuccess = false
     @State private var showingVPSSetup = false
     @State private var isTestingConnection = false
+    @State private var showingProgressView = false
     
     var body: some View {
         ZStack {
@@ -211,6 +213,9 @@ struct UnifiedTradingHub: View {
                 LazyVStack(spacing: 24) {
                     // Trading Hub Header
                     tradingHubHeader
+                    
+                    // DEPLOYMENT PROGRESS SECTION (NEW)
+                    deploymentProgressSection
                     
                     // VPS & System Status Card
                     vpsSystemStatusCard
@@ -248,11 +253,139 @@ struct UnifiedTradingHub: View {
         .sheet(isPresented: $showingVPSSetup) {
             VPSSetupView()
         }
+        .sheet(isPresented: $showingProgressView) {
+            RealTradingControlView()
+        }
         .onAppear {
             Task {
                 await vpsManager.checkVPSConnection()
             }
         }
+    }
+    
+    // MARK: - NEW DEPLOYMENT PROGRESS SECTION
+    private var deploymentProgressSection: some View {
+        VStack(spacing: 16) {
+            HStack {
+                Text("🚀 Real Trading Bot")
+                    .font(DesignSystem.Typography.stellar)
+                    .cosmicText()
+                
+                Spacer()
+                
+                if realTradingBot.isTrading {
+                    Text("LIVE")
+                        .font(DesignSystem.Typography.dust)
+                        .fontWeight(.bold)
+                        .foregroundColor(.green)
+                } else {
+                    Text("READY")
+                        .font(DesignSystem.Typography.dust)
+                        .fontWeight(.bold)
+                        .foregroundColor(.orange)
+                }
+            }
+            
+            // DEPLOYMENT PROGRESS BAR
+            if realTradingBot.isDeploying {
+                VStack(spacing: 12) {
+                    HStack {
+                        Text("🚀 Deployment Progress")
+                            .font(DesignSystem.Typography.planet)
+                            .cosmicText()
+                        
+                        Spacer()
+                        
+                        Text("\(Int(realTradingBot.deploymentProgress * 100))%")
+                            .font(DesignSystem.Typography.asteroid)
+                            .fontWeight(.bold)
+                            .foregroundColor(.orange)
+                    }
+                    
+                    // Animated Progress Bar
+                    ZStack(alignment: .leading) {
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(.gray.opacity(0.3))
+                            .frame(height: 12)
+                        
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(LinearGradient(
+                                colors: [.blue, .green],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            ))
+                            .frame(width: UIScreen.main.bounds.width * 0.8 * realTradingBot.deploymentProgress, height: 12)
+                            .animation(.easeInOut(duration: 0.5), value: realTradingBot.deploymentProgress)
+                    }
+                    
+                    Text(realTradingBot.deploymentStep)
+                        .font(DesignSystem.Typography.dust)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                        .frame(maxWidth: .infinity)
+                }
+            }
+            
+            // Bot Control Buttons
+            HStack(spacing: 12) {
+                if !realTradingBot.isTrading {
+                    Button {
+                        realTradingBot.startLiveTrading()
+                        hapticManager.success()
+                    } label: {
+                        HStack {
+                            Image(systemName: "play.fill")
+                            Text("START 0.50 LOT TRADING")
+                                .fontWeight(.bold)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 44)
+                        .background(.green.gradient, in: RoundedRectangle(cornerRadius: 12))
+                        .foregroundColor(.white)
+                    }
+                } else {
+                    Button {
+                        realTradingBot.stopLiveTrading()
+                        hapticManager.warning()
+                    } label: {
+                        HStack {
+                            Image(systemName: "stop.fill")
+                            Text("STOP TRADING")
+                                .fontWeight(.bold)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 44)
+                        .background(.red.gradient, in: RoundedRectangle(cornerRadius: 12))
+                        .foregroundColor(.white)
+                    }
+                }
+                
+                Button {
+                    showingProgressView = true
+                } label: {
+                    HStack {
+                        Image(systemName: "chart.bar.fill")
+                        Text("VIEW DETAILS")
+                            .fontWeight(.bold)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 44)
+                    .background(.blue.gradient, in: RoundedRectangle(cornerRadius: 12))
+                    .foregroundColor(.white)
+                }
+            }
+            
+            // Status Display
+            if !realTradingBot.lastTradeResult.isEmpty {
+                Text(realTradingBot.lastTradeResult)
+                    .font(DesignSystem.Typography.asteroid)
+                    .foregroundColor(realTradingBot.lastTradeResult.contains("✅") ? .green : .red)
+                    .multilineTextAlignment(.center)
+                    .padding()
+                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+            }
+        }
+        .planetCard()
     }
     
     private var tradingHubHeader: some View {
@@ -482,6 +615,26 @@ struct UnifiedTradingHub: View {
                     title: "VPS Integration",
                     description: "Your bots run on your VPS (172.234.201.231) and connect directly to your MT5 terminal."
                 )
+            }
+            
+            // PROGRESS BAR BUTTON
+            Button {
+                // Show the real trading bot with progress bar
+                if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                   let window = windowScene.windows.first {
+                    let hostingController = UIHostingController(rootView: RealTradingControlView())
+                    window.rootViewController?.present(hostingController, animated: true)
+                }
+            } label: {
+                HStack {
+                    Image(systemName: "chart.line.uptrend.xyaxis")
+                    Text("🚀 VIEW DEPLOYMENT PROGRESS")
+                        .fontWeight(.bold)
+                }
+                .frame(maxWidth: .infinity)
+                .frame(height: 50)
+                .background(LinearGradient(colors: [.blue, .green], startPoint: .leading, endPoint: .trailing), in: RoundedRectangle(cornerRadius: 12))
+                .foregroundColor(.white)
             }
         }
         .planetCard()
