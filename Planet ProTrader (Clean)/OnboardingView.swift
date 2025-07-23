@@ -15,7 +15,8 @@ struct OnboardingView: View {
     @State private var showContent = false
     @Binding var hasCompletedOnboarding: Bool
     
-    @StateObject private var audioPlayer = BackgroundAudioPlayer.shared
+    // Fixed: Removed @State since it's a singleton constant
+    private let audioPlayer = BackgroundAudioPlayer.shared
     
     let pages = OnboardingPage.allPages
     
@@ -205,6 +206,8 @@ struct OnboardingView: View {
     }
     
     private func startOnboarding() {
+        print("🚀 Starting onboarding experience...")
+        
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             withAnimation(.easeInOut(duration: 1.0)) {
                 showContent = true
@@ -212,17 +215,48 @@ struct OnboardingView: View {
             }
         }
         
-        // Fixed the filename - it's missing the 'i' at the beginning
-        audioPlayer.play(sound: "interstellar_theme.mp3", volume: 0.6, loop: true)
+        // Play the audio with proper error handling
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            print("🎵 Attempting to play interstellar theme...")
+            
+            // Debug: Let's see what files are actually in the bundle
+            if let bundlePath = Bundle.main.resourcePath {
+                let fileManager = FileManager.default
+                if let files = try? fileManager.contentsOfDirectory(atPath: bundlePath) {
+                    let audioFiles = files.filter { $0.contains("interstellar") || $0.contains("theme") }
+                    print("🔍 Files containing 'interstellar' or 'theme': \(audioFiles)")
+                    
+                    // Also check all audio files
+                    let allAudioFiles = files.filter { file in
+                        let ext = (file as NSString).pathExtension.lowercased()
+                        return ["mp3", "wav", "m4a", "aac", "caf"].contains(ext)
+                    }
+                    print("🎵 All audio files in bundle: \(allAudioFiles)")
+                }
+            }
+            
+            audioPlayer.play(sound: "interstellar_theme", volume: 0.6, loop: true)
+            
+            // Check if audio started playing
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                if audioPlayer.isPlaying {
+                    print("✅ Audio is playing successfully!")
+                } else {
+                    print("⚠️ Audio is not playing. Check console for details.")
+                }
+            }
+        }
     }
     
     private func completeOnboarding() {
+        print("🎯 Completing onboarding...")
+        audioPlayer.stop()
+        
         withAnimation(.easeInOut(duration: 0.5)) {
             showContent = false
         }
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            audioPlayer.stop()
             hasCompletedOnboarding = true
         }
     }

@@ -1,4 +1,5 @@
 import AVFoundation
+import AudioToolbox
 
 class BackgroundAudioPlayer: ObservableObject {
     static let shared = BackgroundAudioPlayer()
@@ -11,41 +12,107 @@ class BackgroundAudioPlayer: ObservableObject {
         // Debug: Print the file we're looking for
         print("🎵 Looking for audio file: \(sound)")
         
-        guard let url = Bundle.main.url(forResource: sound, withExtension: nil) else {
-            print("❌ Audio file \(sound) not found in bundle")
-            
-            // Let's try without extension
-            if let urlWithoutExt = Bundle.main.url(forResource: String(sound.dropLast(4)), withExtension: "mp3") {
-                print("✅ Found file without extension: \(String(sound.dropLast(4)))")
-                playAudio(from: urlWithoutExt, volume: volume, loop: loop)
-            } else {
-                print("❌ Still not found. Available audio files:")
-                if let bundlePath = Bundle.main.resourcePath {
-                    let fileManager = FileManager.default
-                    if let files = try? fileManager.contentsOfDirectory(atPath: bundlePath) {
-                        let audioFiles = files.filter { $0.hasSuffix(".mp3") || $0.hasSuffix(".wav") || $0.hasSuffix(".m4a") }
-                        print("📁 Available audio files: \(audioFiles)")
+        // Try multiple variations of the filename
+        let possibleNames = [
+            sound, // exact name as provided
+            "interstellar_theme", // without extension
+            "interstellar_theme.mp3", // with .mp3
+            "interstellar_theme.m4a", // with .m4a
+            "interstellar_theme.wav", // with .wav
+            "interstellar_theme.caf" // with .caf
+        ]
+        
+        var foundURL: URL?
+        
+        for fileName in possibleNames {
+            if let url = Bundle.main.url(forResource: fileName, withExtension: nil) {
+                foundURL = url
+                print("✅ Found audio file: \(fileName) at \(url)")
+                break
+            } else if fileName.contains(".") {
+                // If filename has extension, try splitting it
+                let components = fileName.components(separatedBy: ".")
+                if components.count == 2 {
+                    if let url = Bundle.main.url(forResource: components[0], withExtension: components[1]) {
+                        foundURL = url
+                        print("✅ Found audio file: \(components[0]).\(components[1]) at \(url)")
+                        break
                     }
                 }
             }
+        }
+        
+        guard let url = foundURL else {
+            print("❌ Audio file not found. Tried: \(possibleNames)")
+            print("📁 Listing all audio files in bundle:")
+            listAudioFiles()
             return
         }
         
-        print("✅ Found audio file at: \(url)")
         playAudio(from: url, volume: volume, loop: loop)
+    }
+    
+    private func listAudioFiles() {
+        guard let bundlePath = Bundle.main.resourcePath else {
+            print("❌ Could not get bundle path")
+            return
+        }
+        
+        let fileManager = FileManager.default
+        do {
+            let files = try fileManager.contentsOfDirectory(atPath: bundlePath)
+            let audioFiles = files.filter { file in
+                let ext = (file as NSString).pathExtension.lowercased()
+                return ["mp3", "wav", "m4a", "aac", "caf"].contains(ext)
+            }
+            print("🎵 Available audio files: \(audioFiles)")
+            
+            // Also check subdirectories
+            for file in files {
+                let fullPath = bundlePath + "/" + file
+                var isDirectory: ObjCBool = false
+                if fileManager.fileExists(atPath: fullPath, isDirectory: &isDirectory) && isDirectory.boolValue {
+                    do {
+                        let subFiles = try fileManager.contentsOfDirectory(atPath: fullPath)
+                        let subAudioFiles = subFiles.filter { subFile in
+                            let ext = (subFile as NSString).pathExtension.lowercased()
+                            return ["mp3", "wav", "m4a", "aac", "caf"].contains(ext)
+                        }
+                        if !subAudioFiles.isEmpty {
+                            print("🎵 Audio files in \(file)/: \(subAudioFiles)")
+                        }
+                    } catch {
+                        print("❌ Error reading directory \(file): \(error)")
+                    }
+                }
+            }
+        } catch {
+            print("❌ Error listing files: \(error)")
+        }
     }
     
     private func playAudio(from url: URL, volume: Float, loop: Bool) {
         do {
+            // Configure audio session for background playback
+            let audioSession = AVAudioSession.sharedInstance()
+            try audioSession.setCategory(.playback, mode: .default, options: [.mixWithOthers])
+            try audioSession.setActive(true)
+            
             player = try AVAudioPlayer(contentsOf: url)
             player?.volume = 0 // begin silent for fade-in
             player?.numberOfLoops = loop ? -1 : 0
-            player?.play()
-            print("✅ Audio started playing successfully")
-            // Fade in
-            fade(to: volume, duration: 1)
+            player?.prepareToPlay()
+            
+            let success = player?.play() ?? false
+            if success {
+                print("✅ Audio started playing successfully")
+                // Fade in
+                fade(to: volume, duration: 1)
+            } else {
+                print("❌ Failed to start audio playback")
+            }
         } catch {
-            print("❌ Error playing audio: \(error)")
+            print("❌ Error playing audio: \(error.localizedDescription)")
         }
     }
 
@@ -82,18 +149,17 @@ class BackgroundAudioPlayer: ObservableObject {
             }
         }
     }
+    
+    // Public method to check if audio is playing
+    var isPlaying: Bool {
+        return player?.isPlaying ?? false
+    }
 }
 
 // BUTTON SOUND FX PLAYER
 class ButtonSFXPlayer {
     static func play() {
-        guard let url = Bundle.main.url(forResource: "swoosh_fx.mp3", withExtension: nil) else { return }
-        var sfxPlayer: AVAudioPlayer?
-        do {
-            sfxPlayer = try AVAudioPlayer(contentsOf: url)
-            sfxPlayer?.volume = 0.95
-            sfxPlayer?.play()
-            // let go, will deallocate itself
-        } catch { }
+        // Create a simple beep sound programmatically if no sound file
+        AudioServicesPlaySystemSound(1104) // Modern pop sound
     }
 }

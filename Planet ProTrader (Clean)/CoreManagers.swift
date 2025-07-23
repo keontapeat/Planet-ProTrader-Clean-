@@ -134,7 +134,8 @@ class TradingManager: ObservableObject {
     }
     
     func updateLiveData() async {
-        DispatchQueue.main.async {
+        // Fix: Ensure all UI updates happen on main thread
+        await MainActor.run {
             // Update live gold price
             self.currentGoldPrice += Double.random(in: -2...2)
             self.goldPriceChange = Double.random(in: -20...20)

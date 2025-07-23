@@ -17,18 +17,21 @@ struct Planet_ProTrader__Clean_App: App {
     @StateObject private var hapticManager = HapticManager.shared
     @StateObject private var selfHealingSystem = SelfHealingSystem.shared
     
-    // Add onboarding state
+    // Add onboarding state - Reset this to test
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     
     var body: some Scene {
         WindowGroup {
-            ZStack {
+            Group {
                 if !hasCompletedOnboarding {
                     OnboardingView(hasCompletedOnboarding: $hasCompletedOnboarding)
                         .transition(.asymmetric(
                             insertion: .scale.combined(with: .opacity),
                             removal: .scale.combined(with: .opacity)
                         ))
+                        .onAppear {
+                            print("🚀 OnboardingView appeared!")
+                        }
                 } else {
                     ContentView()
                         .environmentObject(tradingManager)
@@ -47,6 +50,9 @@ struct Planet_ProTrader__Clean_App: App {
                 }
             }
             .animation(DesignSystem.Animation.hyperspace, value: hasCompletedOnboarding)
+            .onAppear {
+                print("🔍 App launched. Onboarding completed: \(hasCompletedOnboarding)")
+            }
         }
     }
     
