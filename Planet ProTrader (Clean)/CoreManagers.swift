@@ -267,11 +267,22 @@ class BotManager: ObservableObject {
     @Published var isLoading = false
     @Published var deploymentStatus: String = ""
     
+    @Published var aiEngine = EnhancedAIEngine()
+    @Published var advancedEngine = AdvancedAIEngine()
+    @Published var aiSignals: [AITradingSignal] = []
+    @Published var aiEngineActive = true
+    
+    @Published var athleteEngine = AthleteFlowEngine()
+    @Published var performanceMode = false
+    @Published var flowTraining = false
+    
     private var tradingManager = TradingManager.shared
     
     private init() {
         loadBots()
         startBotMonitoring()
+        startAIEngineIntegration()
+        startAthleteFlowIntegration()
     }
     
     private func loadBots() {
@@ -287,39 +298,198 @@ class BotManager: ObservableObject {
         }
     }
     
+    private func startAIEngineIntegration() {
+        Timer.scheduledTimer(withTimeInterval: 60.0, repeats: true) { [weak self] _ in
+            Task {
+                await self?.processAISignals()
+            }
+        }
+    }
+    
+    private func startAthleteFlowIntegration() {
+        Timer.scheduledTimer(withTimeInterval: 45.0, repeats: true) { [weak self] _ in
+            Task {
+                await self?.optimizeWithFlowState()
+            }
+        }
+    }
+    
     private func updateBotPerformance() async {
         if tradingManager.vpsConnected {
             await refreshBots()
         }
     }
     
-    func refreshBots() async {
-        isLoading = true
-        
-        try? await Task.sleep(for: .seconds(1))
-        
-        for i in 0..<allBots.count {
-            if allBots[i].isActive {
-                let updatedBot = TradingBot(
-                    name: allBots[i].name,
-                    description: allBots[i].description,
-                    winRate: max(0, min(100, allBots[i].winRate + Double.random(in: -1...1))),
-                    profitability: allBots[i].profitability + Double.random(in: -5...10),
-                    riskLevel: allBots[i].riskLevel,
-                    status: allBots[i].status,
-                    icon: allBots[i].icon,
-                    totalTrades: allBots[i].totalTrades + Int.random(in: 0...5),
-                    successfulTrades: allBots[i].successfulTrades + Int.random(in: 0...4),
-                    averageReturn: allBots[i].averageReturn + Double.random(in: -0.1...0.2),
-                    maxDrawdown: max(0, allBots[i].maxDrawdown + Double.random(in: -0.5...0.5)),
-                    createdAt: allBots[i].createdAt
+    private func processAISignals() async {
+        if aiEngineActive {
+            if let signal = await aiEngine.quickAnalysis() {
+                aiSignals.append(signal)
+                
+                // Keep only last 20 signals
+                if aiSignals.count > 20 {
+                    aiSignals.removeFirst()
+                }
+                
+                // Convert AI signal to system signal for execution
+                let systemSignal = TradingSignal(
+                    symbol: signal.symbol,
+                    direction: signal.direction == .buy ? TradeDirection.buy : TradeDirection.sell,
+                    entryPrice: signal.entryPrice,
+                    stopLoss: signal.stopLoss,
+                    takeProfit: signal.takeProfit,
+                    confidence: signal.confidence,
+                    timeframe: signal.timeframe,
+                    timestamp: signal.timestamp,
+                    source: signal.source
                 )
-                allBots[i] = updatedBot
+                
+                // Auto-execute high confidence signals
+                if signal.confidence > 0.90 {
+                    let success = await tradingManager.executeSignal(systemSignal)
+                    if success {
+                        ToastManager.shared.show("🤖 AI Signal executed: \(signal.direction.rawValue) \(signal.symbol)", type: .success)
+                    }
+                }
             }
         }
+    }
+    
+    private func optimizeWithFlowState() async {
+        if athleteEngine.isInZone {
+            // Boost AI confidence when in flow state
+            if let signal = await aiEngine.quickAnalysis() {
+                let enhancedSignal = AITradingSignal(
+                    symbol: signal.symbol,
+                    direction: signal.direction,
+                    entryPrice: signal.entryPrice,
+                    stopLoss: signal.stopLoss,
+                    takeProfit: signal.takeProfit,
+                    confidence: min(0.98, signal.confidence * 1.15), // Flow state boost
+                    timeframe: signal.timeframe,
+                    timestamp: signal.timestamp,
+                    source: "AI + Flow Engine"
+                )
+                
+                aiSignals.append(enhancedSignal)
+                
+                // Convert to system signal for execution
+                let systemSignal = TradingSignal(
+                    symbol: enhancedSignal.symbol,
+                    direction: enhancedSignal.direction == .buy ? TradeDirection.buy : TradeDirection.sell,
+                    entryPrice: enhancedSignal.entryPrice,
+                    stopLoss: enhancedSignal.stopLoss,
+                    takeProfit: enhancedSignal.takeProfit,
+                    confidence: enhancedSignal.confidence,
+                    timeframe: enhancedSignal.timeframe,
+                    timestamp: enhancedSignal.timestamp,
+                    source: enhancedSignal.source
+                )
+                
+                // Auto-execute flow-enhanced signals
+                if enhancedSignal.confidence > 0.92 {
+                    let success = await tradingManager.executeSignal(systemSignal)
+                    if success {
+                        ToastManager.shared.show("🏃‍♂️ Flow State Signal executed: \(enhancedSignal.direction.rawValue)", type: .success)
+                    }
+                }
+            }
+        }
+
+        if athleteEngine.recoveryStatus == .fatigued {
+            aiEngineActive = false
+            ToastManager.shared.show("⚠️ Trading paused - Recovery mode active", type: .warning)
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + 120) {
+                self.aiEngineActive = true
+                self.athleteEngine.recoverFromLoss()
+            }
+        }
+    }
+    
+    func deployBotWithFlow(_ bot: TradingBot) async {
+        deploymentStatus = "🏃‍♂️ Activating Flow State for \(bot.name)..."
         
-        activeBots = allBots.filter { $0.isActive }
-        isLoading = false
+        athleteEngine.activateEngine()
+        flowTraining = true
+        
+        var attempts = 0
+        while !athleteEngine.isInZone && attempts < 10 {
+            try? await Task.sleep(for: .seconds(1))
+            attempts += 1
+        }
+        
+        if athleteEngine.isInZone {
+            deploymentStatus = "⚡ In The Zone - Enhanced Performance Active"
+            
+            // Deploy with both AI and Flow enhancement
+            if let aiSignal = await aiEngine.analyzeMarket() {
+                // Convert AI signal to system signal
+                let systemSignal = TradingSignal(
+                    symbol: aiSignal.symbol,
+                    direction: aiSignal.direction == .buy ? TradeDirection.buy : TradeDirection.sell,
+                    entryPrice: aiSignal.entryPrice,
+                    stopLoss: aiSignal.stopLoss,
+                    takeProfit: aiSignal.takeProfit,
+                    confidence: min(0.98, aiSignal.confidence * athleteEngine.performanceMetrics.overallScore),
+                    timeframe: aiSignal.timeframe,
+                    timestamp: aiSignal.timestamp,
+                    source: "AI + Flow State"
+                )
+                
+                let success = await deployBotForLiveTrading(bot, aiSignal: systemSignal)
+                
+                if success {
+                    deploymentStatus = "✅ \(bot.name) deployed with Flow State enhancement!"
+                    performanceMode = true
+                } else {
+                    deploymentStatus = "❌ Deployment failed"
+                }
+            }
+        } else {
+            deploymentStatus = "⚠️ Flow state not achieved - Standard deployment"
+            await deployBot(bot)
+        }
+        
+        flowTraining = false
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+            self.deploymentStatus = ""
+        }
+    }
+    
+    func deployBotWithAI(_ bot: TradingBot) async {
+        deploymentStatus = "Initializing AI-Enhanced \(bot.name)..."
+        
+        if let aiSignal = await aiEngine.analyzeMarket() {
+            deploymentStatus = "AI Analysis Complete - Confidence: \(Int(aiSignal.confidence * 100))%"
+            
+            // Convert AI signal to system signal
+            let systemSignal = TradingSignal(
+                symbol: aiSignal.symbol,
+                direction: aiSignal.direction == .buy ? TradeDirection.buy : TradeDirection.sell,
+                entryPrice: aiSignal.entryPrice,
+                stopLoss: aiSignal.stopLoss,
+                takeProfit: aiSignal.takeProfit,
+                confidence: aiSignal.confidence,
+                timeframe: aiSignal.timeframe,
+                timestamp: aiSignal.timestamp,
+                source: aiSignal.source
+            )
+            
+            let success = await deployBotForLiveTrading(bot, aiSignal: systemSignal)  // Use systemSignal
+            
+            if success {
+                deploymentStatus = "✅ \(bot.name) deployed with AI guidance!"
+            } else {
+                deploymentStatus = "❌ Deployment failed"
+            }
+        } else {
+            await deployBot(bot)
+        }
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+            self.deploymentStatus = ""
+        }
     }
     
     func deployBot(_ bot: TradingBot) async {
@@ -370,6 +540,64 @@ class BotManager: ObservableObject {
         }
     }
     
+    private func deployBotForLiveTrading(_ bot: TradingBot, aiSignal: TradingSignal? = nil) async -> Bool {
+        try? await Task.sleep(for: .seconds(2))
+        
+        if let signal = aiSignal {
+            print("🤖 Deploying \(bot.name) with AI signal: \(signal.direction.rawValue) @ \(signal.entryPrice)")
+        }
+        
+        if let index = allBots.firstIndex(where: { $0.id == bot.id }) {
+            let updatedBot = TradingBot(
+                name: bot.name,
+                description: bot.description + (aiSignal != nil ? " (AI-Enhanced)" : ""),
+                winRate: bot.winRate,
+                profitability: bot.profitability,
+                riskLevel: bot.riskLevel,
+                status: .active,
+                icon: bot.icon,
+                totalTrades: bot.totalTrades,
+                successfulTrades: bot.successfulTrades,
+                averageReturn: bot.averageReturn,
+                maxDrawdown: bot.maxDrawdown,
+                createdAt: bot.createdAt
+            )
+            allBots[index] = updatedBot
+            activeBots = allBots.filter { $0.isActive }
+        }
+        
+        return true
+    }
+    
+    func refreshBots() async {
+        isLoading = true
+        
+        try? await Task.sleep(for: .seconds(1))
+        
+        for i in 0..<allBots.count {
+            if allBots[i].isActive {
+                let updatedBot = TradingBot(
+                    name: allBots[i].name,
+                    description: allBots[i].description,
+                    winRate: max(0, min(100, allBots[i].winRate + Double.random(in: -1...1))),
+                    profitability: allBots[i].profitability + Double.random(in: -5...10),
+                    riskLevel: allBots[i].riskLevel,
+                    status: allBots[i].status,
+                    icon: allBots[i].icon,
+                    totalTrades: allBots[i].totalTrades + Int.random(in: 0...5),
+                    successfulTrades: allBots[i].successfulTrades + Int.random(in: 0...4),
+                    averageReturn: allBots[i].averageReturn + Double.random(in: -0.1...0.2),
+                    maxDrawdown: max(0, allBots[i].maxDrawdown + Double.random(in: -0.5...0.5)),
+                    createdAt: allBots[i].createdAt
+                )
+                allBots[i] = updatedBot
+            }
+        }
+        
+        activeBots = allBots.filter { $0.isActive }
+        isLoading = false
+    }
+    
     func stopBot(_ bot: TradingBot) {
         if let index = allBots.firstIndex(where: { $0.id == bot.id }) {
             let updatedBot = TradingBot(
@@ -389,6 +617,25 @@ class BotManager: ObservableObject {
             allBots[index] = updatedBot
             activeBots = allBots.filter { $0.isActive }
         }
+    }
+    
+    func handleTradingLoss() {
+        athleteEngine.recoverFromLoss()
+        performanceMode = false
+        
+        ToastManager.shared.show("🔄 Activating mental resilience protocols", type: .info)
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
+            self.athleteEngine.startTraining()
+        }
+    }
+    
+    func activatePerformanceMode() {
+        athleteEngine.activateEngine()
+        performanceMode = true
+        aiEngineActive = true
+        
+        ToastManager.shared.show("🏆 Peak Performance Mode Activated", type: .success)
     }
 }
 
@@ -416,7 +663,6 @@ class DepositManager: ObservableObject {
     func processDeposit(amount: Double, method: DepositMethod) async -> Bool {
         isProcessing = true
         
-        // Simulate processing
         try? await Task.sleep(for: .seconds(2))
         
         DispatchQueue.main.async {

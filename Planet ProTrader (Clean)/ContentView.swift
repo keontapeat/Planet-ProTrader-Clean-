@@ -37,7 +37,7 @@ struct ContentView: View {
                     TradingTerminal()
                 }
                 .tabItem {
-                    Label("Terminal", systemImage: "chart.line.uptrend.xyaxis")
+                    Label("Terminal", systemImage: "dpad.up.filled")
                 }
                 .tag(1)
                 
@@ -46,7 +46,7 @@ struct ContentView: View {
                     CosmicBotsView()
                 }
                 .tabItem {
-                    Label("AI Bots", systemImage: "brain.head.profile")
+                    Label("AI Bots", systemImage: "text.bubble.badge.clock")
                 }
                 .tag(2)
                 
