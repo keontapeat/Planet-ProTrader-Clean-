@@ -390,8 +390,8 @@ struct TradingTerminal: View {
                 .padding(.top, 8)
             
             VStack(spacing: 16) {
-                // Stats Row (TradeLocker style)
-                HStack(spacing: 12) {
+                // Stats Row (TradeLocker style) - CLEAN & SIMPLE
+                HStack(spacing: 10) {
                     TradeLockerStatCard(title: "Balance", value: "$10,425", change: nil, color: .blue)
                     TradeLockerStatCard(title: "Equity", value: "$10,687", change: "+$262", color: .green)
                     TradeLockerStatCard(title: "Free Margin", value: "$10,191", change: nil, color: .cyan)
@@ -402,6 +402,7 @@ struct TradingTerminal: View {
                     TradeLockerActionButton(title: "New Trade", icon: "plus.circle.fill", color: .blue) {
                         showingTradePanel = true
                     }
+
                     
                     TradeLockerActionButton(title: "Deploy AI", icon: "brain.head.profile", color: .orange) {
                         deployAIBot()
@@ -861,8 +862,6 @@ struct TradingTerminal: View {
                             )
                         }
                     }
-                    .padding(.horizontal, 24)
-                    .padding(.vertical, 16)
                 }
                 .background(.regularMaterial)
             }
@@ -947,8 +946,6 @@ struct TradingTerminal: View {
                             )
                         }
                     }
-                    .padding(.horizontal, 24)
-                    .padding(.vertical, 16)
                 }
                 .background(.regularMaterial)
             }
@@ -1035,8 +1032,6 @@ struct TradingTerminal: View {
                             )
                         }
                     }
-                    .padding(.horizontal, 24)
-                    .padding(.vertical, 16)
                 }
                 .background(.regularMaterial)
             }
@@ -1178,6 +1173,41 @@ struct TradingTerminal: View {
 
 // MARK: - Clean Components
 
+struct TradeLockerStatCard: View {
+    let title: String
+    let value: String
+    let change: String?
+    let color: Color
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text(title)
+                .font(.caption2)
+                .fontWeight(.medium)
+                .foregroundColor(.gray)
+            
+            Text(value)
+                .font(.system(size: 14, weight: .bold, design: .rounded))
+                .foregroundColor(.white)
+            
+            // Always show something in the third line for consistent height
+            Text(change ?? " ")
+                .font(.caption2)
+                .fontWeight(.semibold)
+                .foregroundColor(change?.contains("+") == true ? .green : (change != nil ? .red : .clear))
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(height: 60) // Fixed small height - everything will fit
+        .padding(.horizontal, 8)
+        .padding(.vertical, 6)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 8))
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(color.opacity(0.3), lineWidth: 1)
+        )
+    }
+}
+
 struct TradeLockerTimeframeButton: View {
     let timeframe: ChartTimeframe
     let isSelected: Bool
@@ -1202,41 +1232,6 @@ struct TradeLockerTimeframeButton: View {
                 )
         }
         .buttonStyle(PlainButtonStyle())
-    }
-}
-
-struct TradeLockerStatCard: View {
-    let title: String
-    let value: String
-    let change: String?
-    let color: Color
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(title)
-                .font(.caption2)
-                .fontWeight(.medium)
-                .foregroundColor(.gray)
-            
-            Text(value)
-                .font(.system(size: 16, weight: .bold, design: .rounded))
-                .foregroundColor(.white)
-            
-            if let change = change {
-                Text(change)
-                    .font(.caption2)
-                    .fontWeight(.semibold)
-                    .foregroundColor(change.contains("+") ? .green : .red)
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 12)
-        .padding(.vertical, 12)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 10))
-        .overlay(
-            RoundedRectangle(cornerRadius: 10)
-                .stroke(color.opacity(0.3), lineWidth: 1)
-        )
     }
 }
 
