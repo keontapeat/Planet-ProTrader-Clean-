@@ -23,50 +23,40 @@ struct ContentView: View {
                 .ignoresSafeArea()
             
             TabView(selection: $selectedTab) {
-                // Solar Dashboard Tab
-                NavigationStack {
-                    SolarDashboardView()
-                }
-                .tabItem {
-                    Label("Dashboard", systemImage: "globe.americas")
-                }
-                .tag(0)
+                HomeView()
+                    .tabItem {
+                        Image(systemName: "house.fill")
+                        Text("Home")
+                    }
+                    .tag(0)
                 
-                // Trading Terminal
-                NavigationStack {
-                    TradingTerminal()
-                }
-                .tabItem {
-                    Label("Terminal", systemImage: "dpad.up.filled")
-                }
-                .tag(1)
+                BotDeploymentLauncher()
+                    .tabItem {
+                        Image(systemName: "robot.fill")
+                        Text("Deploy Bot")
+                    }
+                    .tag(4)
                 
-                // AI Bots
-                NavigationStack {
-                    CosmicBotsView()
-                }
-                .tabItem {
-                    Label("AI Bots", systemImage: "text.bubble.badge.clock")
-                }
-                .tag(2)
+                TradingTerminal()
+                    .tabItem {
+                        Image(systemName: "chart.line.uptrend.xyaxis")
+                        Text("Terminal")
+                    }
+                    .tag(1)
                 
-                // Portfolio
-                NavigationStack {
-                    GalacticPortfolioView()
-                }
-                .tabItem {
-                    Label("Portfolio", systemImage: "briefcase.fill")
-                }
-                .tag(3)
+                SelfHealingDashboard()
+                    .tabItem {
+                        Image(systemName: "waveform.path.ecg")
+                        Text("Health")
+                    }
+                    .tag(2)
                 
-                // Settings
-                NavigationStack {
-                    SpaceSettingsView()
-                }
-                .tabItem {
-                    Label("Settings", systemImage: "gear")
-                }
-                .tag(4)
+                EADeploymentView()
+                    .tabItem {
+                        Image(systemName: "server.rack")
+                        Text("Deploy")
+                    }
+                    .tag(3)
             }
             .tint(DesignSystem.cosmicBlue)
             .preferredColorScheme(.dark)
