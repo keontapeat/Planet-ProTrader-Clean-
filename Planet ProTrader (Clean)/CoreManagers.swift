@@ -18,12 +18,24 @@ class TradingManager: ObservableObject {
     @Published var accounts: [TradingAccount] = []
     @Published var selectedAccount: TradingAccount?
     @Published var isConnected = false
-    @Published var goldPrice = SampleData.goldPrice
-    @Published var signals: [TradingSignal] = []
-    @Published var activeTrades: [TradingSignal] = []
-    @Published var todaysPnL: Double = 425.50
-    @Published var weeklyPnL: Double = 1_287.30
-    @Published var monthlyPnL: Double = 4_523.85
+    @Published var goldPrice: MarketData = SampleData.goldPrice
+    @Published var isLoading = false
+    @Published var activeTrades: [Trade] = []
+    @Published var pendingOrders: [Order] = []
+    @Published var tradingHistory: [Trade] = []
+    @Published var todaysPnL: Double = 245.75
+    @Published var todaysChangePercent: Double = 2.8
+    @Published var weeklyPnL: Double = 1342.60
+    @Published var weeklyChangePercent: Double = 12.4
+    @Published var monthlyPnL: Double = 5687.30
+    @Published var monthlyChangePercent: Double = 35.7
+    @Published var allTimePnL: Double = 23456.80
+    @Published var allTimeChangePercent: Double = 124.8
+    @Published var winRate: Double = 73.5
+    @Published var currentGoldPrice: Double = 2374.85
+    @Published var goldPriceChange: Double = 12.45
+    @Published var goldPriceChangePercent: Double = 0.52
+    @Published var priceHistory: [Double] = []
     
     // VPS Integration
     @Published var vpsConnected = false
@@ -35,14 +47,22 @@ class TradingManager: ObservableObject {
     
     private init() {
         setupAccounts()
-        startPriceUpdates()
-        setupVPSConnection()
+        setupTradingManager()
+        generatePriceHistory()
     }
     
     private func setupAccounts() {
         accounts = [SampleData.demoAccount, SampleData.liveAccount]
         selectedAccount = accounts.first
         isConnected = true
+    }
+    
+    private func setupTradingManager() {
+        Timer.scheduledTimer(withTimeInterval: 3.0, repeats: true) { _ in
+            Task {
+                await self.updateLiveData()
+            }
+        }
     }
     
     private func setupVPSConnection() {
@@ -85,79 +105,89 @@ class TradingManager: ObservableObject {
         todaysPnL = mt5Status.balance - 5000.0
     }
     
-    private func startPriceUpdates() {
-        priceTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { [weak self] _ in
-            self?.updateGoldPrice()
+    private func generatePriceHistory() {
+        // Generate sample price history for charts
+        var prices: [Double] = []
+        var currentPrice = 2350.0
+        
+        for _ in 0..<50 {
+            currentPrice += Double.random(in: -15...15)
+            prices.append(currentPrice)
+        }
+        
+        priceHistory = prices
+    }
+    
+    func refreshData() async {
+        DispatchQueue.main.async {
+            self.isLoading = true
+        }
+        
+        // Simulate data refresh
+        try? await Task.sleep(for: .seconds(1))
+        
+        await updateLiveData()
+        
+        DispatchQueue.main.async {
+            self.isLoading = false
         }
     }
     
-    private func updateGoldPrice() {
-        if vpsConnected {
-            Task {
-                await updateRealGoldPrice()
-            }
-        } else {
-            let change = Double.random(in: -2.0...2.0)
-            let newPrice = goldPrice.currentPrice + change
-            let totalChange = newPrice - 2362.40
-            let changePercent = (totalChange / 2362.40) * 100
+    func updateLiveData() async {
+        DispatchQueue.main.async {
+            // Update live gold price
+            self.currentGoldPrice += Double.random(in: -2...2)
+            self.goldPriceChange = Double.random(in: -20...20)
+            self.goldPriceChangePercent = (self.goldPriceChange / self.currentGoldPrice) * 100
             
-            goldPrice = MarketData(
+            // Update P&L values
+            self.todaysPnL += Double.random(in: -50...100)
+            self.todaysChangePercent = (self.todaysPnL / 10000) * 100
+            
+            // Update price history
+            self.priceHistory.removeFirst()
+            self.priceHistory.append(self.currentGoldPrice)
+            
+            // Update gold price market data
+            self.goldPrice = MarketData(
                 symbol: "XAUUSD",
-                currentPrice: newPrice,
-                change: totalChange,
-                changePercent: changePercent,
-                volume: Double.random(in: 100_000...200_000),
+                currentPrice: self.currentGoldPrice,
+                change: self.goldPriceChange,
+                changePercent: self.goldPriceChangePercent,
+                volume: 125_000,
                 timestamp: Date()
             )
         }
     }
     
-    private func updateRealGoldPrice() async {
-        let change = Double.random(in: -1.5...1.5)
-        let newPrice = goldPrice.currentPrice + change
-        let totalChange = newPrice - 2362.40
-        let changePercent = (totalChange / 2362.40) * 100
-        
-        goldPrice = MarketData(
-            symbol: "XAUUSD",
-            currentPrice: newPrice,
-            change: totalChange,
-            changePercent: changePercent,
-            volume: Double.random(in: 150_000...300_000),
-            timestamp: Date()
-        )
-    }
-    
-    func refreshData() async {
-        if vpsConnected {
-            await vpsManager.refreshStatus()
-            
-            let mt5Status = await vpsManager.getMT5AccountInfo() 
-            if mt5Status.isConnected {
-                updateRealAccountData(from: mt5Status)
-            }
-        } else {
-            try? await Task.sleep(for: .seconds(1))
-            
-            todaysPnL += Double.random(in: -10...25)
-            weeklyPnL += Double.random(in: -25...50)
-            monthlyPnL += Double.random(in: -50...100)
-        }
-    }
-
     func executeSignal(_ signal: TradingSignal) async -> Bool {
         if vpsConnected {
             let success = await vpsManager.sendSignalToVPS(signal)
             
             if success {
-                activeTrades.append(signal)
+                activeTrades.append(Trade(
+                    symbol: signal.symbol,
+                    direction: .buy,
+                    volume: 0.1,
+                    entryPrice: signal.entryPrice,
+                    currentPrice: signal.entryPrice,
+                    profit: 0,
+                    timestamp: Date()
+                ))
                 return true
             }
             
             return false
         } else {
-            activeTrades.append(signal)
+            activeTrades.append(Trade(
+                symbol: signal.symbol,
+                direction: .buy,
+                volume: 0.1,
+                entryPrice: signal.entryPrice,
+                currentPrice: signal.entryPrice,
+                profit: 0,
+                timestamp: Date()
+            ))
             return true
         }
     }
@@ -166,9 +196,9 @@ class TradingManager: ObservableObject {
         let signal = TradingSignal(
             symbol: "XAUUSD",
             direction: .buy,
-            entryPrice: goldPrice.currentPrice,
-            stopLoss: goldPrice.currentPrice - 25.0,
-            takeProfit: goldPrice.currentPrice + 50.0,
+            entryPrice: currentGoldPrice,
+            stopLoss: currentGoldPrice - 25.0,
+            takeProfit: currentGoldPrice + 50.0,
             confidence: Double.random(in: 0.75...0.95),
             timeframe: "15M",
             timestamp: Date(),
@@ -180,6 +210,49 @@ class TradingManager: ObservableObject {
     
     deinit {
         priceTimer?.invalidate()
+    }
+}
+
+// MARK: - AI Engine Manager
+class AIEngine: ObservableObject {
+    static let shared = AIEngine()
+    
+    @Published var isActive: Bool = true
+    @Published var currentStatus: String = "Analyzing Markets"
+    @Published var marketSentiment: String = "Bullish"
+    @Published var confidence: Double = 87.5
+    @Published var todaysSignals: Int = 42
+    @Published var accuracy: Double = 94.2
+    
+    private init() {
+        startAIEngine()
+    }
+    
+    private func startAIEngine() {
+        Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { _ in
+            Task {
+                await self.updateLiveStatus()
+            }
+        }
+    }
+    
+    func updateStatus() async {
+        // Simulate AI engine updates
+        DispatchQueue.main.async {
+            self.todaysSignals = Int.random(in: 35...50)
+            self.confidence = Double.random(in: 85...95)
+            self.accuracy = Double.random(in: 92...96)
+            
+            let sentiments = ["Bullish", "Bearish", "Neutral"]
+            self.marketSentiment = sentiments.randomElement() ?? "Neutral"
+            
+            let statuses = ["Analyzing Markets", "Processing Signals", "Optimizing Strategies", "Monitoring Positions"]
+            self.currentStatus = statuses.randomElement() ?? "Active"
+        }
+    }
+    
+    func updateLiveStatus() async {
+        await updateStatus()
     }
 }
 
@@ -318,6 +391,54 @@ class BotManager: ObservableObject {
     }
 }
 
+// MARK: - Deposit Manager
+class DepositManager: ObservableObject {
+    static let shared = DepositManager()
+    
+    @Published var isProcessing = false
+    @Published var availableMethods: [DepositMethod] = []
+    @Published var quickAmounts = [100, 500, 1000, 2500, 5000, 10000]
+    
+    private init() {
+        setupDepositMethods()
+    }
+    
+    private func setupDepositMethods() {
+        availableMethods = [
+            DepositMethod(id: "card", name: "Debit/Credit Card", icon: "creditcard.fill", processingTime: "Instant", fee: "Free", maxAmount: 50000),
+            DepositMethod(id: "bank", name: "Bank Transfer", icon: "building.columns.fill", processingTime: "1-2 days", fee: "Free", maxAmount: 1000000),
+            DepositMethod(id: "paypal", name: "PayPal", icon: "p.circle.fill", processingTime: "5 minutes", fee: "2.9%", maxAmount: 25000),
+            DepositMethod(id: "crypto", name: "Cryptocurrency", icon: "bitcoinsign.circle.fill", processingTime: "10-60 min", fee: "0.5%", maxAmount: 100000)
+        ]
+    }
+    
+    func processDeposit(amount: Double, method: DepositMethod) async -> Bool {
+        isProcessing = true
+        
+        // Simulate processing
+        try? await Task.sleep(for: .seconds(2))
+        
+        DispatchQueue.main.async {
+            self.isProcessing = false
+        }
+        
+        return true
+    }
+}
+
+struct DepositMethod: Identifiable, Equatable {
+    let id: String
+    let name: String
+    let icon: String
+    let processingTime: String
+    let fee: String
+    let maxAmount: Double
+    
+    static func == (lhs: DepositMethod, rhs: DepositMethod) -> Bool {
+        lhs.id == rhs.id
+    }
+}
+
 // MARK: - Account Manager
 @MainActor
 class AccountManager: ObservableObject {
@@ -381,6 +502,32 @@ class AccountManager: ObservableObject {
         
         try? await Task.sleep(for: .seconds(1))
         lastUpdate = Date()
+    }
+}
+
+// MARK: - Additional Types
+struct Trade: Identifiable {
+    let id = UUID()
+    let symbol: String
+    let direction: TradeDirection
+    let volume: Double
+    let entryPrice: Double
+    let currentPrice: Double
+    let profit: Double
+    let timestamp: Date
+}
+
+struct Order: Identifiable {
+    let id = UUID()
+    let symbol: String
+    let direction: TradeDirection
+    let volume: Double
+    let targetPrice: Double
+    let type: OrderType
+    let timestamp: Date
+    
+    enum OrderType {
+        case limit, stop, market
     }
 }
 
