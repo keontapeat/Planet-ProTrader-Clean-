@@ -128,7 +128,7 @@ struct GameControllerView: View {
                 .foregroundColor(.secondary)
         }
         .padding()
-        .background(.ultraThinMaterial)
+        .background(Color(.systemGray6).opacity(0.9))
         .cornerRadius(16)
     }
     
@@ -170,7 +170,7 @@ struct GameControllerView: View {
             }
         }
         .padding()
-        .background(.ultraThinMaterial)
+        .background(Color(.systemGray6).opacity(0.9))
         .cornerRadius(16)
     }
     
@@ -199,7 +199,7 @@ struct GameControllerView: View {
                 .foregroundColor(.secondary)
         }
         .padding()
-        .background(.ultraThinMaterial)
+        .background(Color(.systemGray6).opacity(0.9))
         .cornerRadius(16)
     }
     
@@ -269,7 +269,7 @@ struct GameControllerView: View {
             tradeAmountSelector
         }
         .padding()
-        .background(.ultraThinMaterial)
+        .background(Color(.systemGray6).opacity(0.9))
         .cornerRadius(16)
         .scaleEffect(animateControls ? 1.0 : 0.8)
         .opacity(animateControls ? 1.0 : 0.3)
@@ -322,7 +322,7 @@ struct GameControllerView: View {
             }
         }
         .padding()
-        .background(.ultraThinMaterial)
+        .background(Color(.systemGray6).opacity(0.9))
         .cornerRadius(16)
     }
     
@@ -346,7 +346,7 @@ struct GameControllerView: View {
             )
         }
         .padding()
-        .background(.ultraThinMaterial)
+        .background(Color(.systemGray6).opacity(0.9))
         .cornerRadius(16)
     }
     
@@ -379,7 +379,7 @@ struct GameControllerView: View {
                 .foregroundColor(trade.outcome.color)
         }
         .padding(40)
-        .background(.ultraThinMaterial)
+        .background(Color(.systemGray6).opacity(0.95))
         .cornerRadius(20)
         .scaleEffect(showTradeResult ? 1.0 : 0.1)
         .opacity(showTradeResult ? 1.0 : 0.0)

@@ -221,7 +221,7 @@ struct MicroFlipGameView: View {
             
             // Performance Chart Placeholder
             RoundedRectangle(cornerRadius: 10)
-                .fill(.ultraThinMaterial)
+                .fill(Color(.systemGray6))
                 .frame(height: 120)
                 .overlay(
                     VStack {
@@ -471,7 +471,11 @@ struct GameTypeCard: View {
             }
             .padding()
             .frame(height: 120)
-            .background(isSelected ? DesignSystem.cosmicBlue.opacity(0.1) : .ultraThinMaterial)
+            .background(
+                isSelected 
+                ? DesignSystem.cosmicBlue.opacity(0.1) 
+                : Color(.systemGray6)
+            )
             .cornerRadius(10)
             .overlay(
                 RoundedRectangle(cornerRadius: 10)
@@ -555,7 +559,7 @@ struct RecentGameRow: View {
             }
         }
         .padding()
-        .background(.ultraThinMaterial.opacity(0.5))
+        .background(Color(.systemGray6).opacity(0.5))
         .cornerRadius(8)
     }
 }
@@ -589,91 +593,18 @@ struct GameSetupSheet: View {
         NavigationStack {
             VStack(spacing: 24) {
                 // Game Type Selection
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("Game Type")
-                        .font(.headline.bold())
-                    
-                    LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 8) {
-                        ForEach(MicroFlipGame.GameType.allCases, id: \.self) { gameType in
-                            GameTypeCard(
-                                gameType: gameType,
-                                isSelected: selectedGameType == gameType
-                            ) {
-                                selectedGameType = gameType
-                            }
-                        }
-                    }
-                }
+                gameTypeSection
                 
                 // Difficulty Selection
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("Difficulty")
-                        .font(.headline.bold())
-                    
-                    HStack(spacing: 8) {
-                        ForEach(MicroFlipGame.Difficulty.allCases, id: \.self) { difficulty in
-                            Button(action: { selectedDifficulty = difficulty }) {
-                                Text(difficulty.displayName)
-                                    .font(.caption.bold())
-                                    .padding(.horizontal, 12)
-                                    .padding(.vertical, 8)
-                                    .background(selectedDifficulty == difficulty ? difficulty.color : .ultraThinMaterial)
-                                    .foregroundColor(selectedDifficulty == difficulty ? .white : .primary)
-                                    .cornerRadius(15)
-                            }
-                            .buttonStyle(PlainButtonStyle())
-                        }
-                    }
-                }
+                difficultySection
                 
                 // Entry Amount
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("Entry Amount")
-                        .font(.headline.bold())
-                    
-                    HStack(spacing: 12) {
-                        ForEach([20, 50, 100, 200], id: \.self) { amount in
-                            Button(action: { entryAmount = Double(amount) }) {
-                                Text("$\(amount)")
-                                    .font(.subheadline.bold())
-                                    .padding()
-                                    .frame(maxWidth: .infinity)
-                                    .background(entryAmount == Double(amount) ? DesignSystem.cosmicBlue : .ultraThinMaterial)
-                                    .foregroundColor(entryAmount == Double(amount) ? .white : .primary)
-                                    .cornerRadius(10)
-                            }
-                            .buttonStyle(PlainButtonStyle())
-                        }
-                    }
-                    
-                    Stepper(
-                        value: $entryAmount,
-                        in: 10...1000,
-                        step: 5
-                    ) {
-                        Text("Custom: $\(String(format: "%.0f", entryAmount))")
-                            .font(.subheadline)
-                    }
-                }
+                entryAmountSection
                 
                 Spacer()
                 
                 // Start Button
-                Button(action: {
-                    onStart(selectedGameType, selectedDifficulty, entryAmount)
-                    dismiss()
-                }) {
-                    HStack(spacing: 8) {
-                        Text(selectedGameType.emoji)
-                        Text("START GAME")
-                            .font(.headline.bold())
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(DesignSystem.cosmicBlue)
-                    .foregroundColor(.white)
-                    .cornerRadius(15)
-                }
+                startButton
             }
             .padding()
             .navigationTitle("Setup Game")
@@ -685,6 +616,103 @@ struct GameSetupSheet: View {
                     }
                 }
             }
+        }
+    }
+    
+    private var gameTypeSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Game Type")
+                .font(.headline.bold())
+            
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 8) {
+                ForEach(MicroFlipGame.GameType.allCases, id: \.self) { gameType in
+                    GameTypeCard(
+                        gameType: gameType,
+                        isSelected: selectedGameType == gameType
+                    ) {
+                        selectedGameType = gameType
+                    }
+                }
+            }
+        }
+    }
+    
+    private var difficultySection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Difficulty")
+                .font(.headline.bold())
+            
+            HStack(spacing: 8) {
+                ForEach(MicroFlipGame.Difficulty.allCases, id: \.self) { difficulty in
+                    Button(action: { selectedDifficulty = difficulty }) {
+                        Text(difficulty.displayName)
+                            .font(.caption.bold())
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .background(
+                                selectedDifficulty == difficulty 
+                                ? difficulty.color 
+                                : Color(.systemGray6)
+                            )
+                            .foregroundColor(selectedDifficulty == difficulty ? .white : .primary)
+                            .cornerRadius(15)
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                }
+            }
+        }
+    }
+    
+    private var entryAmountSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Entry Amount")
+                .font(.headline.bold())
+            
+            HStack(spacing: 12) {
+                ForEach([20, 50, 100, 200], id: \.self) { amount in
+                    Button(action: { entryAmount = Double(amount) }) {
+                        Text("$\(amount)")
+                            .font(.subheadline.bold())
+                            .padding()
+                            .frame(maxWidth: .infinity)
+                            .background(
+                                entryAmount == Double(amount) 
+                                ? DesignSystem.cosmicBlue 
+                                : Color(.systemGray6)
+                            )
+                            .foregroundColor(entryAmount == Double(amount) ? .white : .primary)
+                            .cornerRadius(10)
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                }
+            }
+            
+            Stepper(
+                value: $entryAmount,
+                in: 10...1000,
+                step: 5
+            ) {
+                Text("Custom: $\(String(format: "%.0f", entryAmount))")
+                    .font(.subheadline)
+            }
+        }
+    }
+    
+    private var startButton: some View {
+        Button(action: {
+            onStart(selectedGameType, selectedDifficulty, entryAmount)
+            dismiss()
+        }) {
+            HStack(spacing: 8) {
+                Text(selectedGameType.emoji)
+                Text("START GAME")
+                    .font(.headline.bold())
+            }
+            .frame(maxWidth: .infinity)
+            .padding()
+            .background(DesignSystem.cosmicBlue)
+            .foregroundColor(.white)
+            .cornerRadius(15)
         }
     }
 }
