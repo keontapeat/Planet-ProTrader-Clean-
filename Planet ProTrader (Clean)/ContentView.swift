@@ -79,6 +79,13 @@ struct ContentView: View {
         .onAppear {
             initializeRealTimeSystem()
             
+            // AUTO-START THE REAL TRADING BOT IMMEDIATELY!
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                print("🚀 AUTO-STARTING REAL TRADING BOT...")
+                RealTradingBot.shared.startLiveTrading()
+                GlobalToastManager.shared.show("🤖 REAL TRADING BOT STARTING AUTOMATICALLY!", type: .success)
+            }
+            
             // Show EA Bot status immediately
             DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
                 GlobalToastManager.shared.show("🤖 EA BOT ACTIVATED - 0.50 lots per trade!", type: .success)
@@ -137,6 +144,12 @@ struct ContentView: View {
         // Start the REAL trading bot with deployment progress
         let realTradingBot = RealTradingBot.shared
         realTradingBot.startLiveTrading()
+        
+        // AUTO-START IMMEDIATELY - NO BUTTON NEEDED!
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            realTradingBot.startLiveTrading()
+            GlobalToastManager.shared.show("🔥 REAL BOT AUTO-LAUNCHED! Watch the progress bar!", type: .success)
+        }
         
         print("✅ Real Trading Bot with progress tracking is now LIVE!")
         print("💰 Will show deployment progress 0-100%")
@@ -217,6 +230,9 @@ struct UnifiedTradingHub: View {
                     // DEPLOYMENT PROGRESS SECTION (NEW)
                     deploymentProgressSection
                     
+                    // MetaApi Diagnostics Button (NEW)
+                    diagnosticsSection
+                    
                     // VPS & System Status Card
                     vpsSystemStatusCard
                     
@@ -278,94 +294,92 @@ struct UnifiedTradingHub: View {
                         .font(DesignSystem.Typography.dust)
                         .fontWeight(.bold)
                         .foregroundColor(.green)
-                } else {
-                    Text("READY")
+                } else if realTradingBot.isDeploying {
+                    Text("DEPLOYING...")
                         .font(DesignSystem.Typography.dust)
                         .fontWeight(.bold)
                         .foregroundColor(.orange)
-                }
-            }
-            
-            // DEPLOYMENT PROGRESS BAR
-            if realTradingBot.isDeploying {
-                VStack(spacing: 12) {
-                    HStack {
-                        Text("🚀 Deployment Progress")
-                            .font(DesignSystem.Typography.planet)
-                            .cosmicText()
-                        
-                        Spacer()
-                        
-                        Text("\(Int(realTradingBot.deploymentProgress * 100))%")
-                            .font(DesignSystem.Typography.asteroid)
-                            .fontWeight(.bold)
-                            .foregroundColor(.orange)
-                    }
-                    
-                    // Animated Progress Bar
-                    ZStack(alignment: .leading) {
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(.gray.opacity(0.3))
-                            .frame(height: 12)
-                        
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(LinearGradient(
-                                colors: [.blue, .green],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            ))
-                            .frame(width: UIScreen.main.bounds.width * 0.8 * realTradingBot.deploymentProgress, height: 12)
-                            .animation(.easeInOut(duration: 0.5), value: realTradingBot.deploymentProgress)
-                    }
-                    
-                    Text(realTradingBot.deploymentStep)
-                        .font(DesignSystem.Typography.dust)
-                        .foregroundColor(.secondary)
-                        .multilineTextAlignment(.center)
-                        .frame(maxWidth: .infinity)
-                }
-            }
-            
-            // Bot Control Buttons
-            HStack(spacing: 12) {
-                if !realTradingBot.isTrading {
-                    Button {
-                        realTradingBot.startLiveTrading()
-                        hapticManager.success()
-                    } label: {
-                        HStack {
-                            Image(systemName: "play.fill")
-                            Text("START 0.50 LOT TRADING")
-                                .fontWeight(.bold)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 44)
-                        .background(.green.gradient, in: RoundedRectangle(cornerRadius: 12))
-                        .foregroundColor(.white)
-                    }
                 } else {
-                    Button {
-                        realTradingBot.stopLiveTrading()
-                        hapticManager.warning()
-                    } label: {
-                        HStack {
-                            Image(systemName: "stop.fill")
-                            Text("STOP TRADING")
-                                .fontWeight(.bold)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 44)
-                        .background(.red.gradient, in: RoundedRectangle(cornerRadius: 12))
-                        .foregroundColor(.white)
-                    }
+                    Text("AUTO-STARTING")
+                        .font(DesignSystem.Typography.dust)
+                        .fontWeight(.bold)
+                        .foregroundColor(.blue)
+                }
+            }
+            
+            // DEPLOYMENT PROGRESS BAR (ALWAYS VISIBLE)
+            VStack(spacing: 12) {
+                HStack {
+                    Text("🚀 Deployment Progress")
+                        .font(DesignSystem.Typography.planet)
+                        .cosmicText()
+                    
+                    Spacer()
+                    
+                    Text("\(Int(realTradingBot.deploymentProgress * 100))%")
+                        .font(DesignSystem.Typography.asteroid)
+                        .fontWeight(.bold)
+                        .foregroundColor(.orange)
                 }
                 
+                // Enhanced Progress Bar with Auto-Animation
+                ZStack(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(.gray.opacity(0.3))
+                        .frame(height: 12)
+                    
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(LinearGradient(
+                            colors: [.blue, .green, .orange],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        ))
+                        .frame(width: max(20, UIScreen.main.bounds.width * 0.8 * realTradingBot.deploymentProgress), height: 12)
+                        .animation(.easeInOut(duration: 0.5), value: realTradingBot.deploymentProgress)
+                        .overlay(
+                            // Shimmering effect
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(
+                                    LinearGradient(
+                                        colors: [.clear, .white.opacity(0.4), .clear],
+                                        startPoint: .leading,
+                                        endPoint: .trailing
+                                    )
+                                )
+                                .offset(x: realTradingBot.isDeploying ? 100 : -100)
+                                .animation(
+                                    .linear(duration: 1.5).repeatForever(autoreverses: false),
+                                    value: realTradingBot.isDeploying
+                                )
+                        )
+                }
+                
+                Text(realTradingBot.deploymentStep)
+                    .font(DesignSystem.Typography.dust)
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: .infinity)
+            }
+            
+            // Auto-Status Display (No buttons needed!)
+            VStack(spacing: 8) {
+                Text("🤖 AUTO-TRADING ENABLED")
+                    .font(DesignSystem.Typography.asteroid)
+                    .fontWeight(.bold)
+                    .foregroundColor(.green)
+                
+                Text("Bot will start automatically when you open the app!")
+                    .font(DesignSystem.Typography.dust)
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+                
+                // Just show status, no interaction needed
                 Button {
                     showingProgressView = true
                 } label: {
                     HStack {
                         Image(systemName: "chart.bar.fill")
-                        Text("VIEW DETAILS")
+                        Text("VIEW DEPLOYMENT DETAILS")
                             .fontWeight(.bold)
                     }
                     .frame(maxWidth: .infinity)
@@ -375,7 +389,7 @@ struct UnifiedTradingHub: View {
                 }
             }
             
-            // Status Display
+            // Status Display (Enhanced)
             if !realTradingBot.lastTradeResult.isEmpty {
                 Text(realTradingBot.lastTradeResult)
                     .font(DesignSystem.Typography.asteroid)
@@ -383,6 +397,62 @@ struct UnifiedTradingHub: View {
                     .multilineTextAlignment(.center)
                     .padding()
                     .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+            } else {
+                Text("🎯 First trade will execute after deployment completes!")
+                    .font(DesignSystem.Typography.asteroid)
+                    .foregroundColor(.blue)
+                    .multilineTextAlignment(.center)
+                    .padding()
+                    .background(.blue.opacity(0.1), in: RoundedRectangle(cornerRadius: 12))
+            }
+        }
+        .planetCard()
+        .onAppear {
+            // FORCE START THE BOT WHEN THIS VIEW APPEARS
+            if !realTradingBot.isActive && !realTradingBot.isDeploying {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    print("🔥 FORCE STARTING BOT FROM VIEW APPEAR...")
+                    realTradingBot.startLiveTrading()
+                }
+            }
+        }
+    }
+    
+    // MARK: - NEW DIAGNOSTICS SECTION
+    private var diagnosticsSection: some View {
+        VStack(spacing: 16) {
+            HStack {
+                Text("🩺 Connection Diagnostics")
+                    .font(DesignSystem.Typography.stellar)
+                    .cosmicText()
+                
+                Spacer()
+            }
+            
+            if !realTradingBot.isTrading {
+                Button {
+                    // Show diagnostics view
+                    if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                       let window = windowScene.windows.first {
+                        let hostingController = UIHostingController(rootView: MetaApiConnectionDiagnosticsView())
+                        window.rootViewController?.present(hostingController, animated: true)
+                    }
+                } label: {
+                    HStack {
+                        Image(systemName: "stethoscope")
+                        Text("🔍 ADVANCED DIAGNOSTICS")
+                            .fontWeight(.bold)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 44)
+                    .background(.red.gradient, in: RoundedRectangle(cornerRadius: 12))
+                    .foregroundColor(.white)
+                }
+                
+                Text("Connection failed? Run diagnostics to identify and fix the issue")
+                    .font(DesignSystem.Typography.dust)
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
             }
         }
         .planetCard()
