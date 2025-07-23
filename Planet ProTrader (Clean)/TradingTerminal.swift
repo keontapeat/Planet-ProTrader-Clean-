@@ -17,7 +17,6 @@ struct TradingTerminal: View {
     @State private var selectedSymbol = "XAUUSD"
     @State private var showingWatchlist = false
     @State private var showingTradePanel = false
-    @State private var showingToolbar = false
     @State private var showingPositions = false
     @State private var showingOrders = false
     @State private var showingHistory = false
@@ -55,19 +54,6 @@ struct TradingTerminal: View {
                                 hapticManager.impact()
                             }
                         
-                        // Floating Toolbar (TradeLocker style)
-                        if showingToolbar || isFullScreen {
-                            VStack {
-                                HStack {
-                                    Spacer()
-                                    floatingToolbar
-                                        .padding(.trailing, 16)
-                                        .padding(.top, 16)
-                                }
-                                Spacer()
-                            }
-                            .transition(.move(edge: .trailing).combined(with: .opacity))
-                        }
                         
                         // Chart Controls Overlay
                         VStack {
@@ -89,14 +75,15 @@ struct TradingTerminal: View {
                             }
                         }
                         
-                        // Tap to show/hide toolbar in full screen
+                        // Simple tap to exit full screen anywhere on chart
                         if isFullScreen {
                             Color.clear
                                 .contentShape(Rectangle())
                                 .onTapGesture {
-                                    withAnimation(.easeInOut(duration: 0.3)) {
-                                        showingToolbar.toggle()
+                                    withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+                                        isFullScreen = false
                                     }
+                                    hapticManager.impact()
                                 }
                         }
                     }
@@ -283,62 +270,41 @@ struct TradingTerminal: View {
         )
     }
     
-    // MARK: - Floating Toolbar (TradeLocker style)
+    // MARK: - Floating Toolbar (TradeLocker style) - COMPLETELY REMOVED
     
-    private var floatingToolbar: some View {
-        VStack(spacing: 12) {
-            ToolbarButton(icon: "chart.line.uptrend.xyaxis", color: .blue) {
-                // Toggle indicators - user can choose
-            }
-            
-            ToolbarButton(icon: "pencil.and.ruler.trianglebadge.exclamationmark", color: .orange) {
-                // Drawing tools
-            }
-            
-            ToolbarButton(icon: "camera.fill", color: .purple) {
-                // Screenshot
-            }
-            
-            ToolbarButton(icon: "square.and.arrow.up", color: .green) {
-                // Share
-            }
-        }
-        .padding(.vertical, 12)
-        .padding(.horizontal, 8)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(.white.opacity(0.1), lineWidth: 1)
-        )
-    }
-    
-    // MARK: - Back to Normal Button
+    // MARK: - Back to Normal Button - IMPROVED EXIT
     
     private var backToNormalButton: some View {
         Button(action: {
             withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
                 isFullScreen = false
-                showingToolbar = false
+                showingPositions = false
+                showingOrders = false
+                showingHistory = false
+                overlayOffset = 0
+                tradePanelOffset = 0
             }
             hapticManager.impact()
         }) {
-            Image(systemName: "arrow.down.right.and.arrow.up.left")
-                .font(.system(size: 18, weight: .medium))
-                .foregroundColor(.white)
-                .padding(12)
-                .background(.ultraThinMaterial, in: Circle())
-                .overlay(
-                    Circle()
-                        .stroke(.white.opacity(0.2), lineWidth: 1)
-                )
+            ZStack {
+                Circle()
+                    .fill(.black.opacity(0.6))
+                    .frame(width: 44, height: 44)
+                
+                Image(systemName: "xmark")
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundColor(.white)
+            }
+            .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 2)
         }
+        .buttonStyle(PlainButtonStyle())
     }
     
-    // MARK: - Full Screen Controls
+    // MARK: - Full Screen Controls - SIMPLIFIED
     
     private var fullScreenControls: some View {
         HStack {
-            // Quick Trade Buttons
+            // Quick Trade Button
             Button(action: {
                 showingTradePanel = true
                 hapticManager.impact()
@@ -353,28 +319,32 @@ struct TradingTerminal: View {
                 .padding(.horizontal, 16)
                 .padding(.vertical, 10)
                 .background(.blue, in: Capsule())
+                .shadow(color: .blue.opacity(0.3), radius: 4, x: 0, y: 2)
             }
+            .buttonStyle(PlainButtonStyle())
             
             Spacer()
             
-            // Timeframe Quick Selector
-            HStack(spacing: 4) {
-                ForEach([ChartTimeframe.m15, .h1, .h4, .d1], id: \.self) { timeframe in
-                    Button(timeframe.displayName) {
-                        selectedTimeframe = timeframe
-                        tradingViewManager.changeTimeframe(timeframe.tradingViewInterval)
-                        hapticManager.impact()
-                    }
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundColor(selectedTimeframe == timeframe ? .black : .white)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 6)
-                    .background(
-                        selectedTimeframe == timeframe ? .white : .white.opacity(0.2),
-                        in: RoundedRectangle(cornerRadius: 6)
-                    )
+            // Exit Full Screen Button
+            Button(action: {
+                withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+                    isFullScreen = false
                 }
+                hapticManager.impact()
+            }) {
+                HStack(spacing: 6) {
+                    Image(systemName: "arrow.down.right.and.arrow.up.left")
+                        .font(.system(size: 14, weight: .medium))
+                    Text("Exit")
+                        .font(.system(size: 14, weight: .semibold))
+                }
+                .foregroundColor(.white)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 10)
+                .background(.gray.opacity(0.8), in: Capsule())
+                .shadow(color: .black.opacity(0.2), radius: 4, x: 0, y: 2)
             }
+            .buttonStyle(PlainButtonStyle())
         }
         .padding(.horizontal, 20)
     }
@@ -591,7 +561,6 @@ struct TradingTerminal: View {
                                 .foregroundColor(.white)
                         }
                     }
-                    .buttonStyle(PlainButtonStyle())
                 }
                 .padding(.horizontal, 24)
                 .padding(.vertical, 20)
