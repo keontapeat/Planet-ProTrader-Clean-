@@ -131,9 +131,13 @@ class BotStoreService: ObservableObject {
                     winRate: 87.2,
                     totalTrades: 1250,
                     totalUsers: 450,
-                    maxDrawdown: 8.5
+                    maxDrawdown: 8.5,
+                    sharpeRatio: 2.8,
+                    universeRank: 15,
+                    performanceGrade: "S+"
                 ),
-                createdDate: Date().addingTimeInterval(-86400 * 45)
+                createdDate: Date().addingTimeInterval(-86400 * 45),
+                tradingStyle: .algorithmic
             ),
             
             MarketplaceBotModel(
@@ -151,9 +155,13 @@ class BotStoreService: ObservableObject {
                     winRate: 73.4,
                     totalTrades: 2840,
                     totalUsers: 230,
-                    maxDrawdown: 12.3
+                    maxDrawdown: 12.3,
+                    sharpeRatio: 1.9,
+                    universeRank: 45,
+                    performanceGrade: "A+"
                 ),
-                createdDate: Date().addingTimeInterval(-86400 * 20)
+                createdDate: Date().addingTimeInterval(-86400 * 20),
+                tradingStyle: .scalping
             ),
             
             MarketplaceBotModel(
@@ -171,9 +179,13 @@ class BotStoreService: ObservableObject {
                     winRate: 65.8,
                     totalTrades: 980,
                     totalUsers: 180,
-                    maxDrawdown: 15.2
+                    maxDrawdown: 15.2,
+                    sharpeRatio: 1.4,
+                    universeRank: 87,
+                    performanceGrade: "A"
                 ),
-                createdDate: Date().addingTimeInterval(-86400 * 60)
+                createdDate: Date().addingTimeInterval(-86400 * 60),
+                tradingStyle: .swingTrading
             ),
             
             MarketplaceBotModel(
@@ -191,16 +203,20 @@ class BotStoreService: ObservableObject {
                     winRate: 81.5,
                     totalTrades: 650,
                     totalUsers: 95,
-                    maxDrawdown: 9.8
+                    maxDrawdown: 9.8,
+                    sharpeRatio: 2.3,
+                    universeRank: 28,
+                    performanceGrade: "S"
                 ),
-                createdDate: Date().addingTimeInterval(-86400 * 10)
+                createdDate: Date().addingTimeInterval(-86400 * 10),
+                tradingStyle: .newsTrading
             ),
             
             MarketplaceBotModel(
                 name: "Crypto Hunter",
                 tagline: "Multi-coin cryptocurrency bot",
                 creatorUsername: "CryptoKing",
-                rarity: .legendary,
+                rarity: .mythic,
                 tier: .expert,
                 verificationStatus: .verified,
                 availability: .exclusive,
@@ -211,9 +227,13 @@ class BotStoreService: ObservableObject {
                     winRate: 92.1,
                     totalTrades: 890,
                     totalUsers: 67,
-                    maxDrawdown: 6.2
+                    maxDrawdown: 6.2,
+                    sharpeRatio: 3.2,
+                    universeRank: 7,
+                    performanceGrade: "S+"
                 ),
-                createdDate: Date().addingTimeInterval(-86400 * 30)
+                createdDate: Date().addingTimeInterval(-86400 * 30),
+                tradingStyle: .arbitrage
             ),
             
             MarketplaceBotModel(
@@ -231,14 +251,47 @@ class BotStoreService: ObservableObject {
                     winRate: 58.7,
                     totalTrades: 450,
                     totalUsers: 320,
-                    maxDrawdown: 5.1
+                    maxDrawdown: 5.1,
+                    sharpeRatio: 0.8,
+                    universeRank: 234,
+                    performanceGrade: "B"
                 ),
-                createdDate: Date().addingTimeInterval(-86400 * 90)
+                createdDate: Date().addingTimeInterval(-86400 * 90),
+                tradingStyle: .dayTrading
+            ),
+            
+            MarketplaceBotModel(
+                name: "God Mode Trader",
+                tagline: "The ultimate trading experience",
+                creatorUsername: "LegendaryTrader",
+                rarity: .godTier,
+                tier: .expert,
+                verificationStatus: .verified,
+                availability: .exclusive,
+                price: 999.99,
+                averageRating: 5.0,
+                stats: BotStats(
+                    totalReturn: 1250.8,
+                    winRate: 97.3,
+                    totalTrades: 3456,
+                    totalUsers: 12,
+                    maxDrawdown: 2.1,
+                    sharpeRatio: 4.8,
+                    universeRank: 1,
+                    performanceGrade: "S+"
+                ),
+                createdDate: Date().addingTimeInterval(-86400 * 150),
+                tradingStyle: .algorithmic
             )
         ]
         
         // Set featured bots (top performing ones)
         featuredBots = Array(allBots.sorted { $0.averageRating > $1.averageRating }.prefix(3))
+    }
+
+    // MARK: - Computed Property for Marketplace Bots
+    var marketplaceBots: [MarketplaceBotModel] {
+        return allBots
     }
 }
 
@@ -256,6 +309,22 @@ struct MarketplaceBotModel: Identifiable, Codable {
     let averageRating: Double
     let stats: BotStats
     let createdDate: Date
+    let tradingStyle: TradingStyle
+    
+    init(name: String, tagline: String, creatorUsername: String, rarity: BotRarity, tier: BotTier, verificationStatus: VerificationStatus, availability: BotAvailability, price: Double, averageRating: Double, stats: BotStats, createdDate: Date, tradingStyle: TradingStyle = .scalping) {
+        self.name = name
+        self.tagline = tagline
+        self.creatorUsername = creatorUsername
+        self.rarity = rarity
+        self.tier = tier
+        self.verificationStatus = verificationStatus
+        self.availability = availability
+        self.price = price
+        self.averageRating = averageRating
+        self.stats = stats
+        self.createdDate = createdDate
+        self.tradingStyle = tradingStyle
+    }
     
     var formattedPrice: String {
         if price == 0 {
@@ -273,35 +342,83 @@ struct BotStats: Codable {
     let totalTrades: Int
     let totalUsers: Int
     let maxDrawdown: Double
+    let sharpeRatio: Double
+    let universeRank: Int
+    let performanceGrade: String
+    
+    init(totalReturn: Double, winRate: Double, totalTrades: Int, totalUsers: Int, maxDrawdown: Double, sharpeRatio: Double = 0.0, universeRank: Int = 0, performanceGrade: String = "") {
+        self.totalReturn = totalReturn
+        self.winRate = winRate
+        self.totalTrades = totalTrades
+        self.totalUsers = totalUsers
+        self.maxDrawdown = maxDrawdown
+        self.sharpeRatio = sharpeRatio == 0.0 ? Double.random(in: 0.5...3.5) : sharpeRatio
+        self.universeRank = universeRank == 0 ? Int.random(in: 1...1000) : universeRank
+        self.performanceGrade = performanceGrade.isEmpty ? Self.generatePerformanceGrade(totalReturn: totalReturn, winRate: winRate) : performanceGrade
+    }
     
     var formattedTotalReturn: String {
         let sign = totalReturn >= 0 ? "+" : ""
         return "\(sign)\(String(format: "%.1f", totalReturn))%"
+    }
+    
+    static func generatePerformanceGrade(totalReturn: Double, winRate: Double) -> String {
+        let score = (totalReturn * 0.6) + (winRate * 0.4)
+        switch score {
+        case 80...: return "S+"
+        case 70..<80: return "S"
+        case 60..<70: return "A+"
+        case 50..<60: return "A"
+        case 40..<50: return "B+"
+        case 30..<40: return "B"
+        default: return "C"
+        }
     }
 }
 
 // MARK: - Bot Rarity Enum
 enum BotRarity: String, CaseIterable, Codable {
     case common = "Common"
+    case uncommon = "Uncommon"
     case rare = "Rare"
     case epic = "Epic"
     case legendary = "Legendary"
+    case mythic = "Mythic"
+    case godTier = "God Tier"
     
     var color: Color {
         switch self {
         case .common: return .gray
+        case .uncommon: return .green
         case .rare: return .blue
         case .epic: return .purple
         case .legendary: return .orange
+        case .mythic: return .red
+        case .godTier: return DesignSystem.primaryGold
         }
     }
     
     var sparkleEffect: String {
         switch self {
         case .common: return "⚪"
+        case .uncommon: return "🟢"
         case .rare: return "🔵"
         case .epic: return "🟣"
         case .legendary: return "🟠"
+        case .mythic: return "🔴"
+        case .godTier: return "⭐"
+        }
+    }
+    
+    var dropRate: Double {
+        switch self {
+        case .common: return 50.0
+        case .uncommon: return 25.0
+        case .rare: return 15.0
+        case .epic: return 7.0
+        case .legendary: return 2.5
+        case .mythic: return 0.4
+        case .godTier: return 0.1
         }
     }
 }
@@ -331,6 +448,31 @@ enum BotTier: String, CaseIterable, Codable {
         case .advanced: return "🌳"
         case .professional: return "🏆"
         case .expert: return "👑"
+        }
+    }
+}
+
+// MARK: - Trading Style Enum
+enum TradingStyle: String, CaseIterable, Codable {
+    case scalping = "Scalping"
+    case dayTrading = "Day Trading"
+    case swingTrading = "Swing Trading"
+    case arbitrage = "Arbitrage"
+    case newsTrading = "News Trading"
+    case algorithmic = "Algorithmic"
+    
+    var displayName: String {
+        return rawValue
+    }
+    
+    var color: Color {
+        switch self {
+        case .scalping: return .red
+        case .dayTrading: return .orange
+        case .swingTrading: return .blue
+        case .arbitrage: return .green
+        case .newsTrading: return .purple
+        case .algorithmic: return .cyan
         }
     }
 }

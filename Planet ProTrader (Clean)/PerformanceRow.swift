@@ -59,25 +59,6 @@ struct BotDetailsView: View {
     }
 }
 
-struct UltraPremiumCard<Content: View>: View {
-    let content: Content
-    
-    init(@ViewBuilder content: () -> Content) {
-        self.content = content()
-    }
-    
-    var body: some View {
-        content
-            .padding(DesignSystem.Spacing.lg)
-            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.lg))
-            .overlay(
-                RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.lg)
-                    .stroke(DesignSystem.goldGradient, lineWidth: 2)
-            )
-            .shadow(color: DesignSystem.primaryGold.opacity(0.4), radius: 16, x: 0, y: 8)
-    }
-}
-
 #Preview {
     VStack(spacing: 16) {
         PerformanceRow(

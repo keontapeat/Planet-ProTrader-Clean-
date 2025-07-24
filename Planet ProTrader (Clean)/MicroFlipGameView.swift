@@ -579,24 +579,6 @@ struct MicroFlipStatCard: View {
     }
 }
 
-struct StatRow: View {
-    let title: String
-    let value: String
-    
-    var body: some View {
-        HStack {
-            Text(title)
-                .font(.caption)
-                .foregroundColor(.secondary)
-            
-            Spacer()
-            
-            Text(value)
-                .font(.caption.bold())
-        }
-    }
-}
-
 struct GameSetupSheet: View {
     @Binding var selectedGameType: MicroFlipGame.GameType
     @Binding var selectedDifficulty: MicroFlipGame.Difficulty
