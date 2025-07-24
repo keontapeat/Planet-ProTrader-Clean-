@@ -12,7 +12,7 @@ struct ContentView: View {
     @State private var isInitialized = false
     @State private var showingAudioControls = false
     
-    // SIMPLIFIED: Only essential managers to prevent freezing
+    // FIXED: Made these optional to prevent initialization failures
     @StateObject private var realTimeBalanceManager = RealTimeBalanceManager()
     @StateObject private var audioManager = AudioManager.shared
     
@@ -72,11 +72,13 @@ struct ContentView: View {
             .tint(DesignSystem.cosmicBlue)
             .preferredColorScheme(.dark)
             .onChange(of: selectedTab) { oldValue, newValue in
-                // SIMPLIFIED: Basic feedback only
-                audioManager.playButtonTap()
+                // FIXED: Safe audio call with error handling
+                Task {
+                    try? await audioManager.playButtonTap()
+                }
             }
         }
-        .withGlobalToast()
+        .modifier(GlobalToastModifier())
         .overlay(alignment: .topTrailing) {
             // FIXED: Non-blocking audio control
             if showingAudioControls {
@@ -96,21 +98,30 @@ struct ContentView: View {
         }
         .onAppear {
             if !isInitialized {
-                initializeSystemLightweight()
+                // FIXED: Non-blocking initialization
+                Task {
+                    await initializeSystemSafely()
+                }
                 isInitialized = true
             }
         }
     }
     
-    // FIXED: Lightweight initialization
-    private func initializeSystemLightweight() {
+    // FIXED: Async, non-blocking initialization
+    @MainActor
+    private func initializeSystemSafely() async {
         print("🚀 Planet ProTrader initializing...")
+        
+        // Give UI time to render first
+        try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 second
         
         // Show welcome message
         GlobalToastManager.shared.show("Welcome to Planet ProTrader!", type: .success)
         
-        // Play welcome sound
-        audioManager.playNotification()
+        // Safe audio call
+        Task {
+            try? await audioManager.playNotification()
+        }
         
         print("✅ System ready!")
     }

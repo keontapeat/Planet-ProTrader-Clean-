@@ -14,7 +14,7 @@ struct RealAccountView: View {
     @State private var accountNumber = ""
     @State private var password = ""
     @State private var serverName = "Coinexx-Demo"
-    @EnvironmentObject var hapticManager: HapticManager
+    @StateObject private var hapticManager = HapticFeedbackManager.shared
     
     var body: some View {
         ZStack {
@@ -177,7 +177,7 @@ struct RealAccountView: View {
     }
     
     private func connectAccount() {
-        hapticManager.impact()
+        hapticManager.impact(.medium)
         isConnecting = true
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
@@ -211,6 +211,5 @@ struct AccountStatusRow: View {
 #Preview {
     NavigationStack {
         RealAccountView()
-            .environmentObject(HapticManager.shared)
     }
 }
