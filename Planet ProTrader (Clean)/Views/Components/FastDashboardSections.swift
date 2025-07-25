@@ -1,4 +1,4 @@
-//
+// 
 //  FastDashboardSections.swift
 //  Planet ProTrader (Clean)
 //
@@ -8,6 +8,343 @@
 
 import SwiftUI
 import Foundation
+
+// MARK: - QuickDeployButton
+struct QuickDeployButton: View {
+    let title: String
+    let subtitle: String
+    let icon: String
+    let color: Color
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 8) {
+                Image(systemName: icon)
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundStyle(color)
+                
+                Text(title)
+                    .font(.system(size: 12, weight: .bold, design: .rounded))
+                    .foregroundStyle(.white)
+                
+                Text(subtitle)
+                    .font(.system(size: 10, weight: .regular, design: .rounded))
+                    .foregroundStyle(.white.opacity(0.6))
+            }
+            .frame(maxWidth: .infinity)
+            .padding(16)
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(color.opacity(0.1))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(color.opacity(0.3), lineWidth: 1)
+                    )
+            )
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+// MARK: - QuickActionButton
+struct QuickActionButton: View {
+    let icon: String
+    let title: String
+    let subtitle: String
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 8) {
+                Image(systemName: icon)
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(.blue)
+                
+                Text(title)
+                    .font(.system(size: 12, weight: .bold, design: .rounded))
+                    .foregroundStyle(.white)
+                
+                Text(subtitle)
+                    .font(.system(size: 10, weight: .regular, design: .rounded))
+                    .foregroundStyle(.white.opacity(0.6))
+            }
+            .frame(maxWidth: .infinity)
+            .padding(16)
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(.blue.opacity(0.1))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(.blue.opacity(0.3), lineWidth: 1)
+                    )
+            )
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+// MARK: - LiveBotCard
+struct LiveBotCard: View {
+    let bot: ProTraderBot
+    let onTap: () -> Void
+    
+    var body: some View {
+        Button(action: onTap) {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Text(bot.name)
+                        .font(.system(size: 12, weight: .bold, design: .rounded))
+                        .foregroundStyle(.white)
+                        .lineLimit(1)
+                    
+                    Spacer()
+                    
+                    Circle()
+                        .fill(bot.isActive ? .green : .gray)
+                        .frame(width: 8, height: 8)
+                }
+                
+                HStack(spacing: 4) {
+                    Text("P&L:")
+                        .font(.system(size: 10, weight: .medium, design: .rounded))
+                        .foregroundStyle(.white.opacity(0.7))
+                    
+                    Text(formatCurrency(bot.profitLoss))
+                        .font(.system(size: 10, weight: .bold, design: .rounded))
+                        .foregroundStyle(bot.profitLoss >= 0 ? .green : .red)
+                }
+                
+                HStack(spacing: 4) {
+                    Text("Confidence:")
+                        .font(.system(size: 10, weight: .medium, design: .rounded))
+                        .foregroundStyle(.white.opacity(0.7))
+                    
+                    Text(String(format: "%.1f%%", bot.confidence * 100))
+                        .font(.system(size: 10, weight: .bold, design: .rounded))
+                        .foregroundStyle(confidenceColor(bot.confidence))
+                }
+            }
+            .padding(12)
+            .background(
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(.white.opacity(0.08))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10)
+                            .stroke(.white.opacity(0.1), lineWidth: 1)
+                    )
+            )
+        }
+        .buttonStyle(.plain)
+    }
+    
+    private func formatCurrency(_ amount: Double) -> String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .currency
+        formatter.maximumFractionDigits = 0
+        return formatter.string(from: NSNumber(value: amount)) ?? "$0"
+    }
+    
+    private func confidenceColor(_ confidence: Double) -> Color {
+        switch confidence {
+        case 0.95...: return .orange
+        case 0.9..<0.95: return .red
+        case 0.8..<0.9: return .purple
+        case 0.7..<0.8: return .blue
+        case 0.6..<0.7: return .green
+        default: return .gray
+        }
+    }
+}
+
+// MARK: - ProTraderMetricCard
+struct ProTraderMetricCard: View {
+    let icon: String
+    let title: String
+    let value: String
+    let subtitle: String
+    let color: Color
+    let trend: TrendDirection
+    
+    enum TrendDirection {
+        case up, down, stable
+        
+        var icon: String {
+            switch self {
+            case .up: return "arrow.up"
+            case .down: return "arrow.down"
+            case .stable: return "minus"
+            }
+        }
+        
+        var color: Color {
+            switch self {
+            case .up: return .green
+            case .down: return .red
+            case .stable: return .yellow
+            }
+        }
+    }
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Image(systemName: icon)
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(color)
+                
+                Spacer()
+                
+                Image(systemName: trend.icon)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(trend.color)
+            }
+            
+            VStack(alignment: .leading, spacing: 4) {
+                Text(value)
+                    .font(.system(size: 18, weight: .black, design: .rounded))
+                    .foregroundStyle(.white)
+                
+                Text(title)
+                    .font(.system(size: 12, weight: .medium, design: .rounded))
+                    .foregroundStyle(.white.opacity(0.8))
+                
+                Text(subtitle)
+                    .font(.system(size: 10, weight: .regular, design: .rounded))
+                    .foregroundStyle(.white.opacity(0.6))
+            }
+        }
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(.white.opacity(0.08))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(color.opacity(0.3), lineWidth: 1)
+                )
+        )
+    }
+}
+
+// MARK: - ArmyStatCard
+struct ArmyStatCard: View {
+    let title: String
+    let value: String
+    let icon: String
+    let color: Color
+    let subtitle: String
+    
+    var body: some View {
+        VStack(spacing: 8) {
+            Image(systemName: icon)
+                .font(.system(size: 20, weight: .semibold))
+                .foregroundStyle(color)
+            
+            Text(value)
+                .font(.system(size: 16, weight: .black, design: .rounded))
+                .foregroundStyle(.white)
+            
+            Text(title)
+                .font(.system(size: 10, weight: .medium, design: .rounded))
+                .foregroundStyle(.white.opacity(0.8))
+            
+            Text(subtitle)
+                .font(.system(size: 9, weight: .regular, design: .rounded))
+                .foregroundStyle(.white.opacity(0.6))
+        }
+        .frame(maxWidth: .infinity)
+        .padding(12)
+        .background(
+            RoundedRectangle(cornerRadius: 10)
+                .fill(.white.opacity(0.05))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(color.opacity(0.3), lineWidth: 1)
+                )
+        )
+    }
+}
+
+// MARK: - TopPerformerRow
+struct TopPerformerRow: View {
+    let rank: Int
+    let bot: ProTraderBot
+    let onTap: () -> Void
+    
+    var body: some View {
+        Button(action: onTap) {
+            HStack(spacing: 12) {
+                // Rank badge
+                Text("\(rank)")
+                    .font(.system(size: 14, weight: .black, design: .rounded))
+                    .foregroundStyle(rankColor)
+                    .frame(width: 24, height: 24)
+                    .background(
+                        Circle()
+                            .fill(rankColor.opacity(0.2))
+                    )
+                
+                // Bot info
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(bot.name)
+                        .font(.system(size: 14, weight: .bold, design: .rounded))
+                        .foregroundStyle(.white)
+                        .lineLimit(1)
+                    
+                    HStack(spacing: 8) {
+                        Text("P&L: \(formatCurrency(bot.profitLoss))")
+                            .font(.system(size: 11, weight: .medium, design: .rounded))
+                            .foregroundStyle(bot.profitLoss >= 0 ? .green : .red)
+                        
+                        Text("•")
+                            .foregroundStyle(.white.opacity(0.5))
+                        
+                        Text("Confidence: \(String(format: "%.1f%%", bot.confidence * 100))")
+                            .font(.system(size: 11, weight: .medium, design: .rounded))
+                            .foregroundStyle(.white.opacity(0.7))
+                    }
+                }
+                
+                Spacer()
+                
+                // Status indicator
+                Circle()
+                    .fill(bot.isActive ? .green : .gray)
+                    .frame(width: 8, height: 8)
+                
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.5))
+            }
+            .padding(12)
+            .background(
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(.white.opacity(0.05))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10)
+                            .stroke(.white.opacity(0.1), lineWidth: 1)
+                    )
+            )
+        }
+        .buttonStyle(.plain)
+    }
+    
+    private var rankColor: Color {
+        switch rank {
+        case 1: return .orange
+        case 2: return .gray
+        case 3: return .brown
+        default: return .blue
+        }
+    }
+    
+    private func formatCurrency(_ amount: Double) -> String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .currency
+        formatter.maximumFractionDigits = 0
+        return formatter.string(from: NSNumber(value: amount)) ?? "$0"
+    }
+}
 
 // MARK: - Fast Header Stats Section
 
@@ -176,7 +513,7 @@ struct FastBotArmySection: View {
                         title: "Deploy 100 Bots",
                         subtitle: "Fast deployment",
                         icon: "bolt.fill",
-                        color: .orange,
+                        color: Color.orange,
                         action: {
                             Task.detached(priority: .background) {
                                 await armyManager.deployBots(count: 100)
@@ -188,7 +525,7 @@ struct FastBotArmySection: View {
                         title: "Deploy All 5K",
                         subtitle: "Full army",
                         icon: "crown.fill",
-                        color: .red,
+                        color: Color.red,
                         action: {
                             Task.detached(priority: .background) {
                                 await armyManager.deployAllBots()
@@ -200,7 +537,7 @@ struct FastBotArmySection: View {
                         title: "Train & Deploy",
                         subtitle: "With historical data",
                         icon: "brain.head.profile",
-                        color: .purple,
+                        color: Color.purple,
                         action: {
                             // Will be handled by parent view
                         }
@@ -210,7 +547,7 @@ struct FastBotArmySection: View {
                         title: "VPS Sync",
                         subtitle: "Upload to server",
                         icon: "icloud.and.arrow.up",
-                        color: .blue,
+                        color: Color.blue,
                         action: {
                             Task.detached(priority: .background) {
                                 await armyManager.syncWithVPS()
@@ -747,13 +1084,13 @@ struct FastConfidenceChartView: View {
     }
     
     private var confidenceBuckets: [(range: String, count: Int, color: Color, label: String)] {
-        let ranges = [
-            (0.0..<0.3, "0-30%", Color.red),
-            (0.3..<0.5, "30-50%", Color.orange),
-            (0.5..<0.6, "50-60%", Color.yellow),
-            (0.6..<0.7, "60-70%", Color.green),
-            (0.7..<0.8, "70-80%", Color.blue),
-            (0.8..<0.9, "80-90%", Color.purple),
+        let ranges: [(ClosedRange<Double>, String, Color)] = [
+            (0.0...0.3, "0-30%", Color.red),
+            (0.3...0.5, "30-50%", Color.orange),
+            (0.5...0.6, "50-60%", Color.yellow),
+            (0.6...0.7, "60-70%", Color.green),
+            (0.7...0.8, "70-80%", Color.blue),
+            (0.8...0.9, "80-90%", Color.purple),
             (0.9...1.0, "90%+", Color.pink)
         ]
         
