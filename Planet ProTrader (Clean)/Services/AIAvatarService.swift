@@ -45,7 +45,12 @@ class AIAvatarService: ObservableObject {
         }
         
         // For demo purposes, always use local generation to prevent API key issues
-        return generateLocalAvatar(bot: bot)
+        let image = generateLocalAvatar(bot: bot)
+        
+        // Cache the generated image
+        imageCache.setImage(image, forKey: cacheKey)
+        
+        return image
     }
     
     func clearCache() {
