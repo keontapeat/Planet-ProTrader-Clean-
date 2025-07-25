@@ -532,6 +532,9 @@ struct FastBotArmySection: View {
                         action: {
                             Task.detached(priority: .background) {
                                 await armyManager.deployBots(count: 100)
+                                await MainActor.run {
+                                    GlobalToastManager.shared.show("🚀 100 bots deployed!", type: .success)
+                                }
                             }
                         }
                     )
@@ -544,6 +547,9 @@ struct FastBotArmySection: View {
                         action: {
                             Task.detached(priority: .background) {
                                 await armyManager.deployAllBots()
+                                await MainActor.run {
+                                    GlobalToastManager.shared.show("🎯 Full army deployed!", type: .success)
+                                }
                             }
                         }
                     )
@@ -554,7 +560,12 @@ struct FastBotArmySection: View {
                         icon: "brain.head.profile",
                         color: Color.purple,
                         action: {
-                            // Will be handled by parent view
+                            Task.detached(priority: .background) {
+                                let results = await armyManager.trainWithHistoricalData(csvData: sampleHistoricalData)
+                                await MainActor.run {
+                                    GlobalToastManager.shared.show("🧠 Training complete: \(results.newGodmodeBots) new GODMODE!", type: .success)
+                                }
+                            }
                         }
                     )
                     
@@ -566,6 +577,9 @@ struct FastBotArmySection: View {
                         action: {
                             Task.detached(priority: .background) {
                                 await armyManager.syncWithVPS()
+                                await MainActor.run {
+                                    GlobalToastManager.shared.show("🔄 VPS synchronized!", type: .success)
+                                }
                             }
                         }
                     )

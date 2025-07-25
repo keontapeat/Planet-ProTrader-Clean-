@@ -86,16 +86,24 @@ struct GlobalToastView: View {
                 .foregroundColor(toast.type.color)
             
             Text(toast.message)
-                .font(DesignSystem.Typography.asteroid)
-                .foregroundColor(DesignSystem.starWhite)
+                .font(.system(size: 14, weight: .medium, design: .rounded))
+                .foregroundColor(.white)
                 .multilineTextAlignment(.leading)
             
             Spacer()
+            
+            Button {
+                GlobalToastManager.shared.dismiss()
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.caption)
+                    .foregroundStyle(.white.opacity(0.7))
+            }
         }
-        .padding()
+        .padding(16)
         .background(
             RoundedRectangle(cornerRadius: 12)
-                .fill(.ultraThinMaterial)
+                .fill(.black.opacity(0.9))
                 .overlay(
                     RoundedRectangle(cornerRadius: 12)
                         .stroke(toast.type.color.opacity(0.5), lineWidth: 1)
@@ -112,20 +120,24 @@ struct GlobalToastModifier: ViewModifier {
         content
             .overlay(
                 VStack {
-                    Spacer()
-                    
                     if toastManager.isShowing, let toast = toastManager.currentToast {
                         GlobalToastView(toast: toast)
-                            .padding(.horizontal)
-                            .padding(.bottom, 100)
-                            .transition(.move(edge: .bottom).combined(with: .opacity))
+                            .padding(.horizontal, 20)
+                            .padding(.top, 100)
+                            .transition(.asymmetric(
+                                insertion: .move(edge: .top).combined(with: .opacity),
+                                removal: .move(edge: .top).combined(with: .opacity)
+                            ))
                             .animation(.spring(response: 0.6, dampingFraction: 0.8), value: toastManager.isShowing)
                             .onTapGesture {
                                 toastManager.dismiss()
                             }
                     }
+                    
+                    Spacer()
                 }
-                .ignoresSafeArea(.keyboard)
+                .ignoresSafeArea(.keyboard),
+                alignment: .top
             )
     }
 }
@@ -136,34 +148,66 @@ extension View {
     }
 }
 
+// MARK: - Simple ToastView for Backward Compatibility
+
+struct ToastView: View {
+    @ObservedObject private var toastManager = GlobalToastManager.shared
+    
+    var body: some View {
+        if toastManager.isShowing, let toast = toastManager.currentToast {
+            GlobalToastView(toast: toast)
+                .transition(.asymmetric(
+                    insertion: .move(edge: .top).combined(with: .opacity),
+                    removal: .move(edge: .top).combined(with: .opacity)
+                ))
+                .animation(.spring(response: 0.5, dampingFraction: 0.8), value: toastManager.isShowing)
+        }
+    }
+}
+
 #Preview {
     VStack(spacing: 20) {
         Text("🍞 Global Toast Manager")
-            .font(DesignSystem.Typography.largeTitle)
-            .goldText()
+            .font(.system(size: 24, weight: .bold, design: .rounded))
+            .foregroundStyle(.white)
         
         VStack(spacing: 12) {
             Button("Success Toast") {
                 GlobalToastManager.shared.show("Trade executed successfully!", type: .success)
             }
-            .buttonStyle(.primary)
+            .padding()
+            .background(Color.green.opacity(0.2))
+            .foregroundStyle(.white)
+            .cornerRadius(8)
             
             Button("Error Toast") {
                 GlobalToastManager.shared.show("Connection failed", type: .error)
             }
-            .buttonStyle(.primary)
+            .padding()
+            .background(Color.red.opacity(0.2))
+            .foregroundStyle(.white)
+            .cornerRadius(8)
             
             Button("Warning Toast") {
                 GlobalToastManager.shared.show("High risk detected", type: .warning)
             }
-            .buttonStyle(.primary)
+            .padding()
+            .background(Color.orange.opacity(0.2))
+            .foregroundStyle(.white)
+            .cornerRadius(8)
             
             Button("Info Toast") {
                 GlobalToastManager.shared.show("Bot deployment started", type: .info)
             }
-            .buttonStyle(.primary)
+            .padding()
+            .background(Color.blue.opacity(0.2))
+            .foregroundStyle(.white)
+            .cornerRadius(8)
         }
     }
     .padding()
+    .frame(maxWidth: .infinity, maxHeight: .infinity)
+    .background(Color.black)
     .withGlobalToast()
+    .preferredColorScheme(.dark)
 }

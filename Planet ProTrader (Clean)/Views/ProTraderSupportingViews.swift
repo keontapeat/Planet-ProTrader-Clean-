@@ -327,151 +327,7 @@ struct ConfidenceChartView: View {
     }
 }
 
-// MARK: - CSV Importer View
-struct CSVImporterView: View {
-    let armyManager: ProTraderArmyManager
-    @Environment(\.dismiss) private var dismiss
-    @State private var csvText = ""
-    @State private var isImporting = false
-    
-    var body: some View {
-        NavigationStack {
-            VStack(spacing: 24) {
-                VStack(alignment: .leading, spacing: 16) {
-                    Text("Import Historical Data")
-                        .font(.title2.bold())
-                    
-                    Text("Paste your CSV data below to train the ProTrader Army:")
-                        .font(.body)
-                        .foregroundStyle(.secondary)
-                    
-                    TextEditor(text: $csvText)
-                        .font(.system(.caption, design: .monospaced))
-                        .padding(12)
-                        .background(Color.gray.opacity(0.1))
-                        .cornerRadius(8)
-                        .frame(minHeight: 200)
-                }
-                
-                Button(action: importData) {
-                    HStack {
-                        if isImporting {
-                            ProgressView()
-                                .scaleEffect(0.8)
-                        } else {
-                            Image(systemName: "brain.head.profile")
-                        }
-                        
-                        Text(isImporting ? "Training Bots..." : "Train Army")
-                            .font(.headline)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(Color.blue)
-                    .foregroundColor(.white)
-                    .cornerRadius(12)
-                }
-                .disabled(csvText.isEmpty || isImporting)
-                
-                Spacer()
-            }
-            .padding()
-            .navigationTitle("Data Import")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Done") {
-                        dismiss()
-                    }
-                }
-            }
-        }
-    }
-    
-    private func importData() {
-        isImporting = true
-        
-        Task {
-            let results = await armyManager.trainWithHistoricalData(csvData: csvText)
-            
-            await MainActor.run {
-                isImporting = false
-                GlobalToastManager.shared.show("🎓 Training completed! \(results.newGodmodeBots) new GODMODE bots!", type: .success)
-                dismiss()
-            }
-        }
-    }
-}
-
-// MARK: - Training Results View
-struct TrainingResultsView: View {
-    let results: TrainingResults
-    @Environment(\.dismiss) private var dismiss
-    
-    var body: some View {
-        NavigationStack {
-            VStack(spacing: 24) {
-                // Success Header
-                VStack(spacing: 16) {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 60))
-                        .foregroundStyle(.green)
-                    
-                    Text("Training Complete!")
-                        .font(.title.bold())
-                    
-                    Text("Your ProTrader Army has been successfully trained")
-                        .font(.body)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                }
-                
-                // Results Grid
-                LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 16) {
-                    ResultCard(title: "Bots Trained", value: "\(results.botsTrained)", color: .blue)
-                    ResultCard(title: "Data Points", value: "\(results.dataPointsProcessed)", color: .green)
-                    ResultCard(title: "New GODMODE", value: "\(results.newGodmodeBots)", color: .orange)
-                    ResultCard(title: "New ELITE", value: "\(results.newEliteBots)", color: .purple)
-                }
-                
-                Spacer()
-                
-                Button("Continue") {
-                    dismiss()
-                }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.large)
-            }
-            .padding()
-            .navigationTitle("Training Results")
-            .navigationBarTitleDisplayMode(.inline)
-        }
-    }
-}
-
-struct ResultCard: View {
-    let title: String
-    let value: String
-    let color: Color
-    
-    var body: some View {
-        VStack(spacing: 8) {
-            Text(value)
-                .font(.title.bold())
-                .foregroundStyle(color)
-            
-            Text(title)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity)
-        .padding()
-        .background(color.opacity(0.1))
-        .cornerRadius(12)
-    }
-}
-
-// MARK: - Bot Detail View
+// MARK: - Bot Detail View (Enhanced version)
 struct BotDetailView: View {
     let bot: ProTraderBot
     @Environment(\.dismiss) private var dismiss
@@ -482,36 +338,97 @@ struct BotDetailView: View {
                 VStack(alignment: .leading, spacing: 24) {
                     // Bot Header
                     VStack(alignment: .leading, spacing: 12) {
-                        Text(bot.name)
-                            .font(.title.bold())
-                        
                         HStack {
-                            Text(bot.confidenceLevel)
-                                .font(.headline)
-                                .foregroundColor(confidenceColor(bot.confidence))
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(bot.name)
+                                    .font(.system(size: 28, weight: .bold, design: .rounded))
+                                    .foregroundStyle(.white)
+                                
+                                Text("Bot #\(bot.botNumber)")
+                                    .font(.system(size: 14, weight: .medium, design: .rounded))
+                                    .foregroundStyle(.white.opacity(0.7))
+                            }
                             
                             Spacer()
                             
-                            Circle()
-                                .fill(bot.isActive ? .green : .gray)
-                                .frame(width: 12, height: 12)
+                            VStack(alignment: .trailing, spacing: 4) {
+                                Text(bot.confidenceLevel)
+                                    .font(.system(size: 16, weight: .bold, design: .rounded))
+                                    .foregroundColor(confidenceColor(bot.confidence))
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 6)
+                                    .background(confidenceColor(bot.confidence).opacity(0.2), in: Capsule())
+                                
+                                HStack(spacing: 4) {
+                                    Circle()
+                                        .fill(bot.isActive ? .green : .gray)
+                                        .frame(width: 8, height: 8)
+                                    
+                                    Text(bot.isActive ? "ACTIVE" : "IDLE")
+                                        .font(.system(size: 12, weight: .medium, design: .rounded))
+                                        .foregroundStyle(bot.isActive ? .green : .gray)
+                                }
+                            }
+                        }
+                    }
+                    .padding(20)
+                    .background(
+                        RoundedRectangle(cornerRadius: 16)
+                            .fill(.white.opacity(0.05))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .stroke(confidenceColor(bot.confidence).opacity(0.3), lineWidth: 1)
+                            )
+                    )
+                    
+                    // Performance Metrics
+                    VStack(alignment: .leading, spacing: 16) {
+                        Text("Performance Metrics")
+                            .font(.system(size: 18, weight: .bold, design: .rounded))
+                            .foregroundStyle(.white)
+                        
+                        LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 16) {
+                            MyStatCard(title: "Confidence", value: String(format: "%.1f%%", bot.confidence * 100))
+                            MyStatCard(title: "Win Rate", value: String(format: "%.1f%%", bot.winRate))
+                            MyStatCard(title: "P&L", value: formatCurrency(bot.profitLoss))
+                            MyStatCard(title: "Total Trades", value: "\(bot.totalTrades)")
+                            MyStatCard(title: "XP Points", value: String(format: "%.0f", bot.xp))
+                            MyStatCard(title: "Grade", value: bot.performanceGrade)
                         }
                     }
                     
-                    // Bot Stats
-                    LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 16) {
-                        MyStatCard(title: "Confidence", value: String(format: "%.1f%%", bot.confidence * 100))
-                        MyStatCard(title: "Win Rate", value: String(format: "%.1f%%", bot.winRate))
-                        MyStatCard(title: "P&L", value: formatCurrency(bot.profitLoss))
-                        MyStatCard(title: "Total Trades", value: "\(bot.totalTrades)")
-                        MyStatCard(title: "Strategy", value: bot.strategy.rawValue)
-                        MyStatCard(title: "Specialization", value: bot.specialization.rawValue)
+                    // Bot Configuration
+                    VStack(alignment: .leading, spacing: 16) {
+                        Text("Configuration")
+                            .font(.system(size: 18, weight: .bold, design: .rounded))
+                            .foregroundStyle(.white)
+                        
+                        VStack(spacing: 12) {
+                            InfoRow(label: "Strategy", value: bot.strategy.rawValue)
+                            InfoRow(label: "Specialization", value: bot.specialization.rawValue)
+                            InfoRow(label: "AI Engine", value: bot.aiEngine.rawValue)
+                            InfoRow(label: "VPS Status", value: bot.vpsStatus.rawValue)
+                            
+                            if let lastTraining = bot.lastTraining {
+                                InfoRow(label: "Last Training", value: formatDate(lastTraining))
+                            }
+                        }
+                        .padding(16)
+                        .background(
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(.white.opacity(0.05))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .stroke(.white.opacity(0.1), lineWidth: 1)
+                                )
+                        )
                     }
                     
                     Spacer()
                 }
-                .padding()
+                .padding(20)
             }
+            .background(Color.black)
             .navigationTitle("Bot Details")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -519,6 +436,7 @@ struct BotDetailView: View {
                     Button("Done") {
                         dismiss()
                     }
+                    .foregroundStyle(.blue)
                 }
             }
         }
@@ -541,6 +459,13 @@ struct BotDetailView: View {
         formatter.maximumFractionDigits = 0
         return formatter.string(from: NSNumber(value: amount)) ?? "$0"
     }
+    
+    private func formatDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .short
+        return formatter.string(from: date)
+    }
 }
 
 struct MyStatCard: View {
@@ -550,79 +475,23 @@ struct MyStatCard: View {
     var body: some View {
         VStack(spacing: 8) {
             Text(value)
-                .font(.title2.bold())
+                .font(.system(size: 18, weight: .bold, design: .rounded))
                 .foregroundStyle(.white)
             
             Text(title)
-                .font(.caption)
-                .foregroundStyle(.secondary)
+                .font(.system(size: 12, weight: .medium, design: .rounded))
+                .foregroundStyle(.white.opacity(0.7))
         }
-        .frame(maxWidth: .infinity)
-        .padding()
-        .background(Color.gray.opacity(0.1))
-        .cornerRadius(12)
-    }
-}
-
-// MARK: - VPS Status View
-struct VPSStatusView: View {
-    let vpsManager: SimpleVPSManager
-    @Environment(\.dismiss) private var dismiss
-    
-    var body: some View {
-        NavigationStack {
-            VStack(spacing: 24) {
-                // Connection Status
-                VStack(spacing: 16) {
-                    Image(systemName: vpsManager.isConnected ? "checkmark.circle.fill" : "xmark.circle.fill")
-                        .font(.system(size: 60))
-                        .foregroundStyle(vpsManager.isConnected ? .green : .red)
-                    
-                    Text(vpsManager.connectionStatus.rawValue)
-                        .font(.title.bold())
-                    
-                    if vpsManager.isConnected {
-                        Text("VPS is online and ready")
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                
-                // VPS Info
-                VStack(alignment: .leading, spacing: 12) {
-                    InfoRow(label: "Server IP", value: "172.234.201.231")
-                    InfoRow(label: "Status", value: vpsManager.connectionStatus.rawValue)
-                    if vpsManager.lastPing > 0 {
-                        InfoRow(label: "Ping", value: "\(String(format: "%.0f", vpsManager.lastPing))ms")
-                    }
-                    InfoRow(label: "Active Bots", value: "\(vpsManager.activeBots.count)")
-                }
-                .padding()
-                .background(Color.gray.opacity(0.1))
-                .cornerRadius(12)
-                
-                if !vpsManager.isConnected {
-                    Button("Connect to VPS") {
-                        Task {
-                            await vpsManager.connectToVPS()
-                        }
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.large)
-                }
-                
-                Spacer()
-            }
-            .padding()
-            .navigationTitle("VPS Status")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Done") {
-                        dismiss()
-                    }
-                }
-            }
-        }
+        .frame(maxWidth: .infinity, minHeight: 80)
+        .padding(12)
+        .background(
+            RoundedRectangle(cornerRadius: 10)
+                .fill(.white.opacity(0.05))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(.white.opacity(0.1), lineWidth: 1)
+                )
+        )
     }
 }
 
@@ -633,126 +502,145 @@ struct InfoRow: View {
     var body: some View {
         HStack {
             Text(label)
-                .foregroundStyle(.secondary)
+                .font(.system(size: 14, weight: .medium, design: .rounded))
+                .foregroundStyle(.white.opacity(0.7))
             
             Spacer()
             
             Text(value)
-                .fontWeight(.medium)
+                .font(.system(size: 14, weight: .semibold, design: .rounded))
+                .foregroundStyle(.white)
         }
     }
 }
 
-// MARK: - Placeholder Views
-struct ScreenshotGalleryView: View {
-    @Environment(\.dismiss) private var dismiss
-    
-    var body: some View {
-        NavigationStack {
-            VStack {
-                Text("🚧 Coming Soon")
-                    .font(.title)
-                Text("Screenshot gallery feature in development")
-                    .foregroundStyle(.secondary)
-            }
-            .navigationTitle("Screenshots")
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Done") { dismiss() }
-                }
-            }
-        }
-    }
-}
-
+// MARK: - Enhanced ProTrader GPT Chat View
 struct ProTraderGPTChatView: View {
     @Environment(\.dismiss) private var dismiss
+    @State private var messages: [ChatMessage] = [
+        ChatMessage(content: "👋 Hello! I'm your ProTrader AI Assistant. How can I help you optimize your trading bots today?", isUser: false)
+    ]
+    @State private var inputText = ""
     
-    var body: some View {
-        NavigationStack {
-            VStack {
-                Text("🤖 AI Assistant")
-                    .font(.title)
-                Text("ProTrader GPT chat coming soon")
-                    .foregroundStyle(.secondary)
-            }
-            .navigationTitle("ProTrader GPT")
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Done") { dismiss() }
-                }
-            }
-        }
+    struct ChatMessage: Identifiable {
+        let id = UUID()
+        let content: String
+        let isUser: Bool
+        let timestamp = Date()
     }
-}
-
-struct BotDeploymentView: View {
-    let armyManager: ProTraderArmyManager
-    @Environment(\.dismiss) private var dismiss
     
     var body: some View {
         NavigationStack {
-            VStack(spacing: 24) {
-                Text("🚀 Bot Deployment")
-                    .font(.title.bold())
-                
-                if armyManager.isDeploying {
-                    VStack(spacing: 16) {
-                        ProgressView(value: armyManager.deploymentProgress)
-                        Text("Deploying bots: \(Int(armyManager.deploymentProgress * 100))%")
+            VStack(spacing: 0) {
+                // Messages
+                ScrollView {
+                    LazyVStack(spacing: 16) {
+                        ForEach(messages) { message in
+                            HStack {
+                                if message.isUser {
+                                    Spacer()
+                                    
+                                    Text(message.content)
+                                        .padding(12)
+                                        .background(Color.blue.opacity(0.2))
+                                        .foregroundStyle(.white)
+                                        .cornerRadius(12)
+                                        .frame(maxWidth: .infinity * 0.8, alignment: .trailing)
+                                } else {
+                                    HStack(alignment: .top, spacing: 8) {
+                                        Text("🤖")
+                                            .font(.title3)
+                                        
+                                        Text(message.content)
+                                            .padding(12)
+                                            .background(.white.opacity(0.1))
+                                            .foregroundStyle(.white)
+                                            .cornerRadius(12)
+                                            .frame(maxWidth: .infinity * 0.8, alignment: .leading)
+                                    }
+                                    
+                                    Spacer()
+                                }
+                            }
+                        }
                     }
-                } else {
-                    Text("✅ Deployment Complete!")
-                        .font(.headline)
-                        .foregroundStyle(.green)
-                    
-                    Text("\(armyManager.deployedBots) bots deployed to VPS")
-                        .foregroundStyle(.secondary)
+                    .padding(16)
                 }
                 
-                Spacer()
+                // Input area
+                HStack(spacing: 12) {
+                    TextField("Ask about your bots...", text: $inputText)
+                        .textFieldStyle(.roundedBorder)
+                    
+                    Button("Send") {
+                        sendMessage()
+                    }
+                    .disabled(inputText.isEmpty)
+                    .buttonStyle(.borderedProminent)
+                }
+                .padding(16)
             }
-            .padding()
-            .navigationTitle("Deployment")
+            .background(Color.black)
+            .navigationTitle("ProTrader GPT")
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Done") { dismiss() }
+                    Button("Done") {
+                        dismiss()
+                    }
+                    .foregroundStyle(.blue)
                 }
             }
         }
     }
-}
-
-struct MassiveDataDownloadView: View {
-    let armyManager: ProTraderArmyManager
-    @Environment(\.dismiss) private var dismiss
     
-    var body: some View {
-        NavigationStack {
-            VStack {
-                Text("📊 Data Download")
-                    .font(.title)
-                Text("Massive data download feature coming soon")
-                    .foregroundStyle(.secondary)
-            }
-            .navigationTitle("Data Download")
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Done") { dismiss() }
-                }
-            }
+    private func sendMessage() {
+        let userMessage = ChatMessage(content: inputText, isUser: true)
+        messages.append(userMessage)
+        
+        let aiResponse = generateAIResponse(to: inputText)
+        let aiMessage = ChatMessage(content: aiResponse, isUser: false)
+        
+        inputText = ""
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+            messages.append(aiMessage)
         }
+    }
+    
+    private func generateAIResponse(to input: String) -> String {
+        let responses = [
+            "🎯 Based on your query, I recommend focusing on your GODMODE bots for maximum profit potential.",
+            "📊 Your bot army is performing well! Consider increasing the confidence threshold for better results.",
+            "⚡ I suggest deploying more bots to the trending markets for optimal returns.",
+            "🧠 Your AI models are learning efficiently. Keep training with fresh market data!",
+            "🚀 Your VPS connection is stable. Perfect time to scale up your trading operations.",
+            "💡 Try adjusting your risk management settings for more consistent performance."
+        ]
+        return responses.randomElement() ?? "Thanks for your question! I'm here to help optimize your ProTrader Army."
     }
 }
 
 #Preview {
-    AProTraderMetricCard(
-        icon: "brain.head.profile",
-        title: "Avg Confidence",
-        value: "87.5%",
-        subtitle: "Target: 90%+",
-        color: .blue,
-        trend: .up
-    )
+    VStack(spacing: 20) {
+        AProTraderMetricCard(
+            icon: "brain.head.profile",
+            title: "Avg Confidence",
+            value: "87.5%",
+            subtitle: "Target: 90%+",
+            color: .blue,
+            trend: .up
+        )
+        
+        MyArmyStatCard(
+            title: "Active Bots",
+            value: "4,250",
+            icon: "robot",
+            color: .green,
+            subtitle: "Trading Now"
+        )
+    }
+    .padding(20)
+    .background(Color.black)
     .preferredColorScheme(.dark)
 }

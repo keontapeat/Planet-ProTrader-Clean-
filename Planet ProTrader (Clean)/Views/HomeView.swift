@@ -91,18 +91,21 @@ struct HomeView: View {
                         }
                     }
                 }
-                .frame(height: 320) // Increased height for better spacing
+                .frame(height: 200)
+                .zIndex(1)
                 
                 // Selected Planet Info
                 selectedPlanetInfo
+                    .zIndex(2)
+                
+                Spacer()
                 
                 // Enter Planet Button
                 enterPlanetButton
-                
+                    .zIndex(3)
             }
             .padding(.horizontal)
             .padding(.top, 20)
-            .padding(.bottom, 100) 
         }
         .navigationTitle("")
         .navigationBarHidden(false)
@@ -130,10 +133,6 @@ struct HomeView: View {
     // MARK: - Subviews
     private var headerView: some View {
         VStack(spacing: 12) {
-            Text("Trading Solar System")
-                .font(.system(size: 28, weight: .bold, design: .rounded))
-                .foregroundColor(.white)
-            
             Text("Choose your trading mentor planet")
                 .font(.subheadline)
                 .foregroundColor(.white.opacity(0.8))
