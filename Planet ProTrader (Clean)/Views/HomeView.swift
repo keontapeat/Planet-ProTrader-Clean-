@@ -1,11 +1,3 @@
-//
-//  HomeView.swift
-//  Planet ProTrader - Solar System Edition
-//
-//  Trading Solar System with Mentor Planets
-//  Created by AI Assistant on 1/25/25.
-//
-
 import SwiftUI
 
 // MARK: - Home View (Now shows Solar System)
@@ -47,9 +39,22 @@ struct HomeView: View {
                     )
             }
             
-            VStack(spacing: 20) {
-                // Header
-                headerView
+            // FIXED HEADER - COMPLETELY STATIC WITH NO ANIMATIONS
+            VStack {
+                Text("Choose your trading mentor planet")
+                    .font(.subheadline)
+                    .foregroundColor(.white.opacity(0.8))
+                    .padding(.top, 50) // INCREASED from 30 to 50 to move text down and avoid overlap
+                Spacer()
+            }
+            .zIndex(10) // Put it on top so nothing affects it
+            .animation(.none) // KILL ALL ANIMATIONS ON THIS
+            .id("fixed-header-never-move") // Unique ID to prevent any layout changes
+            
+            VStack(spacing: 20) { 
+                // Spacer to make room for fixed header
+                Spacer()
+                    .frame(height: 40) // Replace the dynamic header with fixed space
                 
                 // Solar System
                 GeometryReader { geometry in
@@ -91,21 +96,29 @@ struct HomeView: View {
                         }
                     }
                 }
-                .frame(height: 200)
+                .frame(height: 180)
                 .zIndex(1)
+                
+                // Add some space between planets and info card
+                Spacer()
+                    .frame(height: 60) // INCREASED from 45 to 60 to push caption DOWN even more
                 
                 // Selected Planet Info
                 selectedPlanetInfo
                     .zIndex(2)
                 
+                // FIXED SPACER - REDUCED TO BRING BUTTON CLOSER TO CAPTION
                 Spacer()
+                    .frame(height: 2) // REDUCED from 5 to 2 to bring button much closer to caption
                 
-                // Enter Planet Button
+                // Enter Planet Button - FIXED POSITION
                 enterPlanetButton
+                    .padding(.bottom, 100) // Keep bottom padding the same
                     .zIndex(3)
             }
             .padding(.horizontal)
-            .padding(.top, 20)
+            .padding(.top, 0)
+            .padding(.bottom, -15)
         }
         .navigationTitle("")
         .navigationBarHidden(false)
@@ -114,7 +127,7 @@ struct HomeView: View {
             ToolbarItem(placement: .principal) {
                 Text("Trading Solar System")
                     .font(.headline)
-                    .fontWeight(.bold)
+                    .fontWeight(.semibold)
                     .foregroundColor(.white)
             }
         }
@@ -131,62 +144,83 @@ struct HomeView: View {
     }
     
     // MARK: - Subviews
-    private var headerView: some View {
-        VStack(spacing: 12) {
-            Text("Choose your trading mentor planet")
-                .font(.subheadline)
-                .foregroundColor(.white.opacity(0.8))
-        }
-        .padding(.top, 20)
-    }
-    
+    // MARK: - Subviews - REMOVED DYNAMIC HEADER
+    // Header is now completely static in the ZStack above
     private var selectedPlanetInfo: some View {
         VStack(spacing: 16) {
-            // Planet header with slogan in the middle
-            HStack(spacing: 12) {
-                VStack(alignment: .leading, spacing: 4) {
+            // Planet header with slogan - COMPLETELY STATIC
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
                     Text(solarManager.selectedPlanet.name)
                         .font(.title2)
                         .fontWeight(.bold)
                         .foregroundColor(.white)
-                    
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.6) // Allow heavy scaling to fit
+                        .layoutPriority(1) // High priority to prevent clipping
+                    Spacer()
+                }
+                
+                HStack {
                     Text("\"\(solarManager.selectedPlanet.philosophy)\"")
-                        .font(.title3.bold())
+                        .font(.callout.bold())
                         .foregroundStyle(planetPhilosophyGradient)
-                        .shadow(color: solarManager.selectedPlanet.color.opacity(0.3), radius: 4, x: 0, y: 2)
-                    
+                        .shadow(color: solarManager.selectedPlanet.color.opacity(0.3), radius: 3, x: 0, y: 1)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.7)
+                        .layoutPriority(1)
+                    Spacer()
+                }
+                
+                HStack {
                     Text("by \(solarManager.selectedPlanet.mentorName)")
                         .font(.subheadline)
                         .foregroundColor(.white.opacity(0.8))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                    Spacer()
                 }
-                
-                Spacer()
             }
             
-            // Planet details
-            VStack(alignment: .leading, spacing: 12) {
-                Text(solarManager.selectedPlanet.description)
-                    .font(.subheadline)
-                    .foregroundColor(.white.opacity(0.9))
-                    .multilineTextAlignment(.leading)
+            // Planet details - STATIC LAYOUT
+            VStack(alignment: .leading, spacing: 10) {
+                HStack {
+                    Text(solarManager.selectedPlanet.description)
+                        .font(.subheadline)
+                        .foregroundColor(.white.opacity(0.9))
+                        .multilineTextAlignment(.leading)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.8)
+                        .layoutPriority(1)
+                    Spacer()
+                }
                 
-                // Account Balance & Expertise (organized nicely)
+                // Account Balance & Expertise - FIXED SIZE
                 VStack(spacing: 8) {
                     accountBalanceRow
                     tradingExpertiseRow
                 }
             }
             
-            // Subtitle emphasizing the power
-            Text("Each planet is your personal trading account")
-                .font(.caption)
-                .italic()
-                .foregroundColor(.white.opacity(0.6))
-                .multilineTextAlignment(.center)
+            // Subtitle - STATIC
+            HStack {
+                Text("Each planet is your personal trading account")
+                    .font(.caption)
+                    .italic()
+                    .foregroundColor(.white.opacity(0.6))
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.8)
+                Spacer()
+            }
+            .padding(.top, 4)
         }
-        .padding(20)
+        .frame(height: 240) // FIXED HEIGHT - NO DYNAMIC SIZING
+        .padding(.horizontal, 20)
+        .padding(.vertical, 18)
         .background(planetInfoBackground)
-        .animation(.easeInOut(duration: 0.3), value: solarManager.selectedPlanet.id)
+        .clipped() // FORCE CLIP EVERYTHING
+        .id(solarManager.selectedPlanet.id) // PREVENT ANIMATION INTERFERENCE
     }
     
     private var planetPhilosophyGradient: LinearGradient {
@@ -206,6 +240,7 @@ struct HomeView: View {
             Text("Account Balance:")
                 .font(.subheadline.bold())
                 .foregroundColor(.white.opacity(0.8))
+                .layoutPriority(1)
             
             Spacer()
             
@@ -213,9 +248,11 @@ struct HomeView: View {
                 .font(.title3.bold())
                 .foregroundColor(solarManager.selectedPlanet.color)
                 .shadow(color: solarManager.selectedPlanet.color.opacity(0.3), radius: 2, x: 0, y: 1)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
+        .frame(height: 40) 
+        .padding(.horizontal, 14)
         .background(accountBalanceBackground)
     }
 
@@ -229,10 +266,11 @@ struct HomeView: View {
     }
 
     private var tradingExpertiseRow: some View {
-        HStack {
+        HStack(alignment: .center) {
             Text("Trading Expertise:")
                 .font(.subheadline.bold())
                 .foregroundColor(.white.opacity(0.8))
+                .layoutPriority(1)
             
             Spacer()
             
@@ -240,9 +278,12 @@ struct HomeView: View {
                 .font(.subheadline)
                 .foregroundColor(.white.opacity(0.9))
                 .multilineTextAlignment(.trailing)
+                .lineLimit(1) // FORCE SINGLE LINE
+                .minimumScaleFactor(0.6) // Allow heavy scaling
+                .layoutPriority(1)
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
+        .frame(height: 40) // FIXED ROW HEIGHT
+        .padding(.horizontal, 14)
         .background(tradingExpertiseBackground)
     }
 
@@ -278,16 +319,17 @@ struct HomeView: View {
                 Text("Enter \(solarManager.selectedPlanet.name)")
                     .font(.headline)
                     .fontWeight(.semibold)
+                    .lineLimit(1) // FORCE SINGLE LINE
+                    .minimumScaleFactor(0.7) // ALLOW SCALING IF TEXT TOO LONG
             }
             .foregroundColor(.white)
-            .padding(.horizontal, 32)
-            .padding(.vertical, 16)
+            .frame(width: 250, height: 50) // FIXED WIDTH AND HEIGHT - NEVER CHANGES
             .background(enterButtonBackground)
             .clipShape(Capsule())
             .shadow(color: solarManager.selectedPlanet.color.opacity(0.3), radius: 10, x: 0, y: 5)
         }
-        .scaleEffect(planetAnimations[solarManager.selectedPlanet.id] ?? false ? 1.1 : 1.0)
-        .animation(.easeInOut(duration: 0.2), value: planetAnimations[solarManager.selectedPlanet.id])
+        .animation(.none) // KILL ALL LAYOUT ANIMATIONS
+        .id("enter-button-static") // UNIQUE ID TO PREVENT LAYOUT CHANGES
     }
 
     private var enterButtonBackground: LinearGradient {

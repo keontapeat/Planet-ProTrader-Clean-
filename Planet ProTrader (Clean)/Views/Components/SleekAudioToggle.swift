@@ -21,7 +21,10 @@ struct SleekAudioToggle: View {
                 withAnimation(.easeInOut(duration: 0.3)) {
                     audioManager.toggleMusic()
                 }
-                audioManager.playButtonTap()
+                // FIXED: Wrap async call in Task
+                Task {
+                    await audioManager.playButtonTap()
+                }
                 
                 // Pulse animation feedback
                 withAnimation(.easeInOut(duration: 0.2)) {
@@ -97,12 +100,15 @@ struct SleekAudioToggle: View {
                 HStack(spacing: 8) {
                     // Play/Pause
                     Button(action: {
-                        if audioManager.isPlaying {
-                            audioManager.pauseMusic()
-                        } else {
-                            audioManager.playInterstellarTheme()
+                        // FIXED: Wrap async calls in Task
+                        Task {
+                            if audioManager.isPlaying {
+                                audioManager.pauseMusic()
+                            } else {
+                                await audioManager.playInterstellarTheme()
+                            }
+                            await audioManager.playButtonTap()
                         }
-                        audioManager.playButtonTap()
                     }) {
                         Image(systemName: audioManager.isPlaying ? "pause.fill" : "play.fill")
                             .font(.system(size: 14, weight: .semibold))
@@ -117,7 +123,10 @@ struct SleekAudioToggle: View {
                         withAnimation(.easeInOut(duration: 0.3)) {
                             showingVolume.toggle()
                         }
-                        audioManager.playButtonTap()
+                        // FIXED: Wrap async call in Task
+                        Task {
+                            await audioManager.playButtonTap()
+                        }
                     }) {
                         Image(systemName: showingVolume ? "speaker.slash" : "speaker.2")
                             .font(.system(size: 14, weight: .semibold))
@@ -150,7 +159,10 @@ struct CompactAudioToggle: View {
     var body: some View {
         Button(action: {
             audioManager.toggleMusic()
-            audioManager.playButtonTap()
+            // FIXED: Wrap async call in Task
+            Task {
+                await audioManager.playButtonTap()
+            }
         }) {
             HStack(spacing: 6) {
                 Image(systemName: audioManager.isMusicEnabled ? "music.note" : "music.note.slash")
@@ -196,7 +208,10 @@ struct AudioStatusBar: View {
             
             // Quick Test Button
             Button("Test") {
-                audioManager.forceTestAudio()
+                // FIXED: Wrap async call in Task
+                Task {
+                    await audioManager.forceTestAudio()
+                }
             }
             .font(.caption2.bold())
             .foregroundColor(.blue)

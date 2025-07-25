@@ -28,6 +28,13 @@ struct ProTraderBot: Identifiable {
     var vpsStatus: VPSStatus
     var screenshotUrls: [String] = []
     
+    // Additional properties for dashboard
+    var todayPnL: Double = 0.0
+    var virtualPnL: Double = 0.0
+    var totalPnL: Double = 0.0
+    var testTrades: Int = 0
+    var learningProgress: Double = 0.0
+    
     // Computed Properties
     var winRate: Double {
         guard totalTrades > 0 else { return 0 }
@@ -145,6 +152,12 @@ class ProTraderArmyManager: ObservableObject {
     @Published var isDeploying = false
     @Published var deploymentProgress: Double = 0.0
     
+    // Additional properties for dashboard
+    @Published var liveBots: [ProTraderBot] = []
+    @Published var demoBots: [ProTraderBot] = []
+    @Published var topBots: [ProTraderBot] = []
+    @Published var activeBots: Int = 2450
+    
     // Computed Properties
     var totalProfitLoss: Double {
         24567.0 
@@ -156,6 +169,88 @@ class ProTraderArmyManager: ObservableObject {
     
     init() {
         print(" ProTraderArmyManager created (lightweight)")
+        setupInitialData()
+    }
+    
+    func setupInitialData() {
+        // Create sample bots for different categories
+        liveBots = createSampleLiveBots()
+        demoBots = createSampleDemoBots() 
+        topBots = createSampleTopBots()
+        activeBots = deployedBots
+    }
+    
+    func createSampleLiveBots() -> [ProTraderBot] {
+        return (1...20).map { index in
+            var bot = createBasicBot(index: index)
+            bot.todayPnL = Double.random(in: 50...500)
+            bot.totalPnL = Double.random(in: 1000...8000)
+            bot.isActive = true
+            return bot
+        }
+    }
+    
+    func createSampleDemoBots() -> [ProTraderBot] {
+        return (21...40).map { index in
+            var bot = createBasicBot(index: index)
+            bot.virtualPnL = Double.random(in: 100...2000)
+            bot.testTrades = Int.random(in: 50...500)
+            bot.learningProgress = Double.random(in: 0.5...0.95)
+            bot.isActive = false
+            return bot
+        }
+    }
+    
+    func createSampleTopBots() -> [ProTraderBot] {
+        return (1...10).map { index in
+            var bot = createBasicBot(index: index)
+            bot.todayPnL = Double.random(in: 200...800)
+            bot.totalPnL = Double.random(in: 5000...12000)
+            bot.confidence = Double.random(in: 0.85...0.98)
+            bot.wins = Int.random(in: 180...250)
+            bot.losses = Int.random(in: 5...25)
+            bot.totalTrades = bot.wins + bot.losses
+            return bot
+        }
+    }
+    
+    func createBasicBot(index: Int) -> ProTraderBot {
+        let strategyIndex = (index - 1) % ProTraderBot.TradingStrategy.allCases.count
+        let strategy = ProTraderBot.TradingStrategy.allCases[strategyIndex]
+        
+        let specializationIndex = (index - 1) % ProTraderBot.BotSpecialization.allCases.count
+        let specialization = ProTraderBot.BotSpecialization.allCases[specializationIndex]
+        
+        let aiEngineIndex = (index - 1) % ProTraderBot.AIEngineType.allCases.count
+        let aiEngine = ProTraderBot.AIEngineType.allCases[aiEngineIndex]
+        
+        return ProTraderBot(
+            botNumber: index,
+            name: "ProBot-\(String(format: "%04d", index))",
+            xp: Double.random(in: 100...500),
+            confidence: Double.random(in: 0.7...0.95),
+            strategy: strategy,
+            wins: Int.random(in: 50...200),
+            losses: Int.random(in: 10...50),
+            totalTrades: Int.random(in: 60...250),
+            profitLoss: Double.random(in: 500...5000),
+            learningHistory: [],
+            lastTraining: nil,
+            isActive: true,
+            specialization: specialization,
+            aiEngine: aiEngine,
+            vpsStatus: .connected,
+            screenshotUrls: []
+        )
+    }
+    
+    // Add missing method
+    func initializeArmy() async {
+        print(" Army initialization...")
+        try? await Task.sleep(nanoseconds: 1_000_000_000)
+        await MainActor.run {
+            setupInitialData()
+        }
     }
     
     // MARK: - Quick Setup (Non-blocking)
@@ -205,7 +300,12 @@ class ProTraderArmyManager: ObservableObject {
                 specialization: specialization,
                 aiEngine: aiEngine,
                 vpsStatus: .connected,
-                screenshotUrls: []
+                screenshotUrls: [],
+                todayPnL: 0.0,
+                virtualPnL: 0.0,
+                totalPnL: 0.0,
+                testTrades: 0,
+                learningProgress: 0.0
             )
         }
     }

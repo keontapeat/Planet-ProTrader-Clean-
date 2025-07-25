@@ -33,7 +33,7 @@ struct ContentView: View {
                 }
                 .tag(0)
                 
-                // FIXED: Show ProTrader Dashboard with full bot deployment
+                // FIXED: Remove NavigationView wrapper to eliminate navbar
                 ProTraderDashboardView()
                     .tabItem {
                         Image(systemName: "location.slash")
@@ -74,7 +74,7 @@ struct ContentView: View {
             .onChange(of: selectedTab) { oldValue, newValue in
                 // FIXED: Safe audio call with error handling
                 Task {
-                    try? await audioManager.playButtonTap()
+                    await audioManager.playButtonTap()
                 }
             }
         }
@@ -120,7 +120,7 @@ struct ContentView: View {
         
         // Safe audio call
         Task {
-            try? await audioManager.playNotification()
+            await audioManager.playNotification()
         }
         
         print("✅ System ready!")
@@ -180,7 +180,7 @@ struct ProfessionalMoreTabView: View {
     
     private var headerSection: some View {
         VStack(spacing: 16) {
-            Text("🌟 Premium Trading Suite")
+            Text("🌌")
                 .font(.title2.bold())
                 .foregroundStyle(
                     LinearGradient(
@@ -200,7 +200,7 @@ struct ProfessionalMoreTabView: View {
     
     private var professionalToolsSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("🛠️ Professional Tools")
+            Text("🛠 Professional Tools")
                 .font(.headline.bold())
                 .foregroundColor(.white)
             
@@ -272,7 +272,7 @@ struct ProfessionalMoreTabView: View {
     
     private var supportSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("🆘 Help & Support")
+            Text("❓ Help & Support")
                 .font(.headline.bold())
                 .foregroundColor(.white)
             
@@ -383,7 +383,7 @@ struct PremiumProfileView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 20) {
-                Text("👤 Profile Settings")
+                Text("👤")
                     .font(.title.bold())
                 
                 Text("Profile management coming soon!")
@@ -410,7 +410,7 @@ struct AdvancedSettingsView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 20) {
-                Text("⚙️ Advanced Settings")
+                Text("⚙️")
                     .font(.title.bold())
                 
                 Text("Settings panel coming soon!")

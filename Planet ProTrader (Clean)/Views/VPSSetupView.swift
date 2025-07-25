@@ -58,7 +58,10 @@ struct VPSSetupView: View {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") {
                         dismiss()
-                        audioManager.playButtonTap()
+                        // FIXED: Wrap async call in Task
+                        Task {
+                            await audioManager.playButtonTap()
+                        }
                     }
                     .foregroundColor(.blue)
                 }
@@ -140,7 +143,10 @@ struct VPSSetupView: View {
                 ForEach(vpsProviders, id: \.self) { provider in
                     Button(action: {
                         selectedProvider = provider
-                        audioManager.playButtonTap()
+                        // FIXED: Wrap async call in Task
+                        Task {
+                            await audioManager.playButtonTap()
+                        }
                     }) {
                         VStack(spacing: 8) {
                             Image(systemName: getProviderIcon(provider))
@@ -324,20 +330,29 @@ struct VPSSetupView: View {
     
     private func connectToVPS() {
         isConnecting = true
-        audioManager.playDeploy()
+        // FIXED: Wrap async call in Task
+        Task {
+            await audioManager.playDeploy()
+        }
         
         // Simulate connection process
         DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
             isConnecting = false
             connectionStatus = "Connected"
-            audioManager.playSuccess()
+            // FIXED: Wrap async call in Task
+            Task {
+                await audioManager.playSuccess()
+            }
             
             GlobalToastManager.shared.show("🎉 VPS Server deployed successfully!", type: .success)
         }
     }
     
     private func testConnection() {
-        audioManager.playButtonTap()
+        // FIXED: Wrap async call in Task
+        Task {
+            await audioManager.playButtonTap()
+        }
         GlobalToastManager.shared.show("🔍 Testing connection to \(selectedProvider)...", type: .info)
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
@@ -346,7 +361,10 @@ struct VPSSetupView: View {
     }
     
     private func viewLogs() {
-        audioManager.playButtonTap()
+        // FIXED: Wrap async call in Task
+        Task {
+            await audioManager.playButtonTap()
+        }
         GlobalToastManager.shared.show("📋 VPS logs - Coming soon!", type: .info)
     }
 }
