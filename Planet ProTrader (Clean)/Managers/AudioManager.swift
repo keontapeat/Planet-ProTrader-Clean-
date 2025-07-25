@@ -282,24 +282,26 @@ class AudioManager: NSObject, ObservableObject {
     private func findAudioFileFixed(named fileName: String) -> URL? {
         print("🔍 Looking for audio file: \(fileName)")
         
-        // FIXED: Try the exact path where your file is located
+        // FIXED: Try M4A first since that's what the file actually is
         let searchOptions: [(String?, String?, String?)] = [
-            // Check in main bundle root first
-            (fileName, "mp3", nil),
+            // Check for M4A format first (the actual file format)
             (fileName, "m4a", nil),
+            (fileName, "m4a", "Audio "),
+            (fileName, "m4a", "Audio"),
+            
+            // Then try other formats
+            (fileName, "mp3", nil),
             (fileName, "wav", nil),
             (fileName, "caf", nil),
             (fileName, nil, nil),
             
             // FIXED: Check in "Audio " subdirectory (note the space in folder name)
             (fileName, "mp3", "Audio "),
-            (fileName, "m4a", "Audio "),
             (fileName, "wav", "Audio "),
             (fileName, nil, "Audio "),
             
             // Also try without space in case folder was renamed
             (fileName, "mp3", "Audio"),
-            (fileName, "m4a", "Audio"),
             (fileName, "wav", "Audio"),
             (fileName, nil, "Audio")
         ]

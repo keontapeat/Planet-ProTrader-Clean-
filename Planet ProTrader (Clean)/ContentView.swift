@@ -78,7 +78,6 @@ struct ContentView: View {
                 }
             }
         }
-        .modifier(GlobalToastModifier())
         .overlay(alignment: .topTrailing) {
             // FIXED: Non-blocking audio control
             if showingAudioControls {
@@ -116,7 +115,7 @@ struct ContentView: View {
         try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 second
         
         // Show welcome message
-        GlobalToastManager.shared.show("Welcome to Planet ProTrader!", type: .success)
+        // Removed GlobalToastModifier usage
         
         // Safe audio call
         Task {
@@ -278,7 +277,8 @@ struct ProfessionalMoreTabView: View {
             
             VStack(spacing: 8) {
                 MoreListItem(title: "Support Center", icon: "headphones.circle.fill", color: .green, action: { showComingSoon("Support") })
-                MoreListItem(title: "Trading Guide", icon: "book.fill", color: .blue, action: { showComingSoon("Guide") })
+                MoreListItem(title: "Trading Guide", icon: "book.fill", color: .blue, action: { showComingSoon("Guide") }
+                )
                 MoreListItem(title: "Community", icon: "person.3.fill", color: .indigo, action: { showComingSoon("Community") })
                 MoreListItem(title: "About", icon: "info.circle.fill", color: .cyan, action: { showComingSoon("About") })
             }
@@ -309,7 +309,8 @@ struct ProfessionalMoreTabView: View {
     }
     
     private func showComingSoon(_ feature: String) {
-        GlobalToastManager.shared.show("\(feature) - Coming Soon!", type: .info)
+        // Removed GlobalToastManager usage
+        print("🌟 Feature \(feature) is coming soon!")
     }
 }
 
