@@ -36,7 +36,7 @@ struct ContentView: View {
                 // FIXED: Show ProTrader Dashboard with full bot deployment
                 ProTraderDashboardView()
                     .tabItem {
-                        Image(systemName: "brain.head.profile")
+                        Image(systemName: "location.slash")
                         Text("AI Bots")
                     }
                     .tag(1)

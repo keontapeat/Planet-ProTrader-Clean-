@@ -34,7 +34,7 @@ struct TradingPlanet: Identifiable, Hashable {
                 icon: "",
                 expertise: "Technical Analysis & Risk Management",
                 unlocked: true,
-                philosophy: "Precision, Excellence, Adaptability, Tenacity"
+                philosophy: "Where Poverty Doesn't Exist"
             ),
             TradingPlanet(
                 name: "Golden Core",
@@ -46,7 +46,7 @@ struct TradingPlanet: Identifiable, Hashable {
                 icon: "",
                 expertise: "Core Trading Systems",
                 unlocked: true,
-                philosophy: "The center of all trading knowledge"
+                philosophy: "Where Wealth Is Infinite"
             ),
             TradingPlanet(
                 name: "Solar Command",
@@ -58,7 +58,7 @@ struct TradingPlanet: Identifiable, Hashable {
                 icon: "",
                 expertise: "Central Trading Operations",
                 unlocked: true,
-                philosophy: "Illuminate all trading paths"
+                philosophy: "Where Success Burns Bright"
             ),
             TradingPlanet(
                 name: "Discipline",
@@ -70,7 +70,7 @@ struct TradingPlanet: Identifiable, Hashable {
                 icon: "brain.head.profile",
                 expertise: "Trading Psychology & Mindset",
                 unlocked: true,
-                philosophy: "Think like a trader, not a gambler"
+                philosophy: "Where Mindset Conquers Markets"
             ),
             TradingPlanet(
                 name: "Mental Game",
@@ -82,7 +82,7 @@ struct TradingPlanet: Identifiable, Hashable {
                 icon: "leaf.fill",
                 expertise: "Mental Game Coaching",
                 unlocked: true,
-                philosophy: "Master your emotions, master the markets"
+                philosophy: "Where Champions Are Made"
             ),
             TradingPlanet(
                 name: "Zen Trading",
@@ -94,7 +94,7 @@ struct TradingPlanet: Identifiable, Hashable {
                 icon: "figure.mind.and.body",
                 expertise: "Emotional Intelligence & Mindfulness",
                 unlocked: true,
-                philosophy: "Trade from a state of emotional freedom"
+                philosophy: "Where Peace Meets Profit"
             )
         ]
     }

@@ -33,10 +33,11 @@ class AudioManager: NSObject, ObservableObject {
         }
     }
     
-    @Published var musicVolume: Float = 0.6 {
+    @Published var musicVolume: Float = 0.8 {
         didSet {
             UserDefaults.standard.set(musicVolume, forKey: "audio_music_volume")
             backgroundPlayer?.volume = musicVolume
+            print("🔊 Volume set to: \(Int(musicVolume * 100))%")
         }
     }
     
@@ -50,7 +51,7 @@ class AudioManager: NSObject, ObservableObject {
     @Published var currentTrack: AudioTrack?
     @Published var playbackPosition: TimeInterval = 0
     @Published var trackDuration: TimeInterval = 0
-    @Published var audioFileStatus: String = "Checking audio files..."
+    @Published var audioFileStatus: String = "🎵 Audio ready"
     
     // MARK: - Private Properties
     private var backgroundPlayer: AVAudioPlayer?
@@ -96,12 +97,12 @@ class AudioManager: NSObject, ObservableObject {
         
         var systemSoundID: SystemSoundID {
             switch self {
-            case .buttonTap: return 1104 // Modern click
-            case .success: return 1016 // SMS received
-            case .error: return 1053 // Popcorn
-            case .notification: return 1150 // Tweet sent
-            case .deploy: return 1013 // Text tone input
-            case .achievement: return 1054 // Glass
+            case .buttonTap: return 1104 // Simple click
+            case .success: return 1322 // Camera capture - clean
+            case .error: return 1107 // Simple error beep  
+            case .notification: return 1315 // Mail sent - clean
+            case .deploy: return 1322 // Camera capture
+            case .achievement: return 1315 // Mail sent
             }
         }
     }
@@ -112,60 +113,8 @@ class AudioManager: NSObject, ObservableObject {
         setupAudioSession()
         setupInterruptionHandling()
         
-        // Debug: List all audio files on startup
-        print("🚀 AudioManager initializing...")
-        checkAudioFiles()
-        
-        // Auto-start interstellar theme if enabled
-        if isMusicEnabled {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                self.playInterstellarTheme()
-            }
-        }
-    }
-    
-    // MARK: - Audio File Checking
-    private func checkAudioFiles() {
-        print("🔍 Checking for audio files...")
-        audioFileStatus = "Checking audio files..."
-        
-        // Check for interstellar theme specifically
-        if let audioURL = findAudioFile(named: "interstellar_theme") {
-            print("✅ Interstellar theme found at: \(audioURL.path)")
-            audioFileStatus = "✅ Audio files found"
-        } else {
-            print("❌ Audio files not found in bundle")
-            audioFileStatus = "❌ Audio files missing from bundle"
-            showAudioSetupInstructions()
-        }
-        
-        listAvailableAudioFiles()
-    }
-    
-    private func showAudioSetupInstructions() {
-        print("""
-        
-        📁 AUDIO SETUP INSTRUCTIONS:
-        
-        Your interstellar_theme.mp3 file exists but isn't in the Xcode project bundle.
-        
-        To fix this:
-        1. Open Xcode
-        2. Right-click on your project in the navigator
-        3. Select "Add Files to [ProjectName]"
-        4. Navigate to: /Users/keonta/Documents/Planet ProTrader (Clean)/Planet ProTrader (Clean)/Audio/
-        5. Select interstellar_theme.mp3
-        6. Make sure "Add to target" is checked for your main app target
-        7. Click "Add"
-        
-        Alternative method:
-        1. Drag interstellar_theme.mp3 directly from Finder into your Xcode project
-        2. Choose "Copy items if needed" 
-        3. Make sure your app target is selected
-        
-        The file should appear in your project navigator after adding it.
-        
-        """)
+        audioFileStatus = "🎵 Audio system ready"
+        print("🚀 AudioManager initialized with volume: \(Int(musicVolume * 100))%")
     }
     
     // MARK: - Audio Session Configuration
@@ -174,17 +123,17 @@ class AudioManager: NSObject, ObservableObject {
             try audioSession.setCategory(
                 .playback,
                 mode: .default,
-                options: []
+                options: [.duckOthers] // Lower other audio when playing
             )
             
             try audioSession.setPreferredSampleRate(44100.0)
-            try audioSession.setPreferredIOBufferDuration(0.005)
             try audioSession.setActive(true)
             
-            print("✅ Audio session configured successfully for background playback")
+            print("✅ Audio session configured for playback")
             
         } catch {
             print("❌ Failed to configure audio session: \(error.localizedDescription)")
+            audioFileStatus = "⚠️ Audio session setup failed"
         }
     }
     
@@ -257,6 +206,7 @@ class AudioManager: NSObject, ObservableObject {
     func playMusic(track: AudioTrack, loop: Bool = true) {
         guard isMusicEnabled else { 
             print("🔇 Music disabled, not playing \(track.displayName)")
+            audioFileStatus = "🔇 Music disabled"
             return 
         }
         
@@ -265,13 +215,13 @@ class AudioManager: NSObject, ObservableObject {
         // Stop current music if playing
         stopMusic(fadeOut: false)
         
-        // Find the audio file
+        // Find the audio file with better error handling
         guard let audioURL = findAudioFile(named: track.rawValue) else {
             print("❌ Could not find audio file: \(track.rawValue)")
-            audioFileStatus = "❌ Audio file not found: \(track.displayName)"
+            audioFileStatus = "⚠️ Missing: \(track.displayName).mp3"
             
-            // Try system sound as fallback
-            playFallbackSystemSound()
+            // Try to play system sound as elegant fallback
+            playMusicalSystemSound()
             return
         }
         
@@ -279,12 +229,13 @@ class AudioManager: NSObject, ObservableObject {
             // Create and configure player
             backgroundPlayer = try AVAudioPlayer(contentsOf: audioURL)
             backgroundPlayer?.delegate = self
-            backgroundPlayer?.volume = 0.0 // Start silent for fade-in
+            backgroundPlayer?.volume = musicVolume // Start at full volume
             backgroundPlayer?.numberOfLoops = loop ? -1 : 0
             backgroundPlayer?.prepareToPlay()
             
             print("🎼 Audio player created successfully for: \(track.displayName)")
             print("⏱️ Track duration: \(backgroundPlayer?.duration ?? 0) seconds")
+            print("🔊 Starting playback at volume: \(Int(musicVolume * 100))%")
             
             // Start playback
             let success = backgroundPlayer?.play() ?? false
@@ -292,41 +243,92 @@ class AudioManager: NSObject, ObservableObject {
                 currentTrack = track
                 isPlaying = true
                 trackDuration = backgroundPlayer?.duration ?? 0
-                audioFileStatus = "🎵 Playing: \(track.displayName)"
+                audioFileStatus = "🎵 Playing: \(track.displayName) at \(Int(musicVolume * 100))%"
                 
                 // Start position tracking
                 startPositionTracking()
                 
-                // Fade in
-                fadeVolume(to: musicVolume, duration: 2.0)
+                // Ensure volume is audible
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    self.backgroundPlayer?.volume = self.musicVolume
+                    print("🔊 Volume confirmed at: \(Int(self.musicVolume * 100))%")
+                }
                 
-                print("✅ Started playing: \(track.displayName) at volume \(musicVolume)")
+                print("✅ Started playing: \(track.displayName)")
+                
+                // Test if audio is actually working
+                testAudioOutput()
+                
             } else {
                 print("❌ Failed to start playback for: \(track.displayName)")
-                audioFileStatus = "❌ Failed to play: \(track.displayName)"
+                audioFileStatus = "❌ Playback failed: \(track.displayName)"
+                playMusicalSystemSound()
             }
             
         } catch {
             print("❌ Error creating audio player: \(error.localizedDescription)")
-            audioFileStatus = "❌ Error: \(error.localizedDescription)"
+            audioFileStatus = "❌ Audio error: \(getErrorDescription(error))"
+            
+            // Fallback to system sound
+            playMusicalSystemSound()
         }
     }
     
-    private func playFallbackSystemSound() {
-        print("🔔 Playing fallback system sound")
-        AudioServicesPlaySystemSound(1016) // SMS received sound as musical fallback
+    private func testAudioOutput() {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            if let player = self.backgroundPlayer, player.isPlaying {
+                print("✅ Audio confirmed playing - current time: \(player.currentTime)")
+                
+                // Check device volume
+                let volume = AVAudioSession.sharedInstance().outputVolume
+                if volume == 0 {
+                    self.audioFileStatus = "🔇 Device volume is muted! Use volume buttons"
+                    print("⚠️ Device volume is muted!")
+                }
+            } else {
+                print("❌ Audio not playing - falling back to system sound")
+                self.playMusicalSystemSound()
+            }
+        }
+    }
+    
+    private func getErrorDescription(_ error: Error) -> String {
+        if let audioError = error as? AVError {
+            switch audioError.code {
+            case .fileFormatNotRecognized:
+                return "Invalid file format"
+            case .decoderNotFound:
+                return "Audio decoder not found"
+            case .decoderTemporarilyUnavailable:
+                return "Audio decoder unavailable"
+            default:
+                return "Audio system error"
+            }
+        }
+        return "Unknown error"
+    }
+    
+    private func playMusicalSystemSound() {
+        print("🎶 Playing musical system sound as fallback")
         
-        // Create a fake "playing" state for UI purposes
+        // Play ONE clean system sound instead of looping sequence
+        AudioServicesPlaySystemSound(1322) // Camera capture - clean single sound
+        
+        // Create a fake "playing" state for UI consistency
         currentTrack = .interstellarTheme
         isPlaying = true
-        trackDuration = 3.0
-        audioFileStatus = "🔔 Playing system sound (fallback)"
+        trackDuration = 2.0
+        audioFileStatus = "🎶 System sound mode (add MP3 for full audio)"
         
-        // Auto-stop after 3 seconds
-        DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
+        // Start position tracking for UI
+        startPositionTracking()
+        
+        // Stop after 2 seconds - NO MORE LOOPING
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
             self.isPlaying = false
             self.currentTrack = nil
-            self.audioFileStatus = "🔕 System sound finished"
+            self.audioFileStatus = "🔔 Add interstellar_theme.mp3 to hear full audio"
+            self.stopPositionTracking()
         }
     }
     
@@ -339,15 +341,23 @@ class AudioManager: NSObject, ObservableObject {
     }
     
     func resumeMusic() {
-        guard let player = backgroundPlayer else { return }
+        guard let player = backgroundPlayer else { 
+            // If no player, restart music
+            if isMusicEnabled {
+                playInterstellarTheme()
+            }
+            return 
+        }
+        
         let success = player.play()
         if success {
             isPlaying = true
             startPositionTracking()
+            player.volume = musicVolume // Ensure volume is set
             if let track = currentTrack {
-                audioFileStatus = "🎵 Playing: \(track.displayName)"
+                audioFileStatus = "🎵 Playing: \(track.displayName) at \(Int(musicVolume * 100))%"
             }
-            print("▶️ Music resumed")
+            print("▶️ Music resumed at volume: \(Int(musicVolume * 100))%")
         }
     }
     
@@ -399,6 +409,9 @@ class AudioManager: NSObject, ObservableObject {
     }
     
     private func playSystemSound(_ soundID: SystemSoundID) {
+        // Only play if SFX is enabled - single sound only
+        guard isSFXEnabled else { return }
+        
         AudioServicesPlaySystemSound(soundID)
     }
     
@@ -442,8 +455,14 @@ class AudioManager: NSObject, ObservableObject {
         stopPositionTracking()
         
         positionTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
-            guard let self = self, let player = self.backgroundPlayer else { return }
-            self.playbackPosition = player.currentTime
+            guard let self = self else { return }
+            
+            if let player = self.backgroundPlayer {
+                self.playbackPosition = player.currentTime
+            } else if self.currentTrack != nil && self.isPlaying {
+                // For system sound mode, simulate progress
+                self.playbackPosition = min(self.playbackPosition + 0.1, self.trackDuration)
+            }
         }
     }
     
@@ -457,91 +476,36 @@ class AudioManager: NSObject, ObservableObject {
     private func findAudioFile(named fileName: String) -> URL? {
         print("🔍 Looking for audio file: \(fileName)")
         
-        // Try different file extensions
-        let extensions = ["mp3", "m4a", "wav", "caf", "aac"]
+        // Try different file extensions and locations
+        let searchOptions: [(String?, String?)] = [
+            // Main bundle root
+            (fileName, "mp3"),
+            (fileName, "m4a"),
+            (fileName, "wav"),
+            (fileName, "caf"),
+            (fileName, nil),
+            // Audio subdirectory
+            ("Audio/\(fileName)", "mp3"),
+            ("Audio/\(fileName)", "m4a"),
+            ("Audio/\(fileName)", nil)
+        ]
         
-        // Try with extensions first
-        for ext in extensions {
-            if let url = Bundle.main.url(forResource: fileName, withExtension: ext) {
-                print("✅ Found audio file: \(fileName).\(ext) at \(url.path)")
-                return url
+        for (resourceName, fileExtension) in searchOptions {
+            if let url = Bundle.main.url(forResource: resourceName, withExtension: fileExtension) {
+                print("✅ Found audio file: \(url.lastPathComponent) at \(url.path)")
+                
+                // Verify file exists and is readable
+                if FileManager.default.fileExists(atPath: url.path) {
+                    print("✅ File verified as accessible")
+                    return url
+                } else {
+                    print("❌ File exists in bundle but not accessible")
+                }
             }
-        }
-        
-        // Try without extension (in case it's already included)
-        if let url = Bundle.main.url(forResource: fileName, withExtension: nil) {
-            print("✅ Found audio file: \(fileName) at \(url.path)")
-            return url
-        }
-        
-        // Check Audio subdirectory
-        for ext in extensions {
-            if let url = Bundle.main.url(forResource: fileName, withExtension: ext, subdirectory: "Audio") {
-                print("✅ Found audio file in Audio/: \(fileName).\(ext) at \(url.path)")
-                return url
-            }
-        }
-        
-        // Try in Audio subdirectory without extension
-        if let url = Bundle.main.url(forResource: fileName, withExtension: nil, subdirectory: "Audio") {
-            print("✅ Found audio file in Audio/: \(fileName) at \(url.path)")
-            return url
         }
         
         print("❌ Audio file not found: \(fileName)")
         return nil
-    }
-    
-    private func listAvailableAudioFiles() {
-        print("🔍 === AUDIO FILE DIAGNOSTIC ===")
-        
-        guard let bundlePath = Bundle.main.resourcePath else { 
-            print("❌ Could not get bundle resource path")
-            return 
-        }
-        
-        print("📁 Bundle path: \(bundlePath)")
-        
-        let fileManager = FileManager.default
-        let audioExtensions = ["mp3", "m4a", "wav", "caf", "aac"]
-        
-        do {
-            // Check main bundle
-            let files = try fileManager.contentsOfDirectory(atPath: bundlePath)
-            let audioFiles = files.filter { file in
-                let ext = (file as NSString).pathExtension.lowercased()
-                return audioExtensions.contains(ext)
-            }
-            
-            print("🎵 Audio files in main bundle: \(audioFiles.isEmpty ? "NONE" : audioFiles.joined(separator: ", "))")
-            
-            // Check Audio subdirectory
-            let audioPath = bundlePath + "/Audio"
-            if fileManager.fileExists(atPath: audioPath) {
-                let audioSubFiles = try fileManager.contentsOfDirectory(atPath: audioPath)
-                let audioSubAudioFiles = audioSubFiles.filter { file in
-                    let ext = (file as NSString).pathExtension.lowercased()
-                    return audioExtensions.contains(ext)
-                }
-                print("🎵 Audio files in Audio/ subdirectory: \(audioSubAudioFiles.isEmpty ? "NONE" : audioSubAudioFiles.joined(separator: ", "))")
-            } else {
-                print("📁 Audio/ subdirectory does not exist")
-            }
-            
-            // Show first 10 files in bundle for reference
-            print("📋 Sample bundle contents:")
-            for file in files.prefix(10) {
-                print("  - \(file)")
-            }
-            if files.count > 10 {
-                print("  ... and \(files.count - 10) more files")
-            }
-            
-        } catch {
-            print("❌ Error listing files: \(error)")
-        }
-        
-        print("=== END DIAGNOSTIC ===")
     }
     
     // MARK: - User Preferences
@@ -549,7 +513,7 @@ class AudioManager: NSObject, ObservableObject {
     private func loadUserPreferences() {
         isMusicEnabled = UserDefaults.standard.object(forKey: "audio_music_enabled") as? Bool ?? true
         isSFXEnabled = UserDefaults.standard.object(forKey: "audio_sfx_enabled") as? Bool ?? true
-        musicVolume = UserDefaults.standard.object(forKey: "audio_music_volume") as? Float ?? 0.6
+        musicVolume = UserDefaults.standard.object(forKey: "audio_music_volume") as? Float ?? 0.8
         sfxVolume = UserDefaults.standard.object(forKey: "audio_sfx_volume") as? Float ?? 0.8
     }
     
@@ -564,16 +528,65 @@ class AudioManager: NSObject, ObservableObject {
     }
     
     func recheckAudioFiles() {
-        checkAudioFiles()
+        audioFileStatus = "🔍 Checking audio files..."
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            if self.findAudioFile(named: "interstellar_theme") != nil {
+                self.audioFileStatus = "✅ Audio files found"
+            } else {
+                self.audioFileStatus = "⚠️ Add interstellar_theme.mp3 to Xcode project"
+            }
+        }
     }
     
-    // Quick SFX methods
-    func playButtonTap() { playSFX(.buttonTap) }
-    func playSuccess() { playSFX(.success) }
-    func playError() { playSFX(.error) }
-    func playNotification() { playSFX(.notification) }
-    func playDeploy() { playSFX(.deploy) }
-    func playAchievement() { playSFX(.achievement) }
+    // Test method to force play audio - FIXED TO NOT LOOP
+    func forceTestAudio() {
+        print("🎵 FORCE TEST: Playing test sound...")
+        audioFileStatus = "🔊 Testing audio output..."
+        
+        // Play ONE test sound
+        AudioServicesPlaySystemSound(1322) // Camera sound
+        
+        // Update status after test
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            if self.isMusicEnabled {
+                self.playInterstellarTheme()
+            } else {
+                self.audioFileStatus = "🔊 Audio test complete"
+            }
+        }
+    }
+    
+    // Quick SFX methods with cleaner implementation
+    func playButtonTap() { 
+        guard isSFXEnabled else { return }
+        playSFX(.buttonTap) 
+    }
+    
+    func playSuccess() { 
+        guard isSFXEnabled else { return }
+        playSFX(.success) 
+    }
+    
+    func playError() { 
+        guard isSFXEnabled else { return }
+        playSFX(.error) 
+    }
+    
+    func playNotification() { 
+        guard isSFXEnabled else { return }
+        playSFX(.notification) 
+    }
+    
+    func playDeploy() { 
+        guard isSFXEnabled else { return }
+        playSFX(.deploy) 
+    }
+    
+    func playAchievement() { 
+        guard isSFXEnabled else { return }
+        playSFX(.achievement) 
+    }
 }
 
 // MARK: - AVAudioPlayerDelegate
@@ -590,7 +603,7 @@ extension AudioManager: AVAudioPlayerDelegate {
     nonisolated func audioPlayerDecodeErrorDidOccur(_ player: AVAudioPlayer, error: Error?) {
         Task { @MainActor in
             print("❌ Audio decode error: \(error?.localizedDescription ?? "Unknown error")")
-            AudioManager.shared.audioFileStatus = "❌ Decode error: \(error?.localizedDescription ?? "Unknown")"
+            AudioManager.shared.audioFileStatus = "❌ Decode error: \(AudioManager.shared.getErrorDescription(error ?? NSError()))"
             AudioManager.shared.cleanupPlayer()
         }
     }
@@ -607,7 +620,7 @@ struct AudioControlView: View {
             // Audio Status Indicator
             HStack {
                 Circle()
-                    .fill(audioManager.isPlaying ? .green : .red)
+                    .fill(audioManager.isPlaying ? .green : .orange)
                     .frame(width: 8, height: 8)
                 
                 Text(audioManager.audioFileStatus)
@@ -617,12 +630,11 @@ struct AudioControlView: View {
                 
                 Spacer()
                 
-                Button("Recheck Files") {
-                    audioManager.recheckAudioFiles()
-                    audioManager.playButtonTap()
+                Button("Force Test") {
+                    audioManager.forceTestAudio()
                 }
                 .font(.caption2)
-                .foregroundColor(.blue)
+                .foregroundColor(.red)
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
@@ -660,10 +672,13 @@ struct AudioControlView: View {
                 }
                 .buttonStyle(.plain)
                 
-                // Play Interstellar Theme Button
+                // Play/Pause Button
                 Button(action: {
-                    print("🎵 Manual play button pressed")
-                    audioManager.playInterstellarTheme()
+                    if audioManager.isPlaying {
+                        audioManager.pauseMusic()
+                    } else {
+                        audioManager.playInterstellarTheme()
+                    }
                     audioManager.playButtonTap()
                 }) {
                     HStack(spacing: 6) {
@@ -687,108 +702,39 @@ struct AudioControlView: View {
                 }
                 .buttonStyle(.plain)
                 
-                // SFX Toggle
+                // Volume Up Quick Button
                 Button(action: {
-                    audioManager.toggleSFX()
+                    audioManager.musicVolume = min(1.0, audioManager.musicVolume + 0.2)
                     audioManager.playButtonTap()
                 }) {
-                    HStack(spacing: 6) {
-                        Image(systemName: audioManager.isSFXEnabled ? "speaker.2.fill" : "speaker.slash.fill")
-                            .font(.system(size: 16, weight: .semibold))
-                        
-                        Text(audioManager.isSFXEnabled ? "SFX On" : "SFX Off")
-                            .font(.caption.bold())
-                    }
-                    .foregroundColor(audioManager.isSFXEnabled ? .blue : .gray)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
-                    .background(
-                        Capsule()
-                            .fill(.ultraThinMaterial)
-                            .overlay(
-                                Capsule()
-                                    .stroke(audioManager.isSFXEnabled ? .blue : .gray, lineWidth: 1)
-                            )
-                    )
-                }
-                .buttonStyle(.plain)
-                
-                // Detailed Controls Toggle
-                Button(action: {
-                    showingDetailedControls.toggle()
-                    audioManager.playButtonTap()
-                }) {
-                    Image(systemName: showingDetailedControls ? "chevron.up" : "chevron.down")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(.white)
+                    Image(systemName: "speaker.plus.fill")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(.orange)
                         .padding(8)
                         .background(Circle().fill(.ultraThinMaterial))
                 }
                 .buttonStyle(.plain)
             }
             
-            // Detailed Controls
-            if showingDetailedControls {
-                VStack(spacing: 12) {
-                    // Currently Playing
-                    if let track = audioManager.currentTrack {
-                        VStack(spacing: 8) {
-                            HStack {
-                                Text("Now Playing:")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                                
-                                Spacer()
-                                
-                                Text(track.displayName)
-                                    .font(.caption.bold())
-                                    .foregroundColor(.white)
-                            }
-                            
-                            // Progress Bar
-                            if audioManager.trackDuration > 0 {
-                                ProgressView(value: audioManager.playbackPosition, total: audioManager.trackDuration)
-                                    .tint(.blue)
-                            }
-                        }
-                        .padding(12)
-                        .background(
-                            RoundedRectangle(cornerRadius: 8)
-                                .fill(.ultraThinMaterial)
-                        )
-                    }
+            // Volume Display
+            if audioManager.isMusicEnabled {
+                HStack {
+                    Text("Volume: \(Int(audioManager.musicVolume * 100))%")
+                        .font(.caption.bold())
+                        .foregroundColor(.white)
                     
-                    // Volume Controls
-                    VStack(spacing: 8) {
-                        HStack {
-                            Text("Music Volume")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                            
-                            Spacer()
-                            
-                            Text("\(Int(audioManager.musicVolume * 100))%")
-                                .font(.caption.bold())
-                                .foregroundColor(.white)
-                        }
-                        
-                        Slider(value: $audioManager.musicVolume, in: 0...1)
-                            .tint(.green)
-                    }
-                    .padding(12)
-                    .background(
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(.ultraThinMaterial)
-                    )
+                    Spacer()
                     
-                    // Diagnostics Button
-                    Button("Show Audio Diagnostics") {
-                        showingDiagnostics.toggle()
-                        audioManager.playButtonTap()
-                    }
-                    .font(.caption)
-                    .foregroundColor(.orange)
+                    Slider(value: $audioManager.musicVolume, in: 0...1)
+                        .tint(.orange)
+                        .frame(width: 100)
                 }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(.ultraThinMaterial)
+                )
             }
         }
         .padding()
@@ -800,21 +746,6 @@ struct AudioControlView: View {
                         .stroke(.white.opacity(0.1), lineWidth: 1)
                 )
         )
-        .alert("Audio Setup Required", isPresented: $showingDiagnostics) {
-            Button("OK") { }
-        } message: {
-            Text("""
-            To add the interstellar_theme.mp3 file:
-            
-            1. Open Xcode
-            2. Right-click project → "Add Files"
-            3. Select your interstellar_theme.mp3
-            4. Check "Add to target"
-            5. Click "Add"
-            
-            Or drag the file from Finder into Xcode.
-            """)
-        }
     }
 }
 

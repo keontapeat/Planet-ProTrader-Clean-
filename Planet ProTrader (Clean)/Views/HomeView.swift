@@ -98,6 +98,7 @@ struct HomeView: View {
                 
                 // Enter Planet Button
                 enterPlanetButton
+                
             }
             .padding(.horizontal)
             .padding(.top, 20)
@@ -142,13 +143,18 @@ struct HomeView: View {
     
     private var selectedPlanetInfo: some View {
         VStack(spacing: 16) {
-            // Planet header
+            // Planet header with slogan in the middle
             HStack(spacing: 12) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(solarManager.selectedPlanet.name)
                         .font(.title2)
                         .fontWeight(.bold)
                         .foregroundColor(.white)
+                    
+                    Text("\"\(solarManager.selectedPlanet.philosophy)\"")
+                        .font(.title3.bold())
+                        .foregroundStyle(planetPhilosophyGradient)
+                        .shadow(color: solarManager.selectedPlanet.color.opacity(0.3), radius: 4, x: 0, y: 2)
                     
                     Text("by \(solarManager.selectedPlanet.mentorName)")
                         .font(.subheadline)
@@ -159,50 +165,106 @@ struct HomeView: View {
             }
             
             // Planet details
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 12) {
                 Text(solarManager.selectedPlanet.description)
                     .font(.subheadline)
                     .foregroundColor(.white.opacity(0.9))
                     .multilineTextAlignment(.leading)
                 
-                HStack {
-                    Text("Balance:")
-                        .font(.caption)
-                        .foregroundColor(.white.opacity(0.7))
-                    
-                    Text("$\(String(format: "%.0f", solarManager.selectedPlanet.balance))")
-                        .font(.caption)
-                        .fontWeight(.bold)
-                        .foregroundColor(solarManager.selectedPlanet.color)
-                    
-                    Spacer()
-                    
-                    Text(solarManager.selectedPlanet.expertise)
-                        .font(.caption)
-                        .foregroundColor(.white.opacity(0.7))
+                // Account Balance & Expertise (organized nicely)
+                VStack(spacing: 8) {
+                    accountBalanceRow
+                    tradingExpertiseRow
                 }
             }
             
-            // Philosophy
-            Text("\"\(solarManager.selectedPlanet.philosophy)\"")
+            // Subtitle emphasizing the power
+            Text("Each planet is your personal trading account")
                 .font(.caption)
                 .italic()
-                .foregroundColor(solarManager.selectedPlanet.color)
+                .foregroundColor(.white.opacity(0.6))
                 .multilineTextAlignment(.center)
-                .padding(.horizontal)
         }
         .padding(20)
-        .background(
-            RoundedRectangle(cornerRadius: 20)
-                .fill(Color.black.opacity(0.3))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 20)
-                        .stroke(solarManager.selectedPlanet.color.opacity(0.5), lineWidth: 1)
-                )
-        )
+        .background(planetInfoBackground)
         .animation(.easeInOut(duration: 0.3), value: solarManager.selectedPlanet.id)
     }
     
+    private var planetPhilosophyGradient: LinearGradient {
+        LinearGradient(
+            colors: [
+                solarManager.selectedPlanet.color,
+                solarManager.selectedPlanet.color.opacity(0.8),
+                solarManager.selectedPlanet.color
+            ],
+            startPoint: .leading,
+            endPoint: .trailing
+        )
+    }
+
+    private var accountBalanceRow: some View {
+        HStack {
+            Text("Account Balance:")
+                .font(.subheadline.bold())
+                .foregroundColor(.white.opacity(0.8))
+            
+            Spacer()
+            
+            Text("$\(String(format: "%.0f", solarManager.selectedPlanet.balance))")
+                .font(.title3.bold())
+                .foregroundColor(solarManager.selectedPlanet.color)
+                .shadow(color: solarManager.selectedPlanet.color.opacity(0.3), radius: 2, x: 0, y: 1)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(accountBalanceBackground)
+    }
+
+    private var accountBalanceBackground: some View {
+        RoundedRectangle(cornerRadius: 8)
+            .fill(solarManager.selectedPlanet.color.opacity(0.1))
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(solarManager.selectedPlanet.color.opacity(0.3), lineWidth: 1)
+            )
+    }
+
+    private var tradingExpertiseRow: some View {
+        HStack {
+            Text("Trading Expertise:")
+                .font(.subheadline.bold())
+                .foregroundColor(.white.opacity(0.8))
+            
+            Spacer()
+            
+            Text(solarManager.selectedPlanet.expertise)
+                .font(.subheadline)
+                .foregroundColor(.white.opacity(0.9))
+                .multilineTextAlignment(.trailing)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(tradingExpertiseBackground)
+    }
+
+    private var tradingExpertiseBackground: some View {
+        RoundedRectangle(cornerRadius: 8)
+            .fill(.white.opacity(0.05))
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(.white.opacity(0.1), lineWidth: 1)
+            )
+    }
+
+    private var planetInfoBackground: some View {
+        RoundedRectangle(cornerRadius: 20)
+            .fill(Color.black.opacity(0.3))
+            .overlay(
+                RoundedRectangle(cornerRadius: 20)
+                    .stroke(solarManager.selectedPlanet.color.opacity(0.5), lineWidth: 1)
+            )
+    }
+
     private var enterPlanetButton: some View {
         Button(action: {
             impactFeedback()
@@ -221,50 +283,20 @@ struct HomeView: View {
             .foregroundColor(.white)
             .padding(.horizontal, 32)
             .padding(.vertical, 16)
-            .background(
-                LinearGradient(
-                    gradient: Gradient(colors: solarManager.selectedPlanet.gradientColors),
-                    startPoint: .leading,
-                    endPoint: .trailing
-                )
-            )
+            .background(enterButtonBackground)
             .clipShape(Capsule())
             .shadow(color: solarManager.selectedPlanet.color.opacity(0.3), radius: 10, x: 0, y: 5)
         }
         .scaleEffect(planetAnimations[solarManager.selectedPlanet.id] ?? false ? 1.1 : 1.0)
         .animation(.easeInOut(duration: 0.2), value: planetAnimations[solarManager.selectedPlanet.id])
     }
-    
-    private var centralSun: some View {
-        ZStack {
-            // Sun glow (reduced intensity)
-            Circle()
-                .fill(
-                    RadialGradient(
-                        gradient: Gradient(colors: [
-                            Color.yellow.opacity(0.4),
-                            Color.orange.opacity(0.2),
-                            Color.clear
-                        ]),
-                        center: .center,
-                        startRadius: 5,
-                        endRadius: 30
-                    )
-                )
-                .frame(width: 60, height: 60)
-                .scaleEffect(1.0 + sin(rotationAngle * .pi / 180) * 0.05)
-            
-            // Sun core - CLEAN NO UGLY CHART SYMBOL
-            Circle()
-                .fill(
-                    LinearGradient(
-                        gradient: Gradient(colors: [Color.yellow, Color.orange]),
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-                .frame(width: 40, height: 40)
-        }
+
+    private var enterButtonBackground: LinearGradient {
+        LinearGradient(
+            gradient: Gradient(colors: solarManager.selectedPlanet.gradientColors),
+            startPoint: .leading,
+            endPoint: .trailing
+        )
     }
     
     @ViewBuilder
