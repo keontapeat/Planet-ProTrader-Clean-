@@ -500,12 +500,12 @@ struct BotDetailView: View {
                     
                     // Bot Stats
                     LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 16) {
-                        StatCard(title: "Confidence", value: String(format: "%.1f%%", bot.confidence * 100))
-                        StatCard(title: "Win Rate", value: String(format: "%.1f%%", bot.winRate))
-                        StatCard(title: "P&L", value: formatCurrency(bot.profitLoss))
-                        StatCard(title: "Total Trades", value: "\(bot.totalTrades)")
-                        StatCard(title: "Strategy", value: bot.strategy.rawValue)
-                        StatCard(title: "Specialization", value: bot.specialization.rawValue)
+                        MyStatCard(title: "Confidence", value: String(format: "%.1f%%", bot.confidence * 100))
+                        MyStatCard(title: "Win Rate", value: String(format: "%.1f%%", bot.winRate))
+                        MyStatCard(title: "P&L", value: formatCurrency(bot.profitLoss))
+                        MyStatCard(title: "Total Trades", value: "\(bot.totalTrades)")
+                        MyStatCard(title: "Strategy", value: bot.strategy.rawValue)
+                        MyStatCard(title: "Specialization", value: bot.specialization.rawValue)
                     }
                     
                     Spacer()
@@ -543,7 +543,7 @@ struct BotDetailView: View {
     }
 }
 
-struct StatCard: View {
+struct MyStatCard: View {
     let title: String
     let value: String
     
@@ -551,6 +551,7 @@ struct StatCard: View {
         VStack(spacing: 8) {
             Text(value)
                 .font(.title2.bold())
+                .foregroundStyle(.white)
             
             Text(title)
                 .font(.caption)
@@ -745,7 +746,7 @@ struct MassiveDataDownloadView: View {
 }
 
 #Preview {
-    ProTraderMetricCard(
+    AProTraderMetricCard(
         icon: "brain.head.profile",
         title: "Avg Confidence",
         value: "87.5%",

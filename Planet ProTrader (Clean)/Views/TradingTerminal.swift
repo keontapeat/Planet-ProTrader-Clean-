@@ -15,7 +15,7 @@ import Combine
 struct TradingTerminal: View {
     // MARK: - State Management
     @StateObject private var tradingViewManager = TradingViewManager()
-    @StateObject private var aiEngine = AITradingEngine() // NEW: AI Engine
+    @StateObject private var aiEngine = AITradingEngine()
     @State private var selectedTimeframe: ChartTimeframe = .m15
     @State private var selectedSymbol = "XAUUSD"
     @State private var showingWatchlist = false
@@ -23,11 +23,16 @@ struct TradingTerminal: View {
     @State private var showingPositions = false
     @State private var showingOrders = false
     @State private var showingHistory = false
-    @State private var showingAIEngine = false // NEW: AI Engine overlay
+    @State private var showingAIEngine = false
     @State private var tradePanelOffset: CGFloat = 0
     @State private var isFullScreen = false
     @State private var overlayOffset: CGFloat = 0
     @State private var toolbarHidden = false
+    @State private var showQuickTrade = false
+    @State private var showDrawingTools = false
+    @State private var showIndicators = false
+    @State private var currentChartType: ChartType = .candles
+    @State private var showPriceAlerts = false
     
     // Environment Objects
     @EnvironmentObject var tradingManager: TradingManager
@@ -43,7 +48,7 @@ struct TradingTerminal: View {
                 Color.black.ignoresSafeArea()
                 
                 VStack(spacing: 0) {
-                    // Clean Header (hideable for full screen AND toolbar hide)
+                    // Clean Header
                     if !isFullScreen && !toolbarHidden {
                         tradeLockerHeader
                             .transition(.move(edge: .top).combined(with: .opacity))
@@ -53,22 +58,48 @@ struct TradingTerminal: View {
                     ZStack {
                         cleanChart
                             .onTapGesture(count: 2) {
-                                withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+                                withAnimation(.spring(response: 0.5, dampingFraction: 0.85)) {
                                     isFullScreen.toggle()
+                                    if isFullScreen {
+                                        tradingViewManager.enablePriceScaling(true)
+                                    } else {
+                                        tradingViewManager.enablePriceScaling(false)
+                                    }
                                 }
                                 hapticManager.impact()
                             }
                         
+                        // Floating Price Display (Top Right)
+                        if !isFullScreen {
+                            VStack {
+                                HStack {
+                                    Spacer()
+                                    VStack(alignment: .trailing, spacing: 2) {
+                                        Text("$2,374.85")
+                                            .font(.system(size: 20, weight: .bold, design: .rounded))
+                                            .foregroundColor(.white)
+                                        HStack(spacing: 4) {
+                                            Image(systemName: "arrow.up.right")
+                                                .font(.system(size: 10, weight: .bold))
+                                            Text("+12.45")
+                                                .font(.system(size: 12, weight: .semibold))
+                                        }
+                                        .foregroundColor(.green)
+                                    }
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 8)
+                                    .background(.black.opacity(0.7), in: RoundedRectangle(cornerRadius: 10))
+                                }
+                                .padding(.trailing, 16)
+                                .padding(.top, 16)
+                                
+                                Spacer()
+                            }
+                        }
+                        
                         // Chart Controls
                         VStack {
                             HStack {
-                                // Toolbar Hide/Show Button
-                                if !isFullScreen {
-                                    toolbarToggleButton
-                                        .padding(.leading, 16)
-                                        .padding(.top, 16)
-                                }
-                                
                                 Spacer()
                                 
                                 if isFullScreen {
@@ -81,8 +112,10 @@ struct TradingTerminal: View {
                             Spacer()
                             
                             // TradingView-Style Reset Button at Bottom Middle
-                            tradingViewResetButton
-                                .padding(.bottom, isFullScreen ? 40 : 20)
+                            if !isFullScreen {
+                                tradingViewResetButton
+                                    .padding(.bottom, 20)
+                            }
                             
                             // Bottom Chart Controls
                             if isFullScreen {
@@ -106,7 +139,7 @@ struct TradingTerminal: View {
                         }
                     }
                     
-                    // Bottom Trading Panel - Compact (hide when toolbar hidden)
+                    // Bottom Trading Panel - Compact
                     if !isFullScreen && !toolbarHidden {
                         compactTradePanel
                             .offset(y: tradePanelOffset)
@@ -118,10 +151,11 @@ struct TradingTerminal: View {
                                         }
                                     }
                                     .onEnded { value in
-                                        withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
-                                            if value.translation.height > 80 {
+                                        withAnimation(.spring(response: 0.5, dampingFraction: 0.85)) {
+                                            if value.translation.height > 50 || value.velocity.height > 800 {
                                                 isFullScreen = true
                                                 tradePanelOffset = 0
+                                                tradingViewManager.enablePriceScaling(true)
                                             } else {
                                                 tradePanelOffset = 0
                                             }
@@ -158,7 +192,6 @@ struct TradingTerminal: View {
                         .zIndex(10)
                 }
                 
-                // NEW: AI Engine Overlay
                 if showingAIEngine {
                     aiEngineOverlay
                         .zIndex(15)
@@ -176,31 +209,7 @@ struct TradingTerminal: View {
         }
     }
     
-    // MARK: - NEW: Toolbar Toggle Button
-    
-    private var toolbarToggleButton: some View {
-        Button(action: {
-            withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
-                toolbarHidden.toggle()
-            }
-            hapticManager.impact()
-        }) {
-            ZStack {
-                Circle()
-                    .fill(.black.opacity(0.6))
-                    .frame(width: 44, height: 44)
-                
-                Image(systemName: toolbarHidden ? "eye" : "eye.slash")
-                    .font(.system(size: 18, weight: .bold))
-                    .foregroundColor(.white)
-            }
-            .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 2)
-        }
-        .buttonStyle(PlainButtonStyle())
-    }
-    
-    // MARK: - TradingView-Style Reset Button at Bottom Middle
-    
+    // MARK: - TradingView-Style Reset Button
     private var tradingViewResetButton: some View {
         HStack {
             Spacer()
@@ -233,8 +242,7 @@ struct TradingTerminal: View {
         }
     }
     
-    // MARK: - Compact Trade Panel (Reduced Space)
-    
+    // MARK: - Compact Trade Panel
     private var compactTradePanel: some View {
         VStack(spacing: 0) {
             // Minimal drag indicator
@@ -249,9 +257,10 @@ struct TradingTerminal: View {
                     CompactStatCard(title: "Balance", value: "$10,425", color: .blue)
                     CompactStatCard(title: "Equity", value: "$10,687", color: .green)
                     CompactStatCard(title: "P&L", value: "+$262", color: .cyan)
+                    CompactStatCard(title: "Margin", value: "12%", color: .orange)
                 }
                 
-                // Compact Action Buttons Row (Updated with AI Engine)
+                // Compact Action Buttons Row
                 HStack(spacing: 12) {
                     CompactActionButton(title: "Trade", icon: "plus.circle.fill", color: .blue) {
                         showingTradePanel = true
@@ -261,9 +270,68 @@ struct TradingTerminal: View {
                         showingAIEngine = true
                     }
                     
-                    CompactActionButton(title: "Settings", icon: "gear.circle.fill", color: .purple) {
+                    CompactActionButton(title: "1-Tap", icon: "bolt.circle.fill", color: .yellow) {
+                        showQuickTrade.toggle()
                         hapticManager.impact()
                     }
+                }
+                
+                // Quick 1-Tap Trading Row (when enabled)
+                if showQuickTrade {
+                    HStack(spacing: 8) {
+                        Button(action: {
+                            executeQuickSell()
+                        }) {
+                            VStack(spacing: 4) {
+                                Text("SELL")
+                                    .font(.caption2)
+                                    .fontWeight(.black)
+                                Text("0.10")
+                                    .font(.caption)
+                                    .fontWeight(.bold)
+                            }
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 12)
+                            .background(
+                                LinearGradient(
+                                    colors: [.red, .red.opacity(0.8)],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                in: RoundedRectangle(cornerRadius: 10)
+                            )
+                            .shadow(color: .red.opacity(0.3), radius: 4, x: 0, y: 2)
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                        
+                        Button(action: {
+                            executeQuickBuy()
+                        }) {
+                            VStack(spacing: 4) {
+                                Text("BUY")
+                                    .font(.caption2)
+                                    .fontWeight(.black)
+                                Text("0.10")
+                                    .font(.caption)
+                                    .fontWeight(.bold)
+                            }
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 12)
+                            .background(
+                                LinearGradient(
+                                    colors: [.green, .green.opacity(0.8)],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                in: RoundedRectangle(cornerRadius: 10)
+                            )
+                            .shadow(color: .green.opacity(0.3), radius: 4, x: 0, y: 2)
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                    }
+                    .transition(.scale.combined(with: .opacity))
                 }
                 
                 // Quick Access Tabs - Compact
@@ -288,7 +356,6 @@ struct TradingTerminal: View {
     }
     
     // MARK: - TradeLocker Style Header
-    
     private var tradeLockerHeader: some View {
         VStack(spacing: 12) {
             // Top Row: Title & Status
@@ -377,7 +444,7 @@ struct TradingTerminal: View {
                 }
             }
             
-            // Timeframe Selector (TradeLocker style)
+            // Timeframe Selector
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 6) {
                     ForEach(ChartTimeframe.allCases, id: \.self) { timeframe in
@@ -396,6 +463,7 @@ struct TradingTerminal: View {
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 16)
+        .padding(.bottom, -8)
         .background(.regularMaterial)
         .overlay(
             Rectangle()
@@ -406,7 +474,6 @@ struct TradingTerminal: View {
     }
     
     // MARK: - Back to Normal Button
-    
     private var backToNormalButton: some View {
         Button(action: {
             withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
@@ -434,56 +501,124 @@ struct TradingTerminal: View {
     }
     
     // MARK: - Full Screen Controls
-    
     private var fullScreenControls: some View {
-        HStack {
-            // Quick Trade Button
-            Button(action: {
-                showingTradePanel = true
-                hapticManager.impact()
-            }) {
-                HStack(spacing: 6) {
-                    Image(systemName: "plus.circle.fill")
-                        .font(.system(size: 16, weight: .medium))
-                    Text("Trade")
-                        .font(.system(size: 14, weight: .semibold))
+        VStack(spacing: 12) {
+            // Professional Trading Toolbar
+            HStack(spacing: 0) {
+                // Chart Type Selector
+                HStack(spacing: 8) {
+                    ForEach(ChartType.allCases, id: \.self) { type in
+                        Button(action: {
+                            currentChartType = type
+                            tradingViewManager.changeChartType(type.rawValue)
+                            hapticManager.impact()
+                        }) {
+                            Image(systemName: type.icon)
+                                .font(.system(size: 16, weight: .medium))
+                                .foregroundColor(currentChartType == type ? .black : .white)
+                                .frame(width: 32, height: 32)
+                                .background(currentChartType == type ? Color.white : Color.white.opacity(0.1))
+                                .clipShape(Circle())
+                        }
+                    }
                 }
-                .foregroundColor(.white)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 10)
-                .background(.blue, in: Capsule())
-                .shadow(color: .blue.opacity(0.3), radius: 4, x: 0, y: 2)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background(.black.opacity(0.8), in: Capsule())
+                
+                Spacer()
+                
+                // Quick Actions
+                HStack(spacing: 12) {
+                    // Drawing Tools
+                    Button(action: {
+                        showDrawingTools.toggle()
+                        hapticManager.impact()
+                    }) {
+                        Image(systemName: "pencil.tip.crop.circle")
+                            .font(.system(size: 20, weight: .medium))
+                            .foregroundColor(showDrawingTools ? .yellow : .white)
+                    }
+                    
+                    // Indicators
+                    Button(action: {
+                        showIndicators.toggle()
+                        hapticManager.impact()
+                    }) {
+                        Image(systemName: "chart.line.uptrend.xyaxis")
+                            .font(.system(size: 20, weight: .medium))
+                            .foregroundColor(showIndicators ? .cyan : .white)
+                    }
+                    
+                    // Price Alerts
+                    Button(action: {
+                        showPriceAlerts.toggle()
+                        hapticManager.impact()
+                    }) {
+                        Image(systemName: "bell.badge")
+                            .font(.system(size: 20, weight: .medium))
+                            .foregroundColor(showPriceAlerts ? .orange : .white)
+                    }
+                }
+                
+                Spacer()
+                
+                // Trade Actions
+                HStack(spacing: 8) {
+                    // Quick Sell
+                    Button(action: {
+                        executeQuickSell()
+                    }) {
+                        Text("SELL")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 10)
+                            .background(.red, in: Capsule())
+                    }
+                    
+                    // Quick Buy
+                    Button(action: {
+                        executeQuickBuy()
+                    }) {
+                        Text("BUY")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 10)
+                            .background(.green, in: Capsule())
+                    }
+                }
             }
-            .buttonStyle(PlainButtonStyle())
+            .padding(.horizontal, 20)
             
-            Spacer()
-            
-            // Exit Full Screen Button
-            Button(action: {
-                withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
-                    isFullScreen = false
+            // Volume Slider for Quick Trade
+            if showQuickTrade {
+                VStack(spacing: 8) {
+                    HStack {
+                        Text("Volume")
+                            .font(.caption)
+                            .foregroundColor(.gray)
+                        Spacer()
+                        Text("0.10")
+                            .font(.caption)
+                            .fontWeight(.bold)
+                            .foregroundColor(.white)
+                    }
+                    
+                    Slider(value: .constant(0.1), in: 0.01...1.0)
+                        .accentColor(.yellow)
                 }
-                hapticManager.impact()
-            }) {
-                HStack(spacing: 6) {
-                    Image(systemName: "arrow.down.right.and.arrow.up.left")
-                        .font(.system(size: 14, weight: .medium))
-                    Text("Exit")
-                        .font(.system(size: 14, weight: .semibold))
-                }
-                .foregroundColor(.white)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 10)
-                .background(.gray.opacity(0.8), in: Capsule())
-                .shadow(color: .black.opacity(0.2), radius: 4, x: 0, y: 2)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 12)
+                .background(.black.opacity(0.8), in: RoundedRectangle(cornerRadius: 12))
+                .padding(.horizontal, 20)
+                .transition(.scale.combined(with: .opacity))
             }
-            .buttonStyle(PlainButtonStyle())
         }
-        .padding(.horizontal, 20)
     }
     
     // MARK: - Clean Chart
-    
     private var cleanChart: some View {
         TradingViewWebView(
             symbol: selectedSymbol,
@@ -495,7 +630,6 @@ struct TradingTerminal: View {
     }
     
     // MARK: - TradeLocker Watchlist Overlay
-    
     private var tradeLockerWatchlistOverlay: some View {
         ZStack {
             Color.black.opacity(0.8)
@@ -567,7 +701,6 @@ struct TradingTerminal: View {
     }
     
     // MARK: - TradeLocker Trade Panel Overlay
-    
     private var tradeLockerTradePanelOverlay: some View {
         ZStack {
             Color.black.opacity(0.8)
@@ -802,7 +935,6 @@ struct TradingTerminal: View {
     }
     
     // MARK: - TradeLocker Positions Overlay
-    
     private var tradeLockerPositionsOverlay: some View {
         ZStack {
             Color.black.opacity(0.8)
@@ -874,7 +1006,6 @@ struct TradingTerminal: View {
     }
     
     // MARK: - TradeLocker Orders Overlay
-    
     private var tradeLockerOrdersOverlay: some View {
         ZStack {
             Color.black.opacity(0.8)
@@ -943,7 +1074,6 @@ struct TradingTerminal: View {
     }
     
     // MARK: - TradeLocker History Overlay
-    
     private var tradeLockerHistoryOverlay: some View {
         ZStack {
             Color.black.opacity(0.8)
@@ -1014,7 +1144,6 @@ struct TradingTerminal: View {
     }
     
     // MARK: - TradeLocker Toast
-    
     private var tradeLockerToast: some View {
         HStack(spacing: 12) {
             Image(systemName: toastManager.toastType.systemImage)
@@ -1040,7 +1169,6 @@ struct TradingTerminal: View {
     }
     
     // MARK: - AI Engine Overlay
-    
     private var aiEngineOverlay: some View {
         ZStack {
             Color.black.opacity(0.8)
@@ -1153,7 +1281,6 @@ struct TradingTerminal: View {
     }
     
     // MARK: - Dismissal Helper Methods
-    
     private func dismissWatchlist() {
         withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
             showingWatchlist = false
@@ -1203,7 +1330,6 @@ struct TradingTerminal: View {
     }
     
     // MARK: - Helper Methods
-    
     private func setupTradingView() {
         tradingViewManager.initialize(symbol: selectedSymbol, timeframe: selectedTimeframe.tradingViewInterval)
     }
@@ -1231,6 +1357,16 @@ struct TradingTerminal: View {
         }
     }
     
+    private func executeQuickBuy() {
+        toastManager.show("Quick BUY executed - 0.10 lot", type: .success)
+        hapticManager.impact()
+    }
+    
+    private func executeQuickSell() {
+        toastManager.show("Quick SELL executed - 0.10 lot", type: .warning)
+        hapticManager.impact()
+    }
+    
     private func deployAIBot() {
         toastManager.show("Golden Eagle AI deployed successfully", type: .success)
         hapticManager.impact()
@@ -1247,8 +1383,7 @@ struct TradingTerminal: View {
     }
 }
 
-// MARK: - NEW: Compact Components
-
+// MARK: - Compact Components
 struct CompactStatCard: View {
     let title: String
     let value: String
@@ -1337,7 +1472,6 @@ struct CompactTabButton: View {
 }
 
 // MARK: - Clean Components
-
 struct TradeLockerTimeframeButton: View {
     let timeframe: ChartTimeframe
     let isSelected: Bool
@@ -1366,7 +1500,6 @@ struct TradeLockerTimeframeButton: View {
 }
 
 // MARK: - Supporting Classes
-
 class TradingViewManager: ObservableObject {
     @Published var isLoaded = false
     @Published var currentSymbol = "XAUUSD"
@@ -1388,6 +1521,14 @@ class TradingViewManager: ObservableObject {
     func changeTimeframe(_ timeframe: String) {
         currentTimeframe = timeframe
         executeJavaScript("changeTimeframe('\(timeframe)')")
+    }
+    
+    func changeChartType(_ type: String) {
+        executeJavaScript("changeChartType('\(type)')")
+    }
+    
+    func enablePriceScaling(_ enable: Bool) {
+        executeJavaScript("enablePriceScaling(\(enable))")
     }
     
     func resetChart() {
@@ -1462,7 +1603,6 @@ class AITradingEngine: ObservableObject {
 }
 
 // MARK: - Supporting Types
-
 enum ChartTimeframe: String, CaseIterable, Codable {
     case m1 = "1M"
     case m5 = "5M"
@@ -1486,6 +1626,22 @@ enum ChartTimeframe: String, CaseIterable, Codable {
     }
 }
 
+enum ChartType: String, CaseIterable {
+    case candles = "candles"
+    case bars = "bars"
+    case line = "line"
+    case area = "area"
+    
+    var icon: String {
+        switch self {
+        case .candles: return "chart.bar.fill"
+        case .bars: return "chart.bar"
+        case .line: return "chart.line.uptrend.xyaxis"
+        case .area: return "chart.line.flattrend.xyaxis.fill"
+        }
+    }
+}
+
 struct TradingSymbol {
     let symbol: String
     let name: String
@@ -1497,12 +1653,15 @@ struct TradingSymbol {
         TradingSymbol(symbol: "GBPUSD", name: "Pound/USD", type: "FOREX"),
         TradingSymbol(symbol: "USDJPY", name: "USD/Yen", type: "FOREX"),
         TradingSymbol(symbol: "BTCUSD", name: "Bitcoin", type: "CRYPTO"),
-        TradingSymbol(symbol: "ETHUSD", name: "Ethereum", type: "CRYPTO")
+        TradingSymbol(symbol: "ETHUSD", name: "Ethereum", type: "CRYPTO"),
+        TradingSymbol(symbol: "XAGUSD", name: "Silver Spot", type: "METALS"),
+        TradingSymbol(symbol: "USDCHF", name: "USD/Swiss Franc", type: "FOREX"),
+        TradingSymbol(symbol: "AUDUSD", name: "Australian Dollar/USD", type: "FOREX"),
+        TradingSymbol(symbol: "USDCAD", name: "USD/Canadian Dollar", type: "FOREX")
     ]
 }
 
 // MARK: - TradeLocker Symbol Row
-
 struct TradeLockerSymbolRow: View {
     let symbol: TradingSymbol
     let isSelected: Bool
@@ -1803,7 +1962,6 @@ struct TradeLockerHistoryCard: View {
 }
 
 // MARK: - TradingView WebView
-
 struct TradingViewWebView: UIViewRepresentable {
     let symbol: String
     let timeframe: ChartTimeframe
@@ -1818,14 +1976,13 @@ struct TradingViewWebView: UIViewRepresentable {
         webView.navigationDelegate = context.coordinator
         webView.backgroundColor = UIColor.black
         webView.isOpaque = false
-        webView.scrollView.isScrollEnabled = true  // Enable for price stretching
+        webView.scrollView.isScrollEnabled = true
         webView.scrollView.bounces = false
         webView.scrollView.showsVerticalScrollIndicator = false
         webView.scrollView.showsHorizontalScrollIndicator = false
-        webView.scrollView.maximumZoomScale = 3.0   // Allow chart zooming
+        webView.scrollView.maximumZoomScale = 3.0
         webView.scrollView.minimumZoomScale = 0.5
         
-        // Set webView reference in manager for JavaScript communication
         manager.setWebView(webView)
         
         return webView
@@ -1921,7 +2078,6 @@ struct TradingViewWebView: UIViewRepresentable {
                     });
                 }
                 
-                // Chart control functions
                 function changeSymbol(symbol) {
                     if (tvWidget) {
                         tvWidget.setSymbol(symbol, '15');
@@ -1934,6 +2090,18 @@ struct TradingViewWebView: UIViewRepresentable {
                     }
                 }
                 
+                function changeChartType(type) {
+                    if (tvWidget && tvWidget.chart) {
+                        tvWidget.chart().setChartType(type === 'candles' ? 1 : type === 'bars' ? 0 : type === 'line' ? 2 : 3);
+                    }
+                }
+                
+                function enablePriceScaling(enable) {
+                    if (tvWidget && tvWidget.chart) {
+                        tvWidget.chart().getPanes()[0].getMainSourcePriceScale().setAutoScale(enable);
+                    }
+                }
+                
                 function resetChart() {
                     if (tvWidget && tvWidget.chart) {
                         tvWidget.chart().resetData();
@@ -1941,12 +2109,10 @@ struct TradingViewWebView: UIViewRepresentable {
                     }
                 }
                 
-                // Initialize when DOM is ready
                 document.addEventListener('DOMContentLoaded', function() {
                     initTradingView();
                 });
                 
-                // Initialize immediately if already loaded
                 initTradingView();
             </script>
         </body>
