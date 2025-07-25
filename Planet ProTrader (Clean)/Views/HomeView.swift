@@ -195,9 +195,12 @@ struct HomeView: View {
                     Spacer()
                 }
                 
-                // Account Balance & Expertise - FIXED SIZE
+                // Account Balance & Expertise - FIXED: Hide balance for Black Hole
                 VStack(spacing: 8) {
-                    accountBalanceRow
+                    // FIXED: Only show account balance if NOT Black Hole
+                    if solarManager.selectedPlanet.name != "Black Hole" {
+                        accountBalanceRow
+                    }
                     tradingExpertiseRow
                 }
             }
@@ -224,15 +227,24 @@ struct HomeView: View {
     }
     
     private var planetPhilosophyGradient: LinearGradient {
-        LinearGradient(
-            colors: [
-                solarManager.selectedPlanet.color,
-                solarManager.selectedPlanet.color.opacity(0.8),
-                solarManager.selectedPlanet.color
-            ],
-            startPoint: .leading,
-            endPoint: .trailing
-        )
+        // FIXED: White text for Black Hole philosophy
+        if solarManager.selectedPlanet.name == "Black Hole" {
+            return LinearGradient(
+                colors: [Color.white, Color.white.opacity(0.9), Color.white],
+                startPoint: .leading,
+                endPoint: .trailing
+            )
+        } else {
+            return LinearGradient(
+                colors: [
+                    solarManager.selectedPlanet.color,
+                    solarManager.selectedPlanet.color.opacity(0.8),
+                    solarManager.selectedPlanet.color
+                ],
+                startPoint: .leading,
+                endPoint: .trailing
+            )
+        }
     }
 
     private var accountBalanceRow: some View {
@@ -244,12 +256,28 @@ struct HomeView: View {
             
             Spacer()
             
-            Text("$\(String(format: "%.0f", solarManager.selectedPlanet.balance))")
-                .font(.title3.bold())
-                .foregroundColor(solarManager.selectedPlanet.color)
-                .shadow(color: solarManager.selectedPlanet.color.opacity(0.3), radius: 2, x: 0, y: 1)
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
+            // FIXED: Handle Black Hole with no balance display
+            if solarManager.selectedPlanet.name == "Black Hole" {
+                Text("∞ INFINITE")
+                    .font(.title3.bold())
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [Color.purple, Color.white, Color.indigo],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                    .shadow(color: Color.purple.opacity(0.5), radius: 3, x: 0, y: 1)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+            } else {
+                Text("$\(String(format: "%.0f", solarManager.selectedPlanet.balance))")
+                    .font(.title3.bold())
+                    .foregroundColor(solarManager.selectedPlanet.color)
+                    .shadow(color: solarManager.selectedPlanet.color.opacity(0.3), radius: 2, x: 0, y: 1)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+            }
         }
         .frame(height: 40) 
         .padding(.horizontal, 14)
@@ -258,10 +286,16 @@ struct HomeView: View {
 
     private var accountBalanceBackground: some View {
         RoundedRectangle(cornerRadius: 8)
-            .fill(solarManager.selectedPlanet.color.opacity(0.1))
+            .fill(solarManager.selectedPlanet.color.opacity(0.1))  // FIXED: Use planet's natural color
             .overlay(
                 RoundedRectangle(cornerRadius: 8)
-                    .stroke(solarManager.selectedPlanet.color.opacity(0.3), lineWidth: 1)
+                    .stroke(solarManager.selectedPlanet.color.opacity(0.3), lineWidth: 1)  // FIXED: Use planet's natural color
+            )
+            .shadow(
+                color: solarManager.selectedPlanet.color.opacity(0.2),  // FIXED: Use planet's natural color
+                radius: 4,
+                x: 0,
+                y: 2
             )
     }
 
@@ -298,10 +332,29 @@ struct HomeView: View {
 
     private var planetInfoBackground: some View {
         RoundedRectangle(cornerRadius: 20)
-            .fill(Color.black.opacity(0.3))
+            .fill(
+                // FIXED: Better contrast for Black Hole like ProTrader
+                solarManager.selectedPlanet.name == "Black Hole" ?
+                Color.black.opacity(0.7) :  // Darker background for better pop
+                Color.black.opacity(0.5)
+            )
             .overlay(
                 RoundedRectangle(cornerRadius: 20)
-                    .stroke(solarManager.selectedPlanet.color.opacity(0.5), lineWidth: 1)
+                    .stroke(
+                        // FIXED: Better border for Black Hole
+                        solarManager.selectedPlanet.name == "Black Hole" ?
+                        Color.white.opacity(0.6) :  // White border like space theme
+                        solarManager.selectedPlanet.color.opacity(0.5),
+                        lineWidth: solarManager.selectedPlanet.name == "Black Hole" ? 2 : 1
+                    )
+            )
+            .shadow(
+                color: solarManager.selectedPlanet.name == "Black Hole" ?
+                Color.white.opacity(0.4) :  // White glow for cosmic effect
+                solarManager.selectedPlanet.color.opacity(0.3),
+                radius: solarManager.selectedPlanet.name == "Black Hole" ? 12 : 8,
+                x: 0,
+                y: 4
             )
     }
 
@@ -313,31 +366,58 @@ struct HomeView: View {
             }
         }) {
             HStack(spacing: 12) {
-                Image(systemName: "rocket.fill")
+                // FIXED: Different icon for Black Hole
+                Image(systemName: solarManager.selectedPlanet.name == "Black Hole" ? "books.vertical.fill" : "rocket.fill")
                     .font(.title2)
                 
-                Text("Enter \(solarManager.selectedPlanet.name)")
+                // FIXED: Different text for Black Hole
+                Text(solarManager.selectedPlanet.name == "Black Hole" ? "Access Knowledge Library" : "Enter \(solarManager.selectedPlanet.name)")
                     .font(.headline)
                     .fontWeight(.semibold)
-                    .lineLimit(1) // FORCE SINGLE LINE
-                    .minimumScaleFactor(0.7) // ALLOW SCALING IF TEXT TOO LONG
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
             }
             .foregroundColor(.white)
-            .frame(width: 250, height: 50) // FIXED WIDTH AND HEIGHT - NEVER CHANGES
+            .frame(width: 280, height: 50)
             .background(enterButtonBackground)
             .clipShape(Capsule())
-            .shadow(color: solarManager.selectedPlanet.color.opacity(0.3), radius: 10, x: 0, y: 5)
+            .shadow(
+                color: solarManager.selectedPlanet.name == "Black Hole" ?
+                Color.white.opacity(0.3) :
+                solarManager.selectedPlanet.color.opacity(0.3),
+                radius: 10,
+                x: 0,
+                y: 5
+            )
+            // FIXED: Add animated glow for Black Hole button only
+            .overlay(
+                solarManager.selectedPlanet.name == "Black Hole" ?
+                AnimatedGlowOverlay() : nil
+            )
         }
-        .animation(.none) // KILL ALL LAYOUT ANIMATIONS
-        .id("enter-button-static") // UNIQUE ID TO PREVENT LAYOUT CHANGES
+        .animation(.none)
+        .id("enter-button-static")
     }
 
     private var enterButtonBackground: LinearGradient {
-        LinearGradient(
-            gradient: Gradient(colors: solarManager.selectedPlanet.gradientColors),
-            startPoint: .leading,
-            endPoint: .trailing
-        )
+        // FIXED: Better gradient for Black Hole
+        if solarManager.selectedPlanet.name == "Black Hole" {
+            return LinearGradient(
+                gradient: Gradient(colors: [
+                    Color.black,
+                    Color.gray.opacity(0.8),
+                    Color.white.opacity(0.6)
+                ]),
+                startPoint: .leading,
+                endPoint: .trailing
+            )
+        } else {
+            return LinearGradient(
+                gradient: Gradient(colors: solarManager.selectedPlanet.gradientColors),
+                startPoint: .leading,
+                endPoint: .trailing
+            )
+        }
     }
     
     @ViewBuilder
@@ -382,6 +462,50 @@ struct HomeView: View {
     private func impactFeedback() {
         let impact = UIImpactFeedbackGenerator(style: .medium)
         impact.impactOccurred()
+    }
+}
+
+// MARK: - Animated Glow Overlay for Black Hole Button
+struct AnimatedGlowOverlay: View {
+    @State private var glowOffset: CGFloat = -300
+    @State private var currentColors: [Color] = [.purple, .blue, .cyan, .white, .yellow, .orange, .red]
+    @State private var colorIndex = 0
+    
+    var body: some View {
+        // Animated color sweep effect
+        LinearGradient(
+            colors: [
+                Color.clear,
+                currentColors[colorIndex].opacity(0.8),
+                currentColors[(colorIndex + 1) % currentColors.count].opacity(0.6),
+                currentColors[(colorIndex + 2) % currentColors.count].opacity(0.4),
+                Color.clear
+            ],
+            startPoint: .leading,
+            endPoint: .trailing
+        )
+        .mask(
+            Capsule()
+                .stroke(lineWidth: 3)
+        )
+        .offset(x: glowOffset)
+        .onAppear {
+            startGlowAnimation()
+        }
+    }
+    
+    private func startGlowAnimation() {
+        // Continuous sweep animation
+        withAnimation(.linear(duration: 2.0).repeatForever(autoreverses: false)) {
+            glowOffset = 300
+        }
+        
+        // Color cycling animation
+        Timer.scheduledTimer(withTimeInterval: 0.3, repeats: true) { _ in
+            withAnimation(.easeInOut(duration: 0.3)) {
+                colorIndex = (colorIndex + 1) % currentColors.count
+            }
+        }
     }
 }
 

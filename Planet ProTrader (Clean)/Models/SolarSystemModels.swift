@@ -49,16 +49,16 @@ struct TradingPlanet: Identifiable, Hashable {
                 philosophy: "Where Wealth Is Infinite"
             ),
             TradingPlanet(
-                name: "Solar Command",
-                mentorName: "Central Hub",
-                description: "The bright center of trading operations - A radiant sun-like world",
-                balance: 15000.0,
-                color: .orange,
-                gradientColors: [.yellow, .orange, .red],
-                icon: "",
-                expertise: "Central Trading Operations",
+                name: "Black Hole",
+                mentorName: "Universal AI Collective",
+                description: "The cosmic knowledge absorber - Drawing wisdom from every trader, every strategy, every victory and defeat across the universe",
+                balance: 0.0,
+                color: .black,
+                gradientColors: [.black, .purple, .indigo, .white],
+                icon: "brain.filled.head.profile",
+                expertise: "Universal Trading Intelligence & Collective Learning",
                 unlocked: true,
-                philosophy: "Where Success Burns Bright"
+                philosophy: "Where All Knowledge Becomes One"
             ),
             TradingPlanet(
                 name: "Discipline",
@@ -140,7 +140,7 @@ struct PlanetView: View {
     var body: some View {
         ZStack {
             // Planetary aura (removed excessive glow for ProTrader)
-            if isSelected && planet.name != "ProTrader" {
+            if isSelected && planet.name != "ProTrader" && planet.name != "Black Hole" {
                 Circle()
                     .fill(
                         RadialGradient(
@@ -379,20 +379,6 @@ struct PlanetView: View {
                 endRadius: 33
             )
             
-        case "Solar Command":
-            // Sun - Bright yellow surface
-            return RadialGradient(
-                colors: [
-                    Color(red: 1.0, green: 1.0, blue: 0.2),  // Bright yellow
-                    Color(red: 0.8, green: 0.7, blue: 0.1),  // Mid yellow
-                    Color(red: 0.6, green: 0.4, blue: 0.05),  // Dark yellow
-                    Color(red: 0.4, green: 0.2, blue: 0.02)   // Deep yellow
-                ],
-                center: UnitPoint(x: 0.3, y: 0.3),
-                startRadius: 4,
-                endRadius: 28
-            )
-            
         default:
             return RadialGradient(
                 colors: planet.gradientColors,
@@ -428,6 +414,17 @@ struct PlanetView: View {
                     )
                 }
                 
+            case "Discipline":
+                // Jupiter storm systems
+                ForEach(0..<8, id: \.self) { i in
+                    createStormSystem(
+                        size: CGSize(width: Double.random(in: 12...20), height: Double.random(in: 4...8)),
+                        position: CGPoint(x: Double.random(in: -15...15), y: Double.random(in: -15...15)),
+                        color: Color(red: 0.8, green: 0.9, blue: 0.6).opacity(0.5),
+                        isSelected: isSelected
+                    )
+                }
+                
             case "Mental Game":
                 // Venus cloud formations
                 ForEach(0..<4, id: \.self) { i in
@@ -445,17 +442,6 @@ struct PlanetView: View {
                     createCrater(
                         size: CGFloat.random(in: 3...8),
                         position: CGPoint(x: Double.random(in: -18...18), y: Double.random(in: -18...18)),
-                        isSelected: isSelected
-                    )
-                }
-                
-            case "Solar Command":
-                // Sun with solar flares
-                ForEach(0..<4, id: \.self) { i in
-                    createSolarFlare(
-                        size: CGSize(width: Double.random(in: 8...12), height: Double.random(in: 8...12)),
-                        position: CGPoint(x: Double.random(in: -18...18), y: Double.random(in: -18...18)),
-                        color: Color(red: 1.0, green: 0.8, blue: 0.2).opacity(0.7),
                         isSelected: isSelected
                     )
                 }
@@ -486,6 +472,11 @@ struct PlanetView: View {
                         .blur(radius: 2)
                         .rotationEffect(.degrees(rotationAngle * 0.3))
                 }
+            } else if planet.name == "Discipline" {
+                // Jupiter storm bands
+                ForEach(0..<5, id: \.self) { i in
+                    createStormBand(yPosition: Double.random(in: -20...20), color: Color(red: 0.8, green: 0.9, blue: 0.6).opacity(0.5), isSelected: isSelected)
+                }
             }
         }
         .frame(width: isSelected ? 55 : 45, height: isSelected ? 55 : 45)
@@ -495,43 +486,107 @@ struct PlanetView: View {
     
     private func createRealisticRings(isSelected: Bool) -> some View {
         ZStack {
-            // Saturn-style ring system
-            ForEach(0..<6, id: \.self) { ring in
-                Ellipse()
-                    .stroke(
-                        LinearGradient(
-                            colors: [
-                                Color.clear,
-                                getRingColor(for: ring).opacity(0.8),
-                                getRingColor(for: ring).opacity(0.6),
-                                getRingColor(for: ring).opacity(0.4),
-                                Color.clear
-                            ],
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        ),
-                        lineWidth: CGFloat(4.0 - Double(ring) * 0.5)
-                    )
-                    .frame(
-                        width: CGFloat(80 + ring * 12),
-                        height: CGFloat(18 + ring * 3)
-                    )
-                    .rotationEffect(.degrees(12.0 + Double(ring * 3)))
-                    .opacity(0.9 - Double(ring) * 0.1)
-                    .blur(radius: Double(ring) * 0.4)
-                    .rotationEffect(.degrees(rotationAngle * (0.3 + Double(ring) * 0.05)))
-            }
-            
-            // Ring particles and debris
-            ForEach(0..<25, id: \.self) { particle in
-                Circle()
-                    .fill(Color.orange.opacity(0.7))
-                    .frame(width: CGFloat.random(in: 0.5...1.5), height: CGFloat.random(in: 0.5...1.5))
-                    .offset(
-                        x: cos(Double(particle) * 14.4 * .pi / 180 + rotationAngle * .pi / 180) * Double.random(in: 40...65),
-                        y: sin(Double(particle) * 14.4 * .pi / 180 + rotationAngle * .pi / 180) * Double.random(in: 9...15)
-                    )
-                    .blur(radius: 0.5)
+            // FIXED: Only Black Hole gets the Interstellar effects
+            if planet.name == "Black Hole" {
+                // INTERSTELLAR BLACK HOLE - Massive accretion disk
+                ForEach(0..<10, id: \.self) { ring in
+                    Ellipse()
+                        .stroke(
+                            AngularGradient(
+                                colors: [
+                                    Color.white.opacity(0.9),
+                                    Color.yellow.opacity(0.8),
+                                    Color.orange.opacity(0.9),
+                                    Color.red.opacity(0.7),
+                                    Color.purple.opacity(0.6),
+                                    Color.indigo.opacity(0.5),
+                                    Color.white.opacity(0.8)
+                                ],
+                                center: .center,
+                                startAngle: .degrees(0),
+                                endAngle: .degrees(360)
+                            ),
+                            lineWidth: CGFloat(8.0 - Double(ring) * 0.6)
+                        )
+                        .frame(
+                            width: CGFloat(80 + ring * 15),
+                            height: CGFloat(20 + ring * 4)
+                        )
+                        .rotationEffect(.degrees(15.0 + Double(ring * 2)))
+                        .opacity(0.9 - Double(ring) * 0.07)
+                        .blur(radius: Double(ring) * 0.5)
+                        .rotationEffect(.degrees(rotationAngle * (1.2 - Double(ring) * 0.1)))
+                        .shadow(color: .orange.opacity(0.3), radius: 4)
+                }
+                
+                // Matter jets (like in Interstellar)
+                ForEach(0..<2, id: \.self) { jet in
+                    Rectangle()
+                        .fill(
+                            LinearGradient(
+                                colors: [Color.cyan.opacity(0.8), Color.white.opacity(0.6), Color.clear],
+                                startPoint: .center,
+                                endPoint: .trailing
+                            )
+                        )
+                        .frame(width: 60, height: 2)
+                        .offset(x: 30)
+                        .rotationEffect(.degrees(Double(jet) * 180 + rotationAngle * 0.1))
+                        .blur(radius: 1)
+                        .opacity(0.7)
+                }
+                
+                // Gravitational lensing particles
+                ForEach(0..<40, id: \.self) { particle in
+                    Circle()
+                        .fill([Color.white, Color.yellow, Color.orange, Color.cyan].randomElement()!.opacity(0.9))
+                        .frame(width: CGFloat.random(in: 1.0...3.0), height: CGFloat.random(in: 1.0...3.0))
+                        .offset(
+                            x: cos(Double(particle) * 9 * .pi / 180 + rotationAngle * 1.5 * .pi / 180) * Double.random(in: 40...90),
+                            y: sin(Double(particle) * 9 * .pi / 180 + rotationAngle * 1.5 * .pi / 180) * Double.random(in: 10...25)
+                        )
+                        .blur(radius: 1.2)
+                        .shadow(color: .white.opacity(0.5), radius: 2)
+                }
+            } else if planet.name == "Zen Trading" {
+                // FIXED: Zen Trading gets NORMAL Saturn-style rings (orange/red)
+                ForEach(0..<6, id: \.self) { ring in
+                    Ellipse()
+                        .stroke(
+                            LinearGradient(
+                                colors: [
+                                    Color.clear,
+                                    Color.orange.opacity(0.8),
+                                    Color.red.opacity(0.6),
+                                    Color.orange.opacity(0.4),
+                                    Color.clear
+                                ],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            ),
+                            lineWidth: CGFloat(4.0 - Double(ring) * 0.5)
+                        )
+                        .frame(
+                            width: CGFloat(80 + ring * 12),
+                            height: CGFloat(18 + ring * 3)
+                        )
+                        .rotationEffect(.degrees(12.0 + Double(ring * 3)))
+                        .opacity(0.9 - Double(ring) * 0.1)
+                        .blur(radius: Double(ring) * 0.4)
+                        .rotationEffect(.degrees(rotationAngle * (0.3 + Double(ring) * 0.05)))
+                }
+                
+                // Normal ring particles (orange/red)
+                ForEach(0..<25, id: \.self) { particle in
+                    Circle()
+                        .fill(Color.orange.opacity(0.7))
+                        .frame(width: CGFloat.random(in: 0.5...1.5), height: CGFloat.random(in: 0.5...1.5))
+                        .offset(
+                            x: cos(Double(particle) * 14.4 * .pi / 180 + rotationAngle * .pi / 180) * Double.random(in: 40...65),
+                            y: sin(Double(particle) * 14.4 * .pi / 180 + rotationAngle * .pi / 180) * Double.random(in: 9...15)
+                        )
+                        .blur(radius: 0.5)
+                }
             }
         }
     }
@@ -620,17 +675,17 @@ struct PlanetView: View {
     }
     
     private func shouldHaveRings(_ planet: TradingPlanet) -> Bool {
-        return planet.name == "Zen Trading" || planet.name == "Solar Command"
+        return planet.name == "Zen Trading" || planet.name == "Black Hole"  // Only these two get rings
     }
     
     private func getAtmosphereColor(for planet: TradingPlanet) -> Color {
         switch planet.name {
         case "ProTrader": return Color.cyan
         case "Golden Core": return Color.yellow
+        case "Black Hole": return Color.purple     // Cosmic purple aura
         case "Discipline": return Color.purple
         case "Mental Game": return Color.green
         case "Zen Trading": return Color.orange
-        case "Solar Command": return Color.yellow
         default: return planet.color
         }
     }

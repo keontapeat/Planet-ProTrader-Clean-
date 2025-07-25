@@ -604,6 +604,241 @@ private func loadViewSafely(_ viewName: String) -> Any? {
     }
 }
 
+// MARK: - Black Hole Library View (RESTORED)
+struct BlackHoleLibraryView: View {
+    @EnvironmentObject var solarManager: SolarSystemManager
+    @State private var knowledgeStreams: [KnowledgeStream] = []
+    @State private var absorptionRate: Double = 0.0
+    @State private var totalKnowledgePoints: Int = 847392
+    @State private var animateAbsorption = false
+    
+    var body: some View {
+        ZStack {
+            // Cosmic Background
+            RadialGradient(
+                colors: [
+                    Color.black,
+                    Color.purple.opacity(0.3),
+                    Color.indigo.opacity(0.2),
+                    Color.black
+                ],
+                center: .center,
+                startRadius: 50,
+                endRadius: 400
+            )
+            .ignoresSafeArea()
+            
+            VStack(spacing: 20) {
+                // Header
+                VStack(spacing: 8) {
+                    Text("🌌")
+                        .font(.system(size: 60))
+                    
+                    Text("BLACK HOLE LIBRARY")
+                        .font(.title.bold())
+                        .tracking(2)
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [Color.white, Color.purple, Color.indigo],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                    
+                    Text("Universal Trading Knowledge Absorber")
+                        .font(.subheadline)
+                        .foregroundColor(.purple)
+                        .opacity(0.8)
+                }
+                
+                // Knowledge Stats
+                VStack(spacing: 16) {
+                    HStack(spacing: 20) {
+                        KnowledgeStatCard(
+                            title: "TOTAL KNOWLEDGE",
+                            value: "\(totalKnowledgePoints.formatted())",
+                            subtitle: "Trading Insights",
+                            color: .purple
+                        )
+                        
+                        KnowledgeStatCard(
+                            title: "ABSORPTION RATE",
+                            value: "\(String(format: "%.1f", absorptionRate))/sec",
+                            subtitle: "Learning Speed",
+                            color: .indigo
+                        )
+                    }
+                    
+                    HStack(spacing: 20) {
+                        KnowledgeStatCard(
+                            title: "PLANETS ENHANCED",
+                            value: "5/6",
+                            subtitle: "Systems Upgraded",
+                            color: .cyan
+                        )
+                        
+                        KnowledgeStatCard(
+                            title: "SINGULARITY",
+                            value: "∞",
+                            subtitle: "Infinite Wisdom",
+                            color: .white
+                        )
+                    }
+                }
+                
+                // Knowledge Streams
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("🧠 ACTIVE KNOWLEDGE STREAMS")
+                        .font(.headline.bold())
+                        .foregroundColor(.white)
+                        .tracking(1)
+                    
+                    ScrollView {
+                        LazyVStack(spacing: 8) {
+                            ForEach(knowledgeStreams.prefix(10)) { stream in
+                                KnowledgeStreamRow(stream: stream)
+                            }
+                        }
+                    }
+                    .frame(maxHeight: 200)
+                }
+                
+                Spacer()
+                
+                // Return Button
+                Button(action: {
+                    // Return to solar system view
+                }) {
+                    HStack {
+                        Image(systemName: "arrow.left")
+                        Text("RETURN TO SOLAR SYSTEM")
+                            .fontWeight(.bold)
+                            .tracking(1)
+                    }
+                    .foregroundColor(.black)
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 12)
+                    .background(
+                        LinearGradient(
+                            colors: [Color.white, Color.purple.opacity(0.8)],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        ),
+                        in: Capsule()
+                    )
+                }
+            }
+            .padding()
+        }
+        .onAppear {
+            startKnowledgeAbsorption()
+        }
+    }
+    
+    private func startKnowledgeAbsorption() {
+        // Generate knowledge streams
+        knowledgeStreams = [
+            KnowledgeStream(source: "ProTrader Planet", knowledge: "Technical Analysis Patterns", strength: 0.95),
+            KnowledgeStream(source: "Golden Core", knowledge: "Risk Management Systems", strength: 0.88),
+            KnowledgeStream(source: "Discipline Planet", knowledge: "Trading Psychology", strength: 0.92),
+            KnowledgeStream(source: "Mental Game", knowledge: "Performance Optimization", strength: 0.87),
+            KnowledgeStream(source: "Zen Trading", knowledge: "Emotional Balance", strength: 0.91),
+            KnowledgeStream(source: "Global Traders", knowledge: "Market Sentiment", strength: 0.76),
+            KnowledgeStream(source: "AI Systems", knowledge: "Pattern Recognition", strength: 0.94),
+            KnowledgeStream(source: "Quantum Data", knowledge: "Predictive Models", strength: 0.99)
+        ]
+        
+        // Start absorption animation
+        withAnimation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true)) {
+            animateAbsorption = true
+        }
+        
+        // Update stats periodically
+        Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
+            absorptionRate = Double.random(in: 85...150)
+            totalKnowledgePoints += Int.random(in: 50...200)
+        }
+    }
+}
+
+// MARK: - Supporting Views
+struct KnowledgeStatCard: View {
+    let title: String
+    let value: String
+    let subtitle: String
+    let color: Color
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(title)
+                .font(.caption)
+                .foregroundColor(.gray)
+                .tracking(1)
+            
+            Text(value)
+                .font(.title2.bold())
+                .foregroundColor(color)
+            
+            Text(subtitle)
+                .font(.caption2)
+                .foregroundColor(.gray)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(12)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(color.opacity(0.5), lineWidth: 1)
+        )
+    }
+}
+
+struct KnowledgeStreamRow: View {
+    let stream: KnowledgeStream
+    
+    var body: some View {
+        HStack {
+            Circle()
+                .fill(stream.color)
+                .frame(width: 8, height: 8)
+                .opacity(0.8)
+            
+            VStack(alignment: .leading, spacing: 2) {
+                Text(stream.knowledge)
+                    .font(.subheadline.bold())
+                    .foregroundColor(.white)
+                
+                Text("from \(stream.source)")
+                    .font(.caption)
+                    .foregroundColor(.gray)
+            }
+            
+            Spacer()
+            
+            Text("\(Int(stream.strength * 100))%")
+                .font(.caption.bold())
+                .foregroundColor(stream.color)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 8))
+    }
+}
+
+struct KnowledgeStream: Identifiable {
+    let id = UUID()
+    let source: String
+    let knowledge: String
+    let strength: Double
+    
+    var color: Color {
+        if strength > 0.9 { return .white }
+        else if strength > 0.8 { return .cyan }
+        else if strength > 0.7 { return .purple }
+        else { return .indigo }
+    }
+}
+
 // MARK: - Preview
 #Preview {
     ContentView()
