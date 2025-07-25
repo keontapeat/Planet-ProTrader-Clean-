@@ -21,6 +21,8 @@ struct ProTraderDashboardView: View {
     @State private var showingScreenshotGallery = false
     @State private var showingBotDeployment = false
     @State private var showingMassiveDataDownload = false
+    @State private var isViewLoaded = false
+    @State private var currentPage = 0
     
     private let timeframes = ["1M", "5M", "15M", "1H", "4H", "1D"]
     
@@ -55,141 +57,24 @@ Date,Time,Open,High,Low,Close,Volume
     
     var body: some View {
         NavigationStack {
-            SwiftUI.ScrollView(.vertical, showsIndicators: false) {
-                LazyVStack(spacing: 24) {
-                    // Enhanced Header Stats
-                    enhancedHeaderStatsSection
-                    
-                    // Bot Army Deployment Section
-                    botArmyDeploymentSection
-                    
-                    // Army Overview Cards
-                    enhancedArmyOverviewSection
-                    
-                    // VPS Status Section
-                    vpsStatusSection
-                    
-                    // Training Section
-                    enhancedTrainingSection
-                    
-                    // Bot Performance Grid
-                    liveBotsPerformanceSection
-                    
-                    // Performance Charts
-                    enhancedPerformanceChartsSection
-                    
-                    // Top Performers
-                    enhancedTopPerformersSection
-                    
-                    // A+ Screenshots Gallery
-                    aPlusScreenshotsSection
-                    
-                    // Footer spacing
-                    Spacer(minLength: 100)
+            ZStack {
+                // Background
+                backgroundGradient
+                
+                if !isViewLoaded {
+                    // Fast loading screen
+                    LoadingView()
+                } else {
+                    // Main content with progressive loading
+                    mainContent
                 }
-                .padding(.horizontal, 20)
-                .padding(.top, 8)
             }
-            .background(
-                LinearGradient(
-                    colors: [
-                        Color(red: 0.02, green: 0.05, blue: 0.15),
-                        Color(red: 0.05, green: 0.08, blue: 0.20),
-                        Color(red: 0.08, green: 0.12, blue: 0.25)
-                    ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-                .ignoresSafeArea()
-            )
             .navigationTitle("ProTrader Army")
             .navigationBarTitleDisplayMode(.large)
             .toolbarColorScheme(.dark)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    HStack(spacing: 12) {
-                        // Massive Data Download Button
-                        Button(action: { 
-                            showingMassiveDataDownload = true
-                        }) {
-                            HStack(spacing: 4) {
-                                Image(systemName: "icloud.and.arrow.down.fill")
-                                    .foregroundColor(.purple)
-                                Text("Data")
-                                    .font(.caption.bold())
-                                    .foregroundColor(.white)
-                            }
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
-                            .background(.purple.opacity(0.2), in: Capsule())
-                        }
-                        
-                        // Deploy All Bots Button - FIXED
-                        Button(action: { 
-                            showingBotDeployment = true
-                            Task {
-                                await armyManager.deployAllBots()
-                                GlobalToastManager.shared.show("🚀 All 5,000 bots deployed successfully!", type: .success)
-                            }
-                        }) {
-                            HStack(spacing: 4) {
-                                Image(systemName: "arrow.up.circle.fill")
-                                    .foregroundColor(.green)
-                                Text("Deploy")
-                                    .font(.caption.bold())
-                                    .foregroundColor(.white)
-                            }
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
-                            .background(.green.opacity(0.2), in: Capsule())
-                        }
-                        
-                        // VPS Status Button
-                        Button(action: { showingVPSStatus = true }) {
-                            HStack(spacing: 4) {
-                                Circle()
-                                    .fill(armyManager.vpsManager.isConnected ? .green : .red)
-                                    .frame(width: 8, height: 8)
-                                Text("VPS")
-                                    .font(.caption.bold())
-                            }
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
-                            .background(.ultraThinMaterial, in: Capsule())
-                        }
-                        
-                        // Auto-Trading Toggle
-                        Menu {
-                            Button("🚀 Start Auto-Trading") {
-                                Task {
-                                    await armyManager.startAutoTrading()
-                                    GlobalToastManager.shared.show("✅ Auto-trading started!", type: .success)
-                                }
-                            }
-                            Button("🛑 Stop Auto-Trading") {
-                                Task {
-                                    await armyManager.stopAutoTrading()
-                                    GlobalToastManager.shared.show("⏹️ Auto-trading stopped", type: .info)
-                                }
-                            }
-                            Button("🚨 Emergency Stop All") {
-                                Task {
-                                    await armyManager.emergencyStopAll()
-                                    GlobalToastManager.shared.show("🚨 Emergency stop activated!", type: .warning)
-                                }
-                            }
-                            Button("🧠 Train with Sample Data") {
-                                Task {
-                                    await trainWithSampleData()
-                                    GlobalToastManager.shared.show("🎓 Training completed!", type: .success)
-                                }
-                            }
-                        } label: {
-                            Image(systemName: "robot")
-                                .font(.title2)
-                                .foregroundStyle(.white)
-                        }
-                    }
+                    toolbarButtons
                 }
             }
         }
@@ -198,683 +83,186 @@ Date,Time,Open,High,Low,Close,Volume
                 enhancedTrainingOverlay
             }
         }
-        .sheet(isPresented: $showingImporter) {
-            CSVImporterView(armyManager: armyManager)
+        .modifier(SheetPresentationModifier(
+            showingImporter: $showingImporter,
+            showingTrainingResults: $showingTrainingResults,
+            showingBotDetails: $showingBotDetails,
+            showingVPSStatus: $showingVPSStatus,
+            showingScreenshotGallery: $showingScreenshotGallery,
+            showingGPTChat: $showingGPTChat,
+            showingBotDeployment: $showingBotDeployment,
+            showingMassiveDataDownload: $showingMassiveDataDownload,
+            selectedBot: selectedBot,
+            armyManager: armyManager
+        ))
+        .task {
+            await initializeView()
         }
-        .sheet(isPresented: $showingTrainingResults) {
-            if let results = armyManager.lastTrainingResults {
-                TrainingResultsView(results: results)
+    }
+    
+    // MARK: - Performance Optimized Views
+    
+    private var backgroundGradient: some View {
+        LinearGradient(
+            colors: [
+                Color(red: 0.02, green: 0.05, blue: 0.15),
+                Color(red: 0.05, green: 0.08, blue: 0.20),
+                Color(red: 0.08, green: 0.12, blue: 0.25)
+            ],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+        .ignoresSafeArea()
+    }
+    
+    private var toolbarButtons: some View {
+        HStack(spacing: 12) {
+            // Massive Data Download Button
+            ToolbarButton(
+                icon: "icloud.and.arrow.down.fill",
+                text: "Data",
+                color: .purple,
+                action: { showingMassiveDataDownload = true }
+            )
+            
+            // Deploy All Bots Button
+            ToolbarButton(
+                icon: "arrow.up.circle.fill",
+                text: "Deploy",
+                color: .green,
+                action: {
+                    showingBotDeployment = true
+                    Task.detached(priority: .background) {
+                        await armyManager.deployAllBots()
+                        await MainActor.run {
+                            GlobalToastManager.shared.show("🚀 All 5,000 bots deployed successfully!", type: .success)
+                        }
+                    }
+                }
+            )
+            
+            // VPS Status Button
+            VPSStatusButton(isConnected: armyManager.vpsManager.isConnected) {
+                showingVPSStatus = true
             }
+            
+            // Auto-Trading Menu
+            AutoTradingMenu(armyManager: armyManager, sampleData: sampleHistoricalData)
         }
-        .sheet(isPresented: $showingBotDetails) {
-            if let bot = selectedBot {
-                BotDetailView(bot: bot)
+    }
+    
+    private var mainContent: some View {
+        ScrollView(.vertical, showsIndicators: false) {
+            LazyVStack(spacing: 24) {
+                // Load sections progressively
+                Group {
+                    // Always show header first
+                    FastHeaderStatsSection(armyManager: armyManager, animateElements: animateElements)
+                    
+                    // Progressive loading based on scroll position
+                    if currentPage >= 0 {
+                        FastBotArmySection(armyManager: armyManager)
+                    }
+                    
+                    if currentPage >= 1 {
+                        FastArmyOverviewSection(armyManager: armyManager)
+                    }
+                    
+                    if currentPage >= 2 {
+                        FastVPSStatusSection(armyManager: armyManager, showingVPSStatus: $showingVPSStatus)
+                    }
+                    
+                    if currentPage >= 3 {
+                        FastTrainingSection(
+                            armyManager: armyManager,
+                            showingImporter: $showingImporter
+                        )
+                    }
+                    
+                    if currentPage >= 4 {
+                        FastLiveBotsSection(
+                            armyManager: armyManager,
+                            selectedBot: $selectedBot,
+                            showingBotDetails: $showingBotDetails
+                        )
+                    }
+                    
+                    if currentPage >= 5 {
+                        FastPerformanceSection(
+                            armyManager: armyManager,
+                            selectedTimeframe: $selectedTimeframe,
+                            timeframes: timeframes
+                        )
+                    }
+                    
+                    if currentPage >= 6 {
+                        FastTopPerformersSection(
+                            armyManager: armyManager,
+                            selectedBot: $selectedBot,
+                            showingBotDetails: $showingBotDetails
+                        )
+                    }
+                    
+                    if currentPage >= 7 {
+                        FastScreenshotsSection(
+                            armyManager: armyManager,
+                            showingScreenshotGallery: $showingScreenshotGallery
+                        )
+                    }
+                }
+                
+                // Footer spacing
+                Spacer(minLength: 100)
             }
-        }
-        .sheet(isPresented: $showingVPSStatus) {
-            VPSStatusView(vpsManager: armyManager.vpsManager)
-        }
-        .sheet(isPresented: $showingScreenshotGallery) {
-            ScreenshotGalleryView()
-        }
-        .sheet(isPresented: $showingGPTChat) {
-            ProTraderGPTChatView()
-        }
-        .sheet(isPresented: $showingBotDeployment) {
-            BotDeploymentView(armyManager: armyManager)
-        }
-        .sheet(isPresented: $showingMassiveDataDownload) {
-            MassiveDataDownloadView(armyManager: armyManager)
+            .padding(.horizontal, 20)
+            .padding(.top, 8)
         }
         .onAppear {
-            withAnimation(.spring(response: 0.8, dampingFraction: 0.8).delay(0.2)) {
+            // Animate elements after view loads
+            withAnimation(.spring(response: 0.8, dampingFraction: 0.8).delay(0.1)) {
                 animateElements = true
             }
-            armyManager.startContinuousLearning()
             
-            // Auto-start VPS connection
+            // Load sections progressively
             Task {
-                await armyManager.vpsManager.connectToVPS()
+                await loadSectionsProgressively()
+            }
+        }
+    }
+    
+    // MARK: - Async Initialization
+    
+    @MainActor
+    private func initializeView() async {
+        // Fast initial load
+        defer { isViewLoaded = true }
+        
+        // Start background tasks without blocking UI
+        Task.detached(priority: .background) {
+            await armyManager.startContinuousLearning()
+            
+            // Auto-start VPS connection in background
+            await armyManager.vpsManager.connectToVPS()
+            await MainActor.run {
                 armyManager.isConnectedToVPS = armyManager.vpsManager.isConnected
             }
             
-            // Auto-start training with sample data
-            Task {
-                await trainWithSampleData()
-            }
+            // Auto-start training with sample data in background
+            let results = await armyManager.trainWithHistoricalData(csvData: sampleHistoricalData)
+            print("✅ Background training completed: \(results.summary)")
         }
     }
     
-    // MARK: - Sample Data Training
-    private func trainWithSampleData() async {
-        print("🚀 Training bots with sample historical data...")
-        let results = await armyManager.trainWithHistoricalData(csvData: sampleHistoricalData)
-        print("✅ Training completed: \(results.summary)")
-    }
-
-    // MARK: - Bot Army Deployment Section
-    private var botArmyDeploymentSection: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack {
-                Text("🚀")
-                    .font(.title2)
-                
-                Text("BOT ARMY DEPLOYMENT")
-                    .font(.system(size: 18, weight: .black, design: .rounded))
-                    .foregroundStyle(.white)
-                
-                Spacer()
-                
-                Text("\(armyManager.deployedBots)/5000")
-                    .font(.system(size: 14, weight: .bold, design: .rounded))
-                    .foregroundColor(.green)
-            }
-            
-            VStack(spacing: 16) {
-                // Quick Deploy Actions
-                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: 2), spacing: 12) {
-                    QuickDeployButton(
-                        title: "Deploy 100 Bots",
-                        subtitle: "Fast deployment",
-                        icon: "bolt.fill",
-                        color: .orange,
-                        action: {
-                            Task {
-                                await armyManager.deployBots(count: 100)
-                            }
-                        }
-                    )
-                    
-                    QuickDeployButton(
-                        title: "Deploy All 5K",
-                        subtitle: "Full army",
-                        icon: "crown.fill",
-                        color: .red,
-                        action: {
-                            Task {
-                                await armyManager.deployAllBots()
-                            }
-                        }
-                    )
-                    
-                    QuickDeployButton(
-                        title: "Train & Deploy",
-                        subtitle: "With historical data",
-                        icon: "brain.head.profile",
-                        color: .purple,
-                        action: {
-                            showingImporter = true
-                        }
-                    )
-                    
-                    QuickDeployButton(
-                        title: "VPS Sync",
-                        subtitle: "Upload to server",
-                        icon: "icloud.and.arrow.up",
-                        color: .blue,
-                        action: {
-                            Task {
-                                await armyManager.syncWithVPS()
-                            }
-                        }
-                    )
-                }
-                
-                // Deployment Progress
-                if armyManager.isDeploying {
-                    VStack(spacing: 8) {
-                        HStack {
-                            Text("Deploying Bots...")
-                                .font(.system(size: 14, weight: .medium, design: .rounded))
-                                .foregroundStyle(.white)
-                            
-                            Spacer()
-                            
-                            Text("\(Int(armyManager.deploymentProgress * 100))%")
-                                .font(.system(size: 14, weight: .bold, design: .rounded))
-                                .foregroundStyle(.green)
-                        }
-                        
-                        ProgressView(value: armyManager.deploymentProgress)
-                            .tint(.green)
-                            .background(.white.opacity(0.2))
-                            .clipShape(Capsule())
-                    }
+    private func loadSectionsProgressively() async {
+        // Load sections with small delays to prevent freezing
+        for page in 0...7 {
+            await MainActor.run {
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    currentPage = max(currentPage, page)
                 }
             }
-            .padding(20)
-            .background(
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(.white.opacity(0.05))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16)
-                            .stroke(.white.opacity(0.1), lineWidth: 1)
-                    )
-            )
-        }
-    }
-    
-    // MARK: - Live Bots Performance Section
-    private var liveBotsPerformanceSection: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack {
-                Text("⚡")
-                    .font(.title2)
-                
-                Text("LIVE BOTS PERFORMANCE")
-                    .font(.system(size: 18, weight: .black, design: .rounded))
-                    .foregroundStyle(.white)
-                
-                Spacer()
-                
-                Button("View All") {
-                    // Show all bots view
-                }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.small)
-            }
-            
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: 2), spacing: 12) {
-                ForEach(armyManager.getTopPerformers(count: 4), id: \.id) { bot in
-                    LiveBotCard(bot: bot) {
-                        selectedBot = bot
-                        showingBotDetails = true
-                    }
-                }
-            }
-        }
-    }
-    
-    // MARK: - Enhanced Header Stats Section
-    private var enhancedHeaderStatsSection: some View {
-        VStack(spacing: 20) {
-            // Enhanced Army Status Banner
-            HStack {
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack(spacing: 8) {
-                        Text("💎")
-                            .font(.title)
-                        
-                        Text("PROTRADER ARMY STATUS")
-                            .font(.system(size: 22, weight: .black, design: .rounded))
-                            .foregroundStyle(.white)
-                    }
-                    
-                    Text("5,000 ProTrader Bots • \(armyManager.getArmyStats().connectedToVPS) VPS Active")
-                        .font(.system(size: 14, weight: .medium, design: .rounded))
-                        .foregroundStyle(.white.opacity(0.8))
-                }
-                
-                Spacer()
-                
-                VStack(alignment: .trailing, spacing: 6) {
-                    HStack(spacing: 6) {
-                        Circle()
-                            .fill(armyManager.isConnectedToVPS ? .green : .red)
-                            .frame(width: 8, height: 8)
-                        Text(armyManager.isConnectedToVPS ? "VPS CONNECTED" : "VPS OFFLINE")
-                            .font(.system(size: 12, weight: .bold, design: .rounded))
-                            .foregroundStyle(armyManager.isConnectedToVPS ? .green : .red)
-                    }
-                    
-                    Text("24/7 AI Learning Active")
-                        .font(.system(size: 11, weight: .medium, design: .rounded))
-                        .foregroundStyle(.white.opacity(0.7))
-                }
-            }
-            .padding(24)
-            .background(
-                RoundedRectangle(cornerRadius: 20)
-                    .fill(
-                        LinearGradient(
-                            colors: [
-                                Color.blue.opacity(0.2),
-                                Color.cyan.opacity(0.1),
-                                Color.indigo.opacity(0.05)
-                            ],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 20)
-                            .stroke(
-                                LinearGradient(
-                                    colors: [Color.blue.opacity(0.5), Color.cyan.opacity(0.3)],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                ),
-                                lineWidth: 1
-                            )
-                    )
-            )
-            .scaleEffect(animateElements ? 1.0 : 0.9)
-            .opacity(animateElements ? 1.0 : 0.0)
-            .animation(.spring(response: 0.6, dampingFraction: 0.8), value: animateElements)
-            
-            // Enhanced Key Metrics Grid
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 16), count: 2), spacing: 16) {
-                ProTraderMetricCard(
-                    icon: "brain.head.profile",
-                    title: "Avg Confidence",
-                    value: String(format: "%.1f%%", armyManager.averageConfidence * 100),
-                    subtitle: "Target: 90%+",
-                    color: confidenceColor(armyManager.averageConfidence),
-                    trend: .up
-                )
-                
-                ProTraderMetricCard(
-                    icon: "chart.xyaxis.line",
-                    title: "Total P&L",
-                    value: formatCurrency(armyManager.totalProfitLoss),
-                    subtitle: "Real-time earnings",
-                    color: armyManager.totalProfitLoss >= 0 ? .green : .red,
-                    trend: armyManager.totalProfitLoss >= 0 ? .up : .down
-                )
-                
-                ProTraderMetricCard(
-                    icon: "crown.fill",
-                    title: "GODMODE Bots",
-                    value: "\(armyManager.godmodeBots)",
-                    subtitle: "95%+ Confidence",
-                    color: .orange,
-                    trend: .up
-                )
-                
-                ProTraderMetricCard(
-                    icon: "target",
-                    title: "Win Rate",
-                    value: String(format: "%.1f%%", armyManager.overallWinRate),
-                    subtitle: "All bots combined",
-                    color: .blue,
-                    trend: .stable
-                )
-            }
-        }
-    }
-    
-    // MARK: - Enhanced Army Overview Section
-    private var enhancedArmyOverviewSection: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack {
-                Text("🏛️")
-                    .font(.title2)
-                
-                Text("ARMY OVERVIEW")
-                    .font(.system(size: 18, weight: .black, design: .rounded))
-                    .foregroundStyle(.white)
-            }
-            
-            let stats = armyManager.getArmyStats()
-            
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: 3), spacing: 12) {
-                ArmyStatCard(
-                    title: "Active Bots",
-                    value: "\(stats.activeBots)",
-                    icon: "robot",
-                    color: .green,
-                    subtitle: "Trading Now"
-                )
-                
-                ArmyStatCard(
-                    title: "Deployed",
-                    value: "\(armyManager.deployedBots)",
-                    icon: "arrow.up.circle",
-                    color: .blue,
-                    subtitle: "On VPS"
-                )
-                
-                ArmyStatCard(
-                    title: "Training",
-                    value: "\(stats.botsInTraining)",
-                    icon: "brain",
-                    color: .purple,
-                    subtitle: "Learning"
-                )
-            }
-        }
-    }
-    
-    // MARK: - VPS Status Section
-    private var vpsStatusSection: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack {
-                Text("🖥️")
-                    .font(.title2)
-                
-                Text("VPS STATUS")
-                    .font(.system(size: 18, weight: .black, design: .rounded))
-                    .foregroundStyle(.white)
-                
-                Spacer()
-                
-                Button("Manage VPS") {
-                    showingVPSStatus = true
-                }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.small)
-            }
-            
-            HStack(spacing: 16) {
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack(spacing: 8) {
-                        Circle()
-                            .fill(armyManager.isConnectedToVPS ? .green : .red)
-                            .frame(width: 12, height: 12)
-                        
-                        Text(armyManager.vpsManager.connectionStatus.rawValue)
-                            .font(.system(size: 14, weight: .semibold, design: .rounded))
-                            .foregroundStyle(.white)
-                    }
-                    
-                    Text("IP: 172.234.201.231")
-                        .font(.system(size: 12, weight: .medium, design: .rounded))
-                        .foregroundStyle(.white.opacity(0.7))
-                    
-                    if armyManager.vpsManager.lastPing > 0 {
-                        Text("Ping: \(String(format: "%.0f", armyManager.vpsManager.lastPing))ms")
-                            .font(.system(size: 12, weight: .medium, design: .rounded))
-                            .foregroundStyle(.white.opacity(0.7))
-                    }
-                }
-                
-                Spacer()
-                
-                VStack(alignment: .trailing, spacing: 4) {
-                    Text("\(armyManager.getArmyStats().connectedToVPS)")
-                        .font(.system(size: 20, weight: .bold, design: .rounded))
-                        .foregroundStyle(.green)
-                    
-                    Text("Bots Deployed")
-                        .font(.system(size: 12, weight: .medium, design: .rounded))
-                        .foregroundStyle(.white.opacity(0.7))
-                }
-            }
-            .padding(16)
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(.white.opacity(0.05))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(.white.opacity(0.1), lineWidth: 1)
-                    )
-            )
-        }
-    }
-    
-    // MARK: - Enhanced Training Section
-    private var enhancedTrainingSection: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack {
-                HStack(spacing: 8) {
-                    Text("🎯")
-                        .font(.title2)
-                    
-                    Text("AI TRAINING CENTER")
-                        .font(.system(size: 18, weight: .black, design: .rounded))
-                        .foregroundStyle(.white)
-                }
-                
-                Spacer()
-                
-                Button("Import Data") {
-                    showingImporter = true
-                }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.regular)
-                .tint(.blue)
-            }
-            
-            VStack(spacing: 16) {
-                // Enhanced Training Progress
-                if armyManager.isTraining {
-                    VStack(alignment: .leading, spacing: 12) {
-                        HStack {
-                            Text("🧠 Advanced AI Training in Progress...")
-                                .font(.system(size: 14, weight: .medium, design: .rounded))
-                                .foregroundStyle(.white)
-                            
-                            Spacer()
-                            
-                            Text("\(Int(armyManager.trainingProgress * 100))%")
-                                .font(.system(size: 14, weight: .bold, design: .rounded))
-                                .foregroundStyle(.orange)
-                        }
-                        
-                        ProgressView(value: armyManager.trainingProgress)
-                            .tint(.orange)
-                            .background(.white.opacity(0.2))
-                            .clipShape(Capsule())
-                        
-                        Text("Training 5,000 bots with machine learning algorithms...")
-                            .font(.system(size: 12, weight: .regular, design: .rounded))
-                            .foregroundStyle(.white.opacity(0.7))
-                    }
-                }
-                
-                // Enhanced Last Training Results
-                if let results = armyManager.lastTrainingResults {
-                    Button(action: { showingTrainingResults = true }) {
-                        HStack(spacing: 16) {
-                            Image(systemName: "checkmark.circle.fill")
-                                .font(.title2)
-                                .foregroundStyle(.green)
-                            
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("Last Training Session")
-                                    .font(.system(size: 14, weight: .medium, design: .rounded))
-                                    .foregroundStyle(.white)
-                                
-                                HStack(spacing: 8) {
-                                    Text("Trained: \(results.botsTrained)")
-                                    Text("•")
-                                    Text("GODMODE: +\(results.newGodmodeBots)")
-                                    Text("•")
-                                    Text("Data: \(results.dataPointsProcessed)")
-                                }
-                                .font(.system(size: 12, weight: .regular, design: .rounded))
-                                .foregroundStyle(.white.opacity(0.7))
-                            }
-                            
-                            Spacer()
-                            
-                            Image(systemName: "chevron.right")
-                                .font(.system(size: 12, weight: .medium))
-                                .foregroundStyle(.white.opacity(0.5))
-                        }
-                        .padding(16)
-                        .background(
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(.white.opacity(0.08))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 12)
-                                        .stroke(.white.opacity(0.1), lineWidth: 1)
-                                )
-                        )
-                    }
-                }
-                
-                // Enhanced Quick Actions
-                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: 2), spacing: 12) {
-                    QuickActionButton(
-                        icon: "chart.bar.fill",
-                        title: "Historical Data",
-                        subtitle: "Import CSV data",
-                        action: { showingImporter = true }
-                    )
-                    
-                    QuickActionButton(
-                        icon: "cloud.fill",
-                        title: "VPS Sync",
-                        subtitle: "Sync with server",
-                        action: { 
-                            Task {
-                                await armyManager.vpsManager.connectToVPS()
-                            }
-                        }
-                    )
-                }
-            }
-            .padding(20)
-            .background(
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(.white.opacity(0.05))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16)
-                            .stroke(.white.opacity(0.1), lineWidth: 1)
-                    )
-            )
-        }
-    }
-    
-    // MARK: - Enhanced Performance Charts Section
-    private var enhancedPerformanceChartsSection: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack {
-                HStack(spacing: 8) {
-                    Text("📊")
-                        .font(.title2)
-                    
-                    Text("PERFORMANCE ANALYTICS")
-                        .font(.system(size: 18, weight: .black, design: .rounded))
-                        .foregroundStyle(.white)
-                }
-                
-                Spacer()
-                
-                Picker("Timeframe", selection: $selectedTimeframe) {
-                    ForEach(timeframes, id: \.self) { timeframe in
-                        Text(timeframe).tag(timeframe)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .frame(width: 200)
-            }
-            
-            // Enhanced Confidence Distribution Chart
-            VStack(alignment: .leading, spacing: 12) {
-                Text("AI Confidence Distribution")
-                    .font(.system(size: 16, weight: .semibold, design: .rounded))
-                    .foregroundStyle(.white)
-                
-                ConfidenceChartView(bots: armyManager.bots)
-                    .frame(height: 220)
-            }
-            .padding(20)
-            .background(
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(.white.opacity(0.05))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16)
-                            .stroke(.white.opacity(0.1), lineWidth: 1)
-                    )
-            )
-        }
-    }
-    
-    // MARK: - Enhanced Top Performers Section
-    private var enhancedTopPerformersSection: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack(spacing: 8) {
-                Text("🏆")
-                    .font(.title2)
-                
-                Text("TOP PERFORMERS")
-                    .font(.system(size: 18, weight: .black, design: .rounded))
-                    .foregroundStyle(.white)
-            }
-            
-            LazyVStack(spacing: 12) {
-                ForEach(Array(armyManager.getTopPerformers(count: 10).enumerated()), id: \.offset) { index, bot in
-                    TopPerformerRow(
-                        rank: index + 1,
-                        bot: bot,
-                        onTap: {
-                            selectedBot = bot
-                            showingBotDetails = true
-                        }
-                    )
-                }
-            }
-            .padding(20)
-            .background(
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(.white.opacity(0.05))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16)
-                            .stroke(.white.opacity(0.1), lineWidth: 1)
-                    )
-            )
-        }
-    }
-    
-    // MARK: - A+ Screenshots Section
-    private var aPlusScreenshotsSection: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack {
-                HStack(spacing: 8) {
-                    Text("📸")
-                        .font(.title2)
-                    
-                    Text("A+ SCREENSHOTS")
-                        .font(.system(size: 18, weight: .black, design: .rounded))
-                        .foregroundStyle(.white)
-                }
-                
-                Spacer()
-                
-                Button("View Gallery") {
-                    showingScreenshotGallery = true
-                }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.small)
-            }
-            
-            VStack(spacing: 12) {
-                HStack(spacing: 16) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("\(armyManager.getArmyStats().totalScreenshots)")
-                            .font(.system(size: 24, weight: .black, design: .rounded))
-                            .foregroundStyle(.orange)
-                        
-                        Text("Total Screenshots")
-                            .font(.system(size: 12, weight: .medium, design: .rounded))
-                            .foregroundStyle(.white.opacity(0.7))
-                    }
-                    
-                    Spacer()
-                    
-                    VStack(alignment: .trailing, spacing: 4) {
-                        HStack(spacing: 4) {
-                            Text("A+")
-                                .font(.system(size: 16, weight: .black, design: .rounded))
-                                .foregroundStyle(.orange)
-                            
-                            Text("Grade")
-                                .font(.system(size: 12, weight: .medium, design: .rounded))
-                                .foregroundStyle(.white.opacity(0.7))
-                        }
-                        
-                        Text("AI Analyzed")
-                            .font(.system(size: 10, weight: .regular, design: .rounded))
-                            .foregroundStyle(.white.opacity(0.5))
-                    }
-                }
-                
-                Text("Screenshots automatically captured and analyzed by AI for A+ trading opportunities")
-                    .font(.system(size: 12, weight: .regular, design: .rounded))
-                    .foregroundStyle(.white.opacity(0.7))
-                    .multilineTextAlignment(.leading)
-            }
-            .padding(16)
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(.white.opacity(0.05))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(.white.opacity(0.1), lineWidth: 1)
-                    )
-            )
+            // Small delay between sections
+            try? await Task.sleep(nanoseconds: 50_000_000) // 0.05 seconds
         }
     }
     
@@ -986,149 +374,182 @@ Date,Time,Open,High,Low,Close,Volume
             .padding(.horizontal, 32)
         }
     }
+}
+
+// MARK: - Performance Optimized Components
+
+struct LoadingView: View {
+    @State private var rotationAngle = 0.0
     
-    // MARK: - Helper Functions
-    private func confidenceColor(_ confidence: Double) -> Color {
-        switch confidence {
-        case 0.95...: return .orange
-        case 0.9..<0.95: return .red
-        case 0.8..<0.9: return .purple
-        case 0.7..<0.8: return .blue
-        case 0.6..<0.7: return .green
-        default: return .gray
+    var body: some View {
+        VStack(spacing: 24) {
+            ZStack {
+                Circle()
+                    .fill(
+                        LinearGradient(
+                            colors: [.blue.opacity(0.3), .cyan.opacity(0.2)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .frame(width: 80, height: 80)
+                
+                Image(systemName: "brain.head.profile")
+                    .font(.system(size: 32, weight: .bold))
+                    .foregroundStyle(.white)
+                    .rotationEffect(.degrees(rotationAngle))
+            }
+            
+            VStack(spacing: 8) {
+                Text("Loading ProTrader Army")
+                    .font(.system(size: 18, weight: .bold, design: .rounded))
+                    .foregroundStyle(.white)
+                
+                Text("Initializing 5,000 AI bots...")
+                    .font(.system(size: 14, weight: .medium, design: .rounded))
+                    .foregroundStyle(.white.opacity(0.7))
+            }
         }
-    }
-    
-    private func formatNumber(_ number: Double) -> String {
-        if number >= 1_000_000 {
-            return String(format: "%.1fM", number / 1_000_000)
-        } else if number >= 1_000 {
-            return String(format: "%.1fK", number / 1_000)
-        } else {
-            return String(format: "%.0f", number)
+        .onAppear {
+            withAnimation(.linear(duration: 2).repeatForever(autoreverses: false)) {
+                rotationAngle = 360
+            }
         }
-    }
-    
-    private func formatCurrency(_ amount: Double) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .currency
-        formatter.maximumFractionDigits = 0
-        return formatter.string(from: NSNumber(value: amount)) ?? "$0"
     }
 }
 
-// MARK: - Supporting Views
-
-struct QuickDeployButton: View {
-    let title: String
-    let subtitle: String
+struct ToolbarButton: View {
     let icon: String
+    let text: String
     let color: Color
     let action: () -> Void
     
     var body: some View {
         Button(action: action) {
-            VStack(spacing: 8) {
+            HStack(spacing: 4) {
                 Image(systemName: icon)
-                    .font(.system(size: 20, weight: .semibold))
-                    .foregroundStyle(color)
-                
-                Text(title)
-                    .font(.system(size: 12, weight: .bold, design: .rounded))
-                    .foregroundStyle(.white)
-                
-                Text(subtitle)
-                    .font(.system(size: 10, weight: .regular, design: .rounded))
-                    .foregroundStyle(.white.opacity(0.6))
+                    .foregroundColor(color)
+                Text(text)
+                    .font(.caption.bold())
+                    .foregroundColor(.white)
             }
-            .frame(maxWidth: .infinity)
-            .padding(16)
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(color.opacity(0.1))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(color.opacity(0.3), lineWidth: 1)
-                    )
-            )
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(color.opacity(0.2), in: Capsule())
         }
-        .buttonStyle(.plain)
     }
 }
 
-struct LiveBotCard: View {
-    let bot: ProTraderBot
-    let onTap: () -> Void
+struct VPSStatusButton: View {
+    let isConnected: Bool
+    let action: () -> Void
     
     var body: some View {
-        Button(action: onTap) {
-            VStack(alignment: .leading, spacing: 8) {
-                HStack {
-                    Text(bot.name)
-                        .font(.system(size: 12, weight: .bold, design: .rounded))
-                        .foregroundStyle(.white)
-                        .lineLimit(1)
-                    
-                    Spacer()
-                    
-                    Circle()
-                        .fill(bot.isActive ? .green : .gray)
-                        .frame(width: 8, height: 8)
-                }
-                
-                HStack(spacing: 4) {
-                    Text("P&L:")
-                        .font(.system(size: 10, weight: .medium, design: .rounded))
-                        .foregroundStyle(.white.opacity(0.7))
-                    
-                    Text(formatCurrency(bot.profitLoss))
-                        .font(.system(size: 10, weight: .bold, design: .rounded))
-                        .foregroundStyle(bot.profitLoss >= 0 ? .green : .red)
-                }
-                
-                HStack(spacing: 4) {
-                    Text("Confidence:")
-                        .font(.system(size: 10, weight: .medium, design: .rounded))
-                        .foregroundStyle(.white.opacity(0.7))
-                    
-                    Text(String(format: "%.1f%%", bot.confidence * 100))
-                        .font(.system(size: 10, weight: .bold, design: .rounded))
-                        .foregroundStyle(confidenceColor(bot.confidence))
-                }
+        Button(action: action) {
+            HStack(spacing: 4) {
+                Circle()
+                    .fill(isConnected ? .green : .red)
+                    .frame(width: 8, height: 8)
+                Text("VPS")
+                    .font(.caption.bold())
             }
-            .padding(12)
-            .background(
-                RoundedRectangle(cornerRadius: 10)
-                    .fill(.white.opacity(0.08))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 10)
-                            .stroke(.white.opacity(0.1), lineWidth: 1)
-                    )
-            )
-        }
-        .buttonStyle(.plain)
-    }
-    
-    private func formatCurrency(_ amount: Double) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .currency
-        formatter.maximumFractionDigits = 0
-        return formatter.string(from: NSNumber(value: amount)) ?? "$0"
-    }
-    
-    private func confidenceColor(_ confidence: Double) -> Color {
-        switch confidence {
-        case 0.95...: return .orange
-        case 0.9..<0.95: return .red
-        case 0.8..<0.9: return .purple
-        case 0.7..<0.8: return .blue
-        case 0.6..<0.7: return .green
-        default: return .gray
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(.ultraThinMaterial, in: Capsule())
         }
     }
 }
 
-// Continue with remaining view definitions...
+struct AutoTradingMenu: View {
+    let armyManager: ProTraderArmyManager
+    let sampleData: String
+    
+    var body: some View {
+        Menu {
+            Button("🚀 Start Auto-Trading") {
+                Task.detached(priority: .background) {
+                    await armyManager.startAutoTrading()
+                    await MainActor.run {
+                        GlobalToastManager.shared.show("✅ Auto-trading started!", type: .success)
+                    }
+                }
+            }
+            Button("🛑 Stop Auto-Trading") {
+                Task.detached(priority: .background) {
+                    await armyManager.stopAutoTrading()
+                    await MainActor.run {
+                        GlobalToastManager.shared.show("⏹️ Auto-trading stopped", type: .info)
+                    }
+                }
+            }
+            Button("🚨 Emergency Stop All") {
+                Task.detached(priority: .background) {
+                    await armyManager.emergencyStopAll()
+                    await MainActor.run {
+                        GlobalToastManager.shared.show("🚨 Emergency stop activated!", type: .warning)
+                    }
+                }
+            }
+            Button("🧠 Train with Sample Data") {
+                Task.detached(priority: .background) {
+                    let results = await armyManager.trainWithHistoricalData(csvData: sampleData)
+                    await MainActor.run {
+                        GlobalToastManager.shared.show("🎓 Training completed!", type: .success)
+                    }
+                }
+            }
+        } label: {
+            Image(systemName: "robot")
+                .font(.title2)
+                .foregroundStyle(.white)
+        }
+    }
+}
+
+struct SheetPresentationModifier: ViewModifier {
+    @Binding var showingImporter: Bool
+    @Binding var showingTrainingResults: Bool
+    @Binding var showingBotDetails: Bool
+    @Binding var showingVPSStatus: Bool
+    @Binding var showingScreenshotGallery: Bool
+    @Binding var showingGPTChat: Bool
+    @Binding var showingBotDeployment: Bool
+    @Binding var showingMassiveDataDownload: Bool
+    let selectedBot: ProTraderBot?
+    let armyManager: ProTraderArmyManager
+    
+    func body(content: Content) -> some View {
+        content
+            .sheet(isPresented: $showingImporter) {
+                CSVImporterView(armyManager: armyManager)
+            }
+            .sheet(isPresented: $showingTrainingResults) {
+                if let results = armyManager.lastTrainingResults {
+                    TrainingResultsView(results: results)
+                }
+            }
+            .sheet(isPresented: $showingBotDetails) {
+                if let bot = selectedBot {
+                    BotDetailView(bot: bot)
+                }
+            }
+            .sheet(isPresented: $showingVPSStatus) {
+                VPSStatusView(vpsManager: armyManager.vpsManager)
+            }
+            .sheet(isPresented: $showingScreenshotGallery) {
+                ScreenshotGalleryView()
+            }
+            .sheet(isPresented: $showingGPTChat) {
+                ProTraderGPTChatView()
+            }
+            .sheet(isPresented: $showingBotDeployment) {
+                BotDeploymentView(armyManager: armyManager)
+            }
+            .sheet(isPresented: $showingMassiveDataDownload) {
+                MassiveDataDownloadView(armyManager: armyManager)
+            }
+    }
+}
 
 #Preview {
     ProTraderDashboardView()
