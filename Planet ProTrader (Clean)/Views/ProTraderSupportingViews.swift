@@ -9,7 +9,7 @@ import SwiftUI
 import Foundation
 
 // MARK: - ProTrader Metric Card
-struct ProTraderMetricCard: View {
+struct AProTraderMetricCard: View {
     let icon: String
     let title: String
     let value: String
@@ -78,7 +78,7 @@ struct ProTraderMetricCard: View {
 }
 
 // MARK: - Army Stat Card
-struct ArmyStatCard: View {
+struct MyArmyStatCard: View {
     let title: String
     let value: String
     let icon: String
@@ -117,7 +117,7 @@ struct ArmyStatCard: View {
 }
 
 // MARK: - Quick Action Button
-struct QuickActionButton: View {
+struct TheQuickActionButton: View {
     let icon: String
     let title: String
     let subtitle: String
@@ -154,7 +154,7 @@ struct QuickActionButton: View {
 }
 
 // MARK: - Top Performer Row
-struct TopPerformerRow: View {
+struct MTopPerformerRow: View {
     let rank: Int
     let bot: ProTraderBot
     let onTap: () -> Void

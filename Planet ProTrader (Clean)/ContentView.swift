@@ -41,13 +41,13 @@ struct ContentView: View {
                     }
                     .tag(1)
                 
-                // MicroFlip Gaming Arena
+                // TERMINAL IS BACK WHERE IT BELONGS!
                 NavigationView {
-                    MicroFlipGameView()
+                    TradingTerminal()
                 }
                 .tabItem {
-                    Image(systemName: "gamecontroller.fill")
-                    Text("Gaming")
+                    Image(systemName: "terminal.fill")
+                    Text("Terminal")
                 }
                 .tag(2)
                 
@@ -61,7 +61,7 @@ struct ContentView: View {
                 }
                 .tag(3)
                 
-                // FIRE MORE TAB  
+                // MORE TAB WITH MICROFLIP  
                 ProfessionalMoreTabView()
                     .tabItem {
                         Image(systemName: "ellipsis.circle.fill")
@@ -127,13 +127,11 @@ struct ContentView: View {
     }
 }
 
-// MARK: - Simplified More Tab
-
+// MARK: - Simplified More Tab (NO GAMING BULLSHIT)
 struct ProfessionalMoreTabView: View {
     @State private var showingProfile = false
     @State private var showingSettings = false
     @State private var showingVPSSetup = false
-    @State private var showingTerminal = false
     @State private var animateCards = false
     
     var body: some View {
@@ -178,7 +176,6 @@ struct ProfessionalMoreTabView: View {
         .sheet(isPresented: $showingProfile) { PremiumProfileView() }
         .sheet(isPresented: $showingSettings) { AdvancedSettingsView() }
         .sheet(isPresented: $showingVPSSetup) { VPSSetupView() }
-        .sheet(isPresented: $showingTerminal) { TradingTerminal() }
     }
     
     private var headerSection: some View {
@@ -209,13 +206,6 @@ struct ProfessionalMoreTabView: View {
             
             LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 12) {
                 MoreFeatureCard(
-                    title: "Trading Terminal",
-                    icon: "chart.bar.xaxis",
-                    color: DesignSystem.cosmicBlue,
-                    action: { showingTerminal = true }
-                )
-                
-                MoreFeatureCard(
                     title: "VPS Setup",
                     icon: "server.rack",
                     color: .purple,
@@ -235,6 +225,27 @@ struct ProfessionalMoreTabView: View {
                     color: .orange,
                     action: { showComingSoon("Risk Manager") }
                 )
+                
+                MoreFeatureCard(
+                    title: "Bot Builder",
+                    icon: "hammer.fill",
+                    color: .mint,
+                    action: { showComingSoon("Bot Builder") }
+                )
+                
+                MoreFeatureCard(
+                    title: "Market Scanner",
+                    icon: "magnifyingglass.circle",
+                    color: .indigo,
+                    action: { showComingSoon("Market Scanner") }
+                )
+                
+                MoreFeatureCard(
+                    title: "Portfolio Tracker",
+                    icon: "briefcase.fill",
+                    color: .teal,
+                    action: { showComingSoon("Portfolio Tracker") }
+                )
             }
         }
         .opacity(animateCards ? 1 : 0)
@@ -250,7 +261,9 @@ struct ProfessionalMoreTabView: View {
             VStack(spacing: 8) {
                 MoreListItem(title: "Profile Settings", icon: "person.crop.circle", color: DesignSystem.cosmicBlue, action: { showingProfile = true })
                 MoreListItem(title: "App Settings", icon: "gearshape.fill", color: .gray, action: { showingSettings = true })
-                MoreListItem(title: "Security", icon: "lock.shield.fill", color: .green, action: { showComingSoon("Security") })
+                MoreListItem(title: "Security", icon: "lock.shield.fill", color: .green, action: { showComingSoon("Security") }
+                )
+                MoreListItem(title: "Notifications", icon: "bell.circle.fill", color: .orange, action: { showComingSoon("Notifications") })
             }
         }
         .opacity(animateCards ? 1 : 0)
@@ -267,6 +280,7 @@ struct ProfessionalMoreTabView: View {
                 MoreListItem(title: "Support Center", icon: "headphones.circle.fill", color: .green, action: { showComingSoon("Support") })
                 MoreListItem(title: "Trading Guide", icon: "book.fill", color: .blue, action: { showComingSoon("Guide") })
                 MoreListItem(title: "Community", icon: "person.3.fill", color: .indigo, action: { showComingSoon("Community") })
+                MoreListItem(title: "About", icon: "info.circle.fill", color: .cyan, action: { showComingSoon("About") })
             }
         }
         .opacity(animateCards ? 1 : 0)
@@ -300,7 +314,6 @@ struct ProfessionalMoreTabView: View {
 }
 
 // MARK: - Simplified Supporting Views
-
 struct MoreFeatureCard: View {
     let title: String
     let icon: String
@@ -421,4 +434,8 @@ struct AdvancedSettingsView: View {
 // Preview
 #Preview {
     ContentView()
+        .environmentObject(TradingManager.shared)
+        .environmentObject(ProTraderArmyManager())
+        .environmentObject(AudioManager.shared)
+        .environmentObject(RealTimeBalanceManager())
 }
