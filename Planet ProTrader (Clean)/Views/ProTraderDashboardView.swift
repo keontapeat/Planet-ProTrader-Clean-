@@ -20,7 +20,7 @@ struct ProTraderDashboardView: View {
     @State private var showingBotJournal = false
     @State private var showingQuickDeployment = false
     @State private var deployedBots: [RealTimeProTraderBot] = []
-    @State private var realTimeStats = TradingStats()
+    @State private var realTimeStats = TradingStats.load()  // FIXED: Load saved stats
     @State private var isInitialized = false
 
     var body: some View {
@@ -70,7 +70,7 @@ struct ProTraderDashboardView: View {
             QuickDeploymentSheet(
                 vpsManager: vpsManager,
                 onDeploymentComplete: { bots in
-                    deployedBots = bots
+                    handleDeploymentCompletion(bots)  // Use the new handler
                 }
             )
         }
@@ -83,10 +83,20 @@ struct ProTraderDashboardView: View {
                 )
             }
         }
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification)) { _ in
+            saveTradingData()
+            print("📱 App going to background - saving trading data")
+        }
+        .onDisappear {
+            saveTradingData()
+        }
     }
     
     private func setupDashboard() {
         isInitialized = true
+        
+        // NEW: Check if it's a new trading day
+        realTimeStats.checkNewTradingDay()
         
         Task {
             await vpsManager.connectToVPS()
@@ -96,6 +106,9 @@ struct ProTraderDashboardView: View {
                     animateNumbers = true
                 }
                 startRealTimeUpdates()
+                
+                // Load any previously deployed bots (if you want to persist bot deployment too)
+                loadDeployedBots()
             }
         }
     }
@@ -136,10 +149,11 @@ struct ProTraderDashboardView: View {
                         .foregroundColor(.gray)
                         .tracking(1.5)
                     
-                    Text(realTimeStats.dailyPnL >= 0 ? "+$\(String(format: "%.2f", realTimeStats.dailyPnL))" : "-$\(String(format: "%.2f", abs(realTimeStats.dailyPnL)))")
+                    // FIXED: Show accurate daily P&L based on trading history
+                    Text(realTimeStats.hasEverTraded ? (realTimeStats.dailyPnL >= 0 ? "+$\(String(format: "%.2f", realTimeStats.dailyPnL))" : "-$\(String(format: "%.2f", abs(realTimeStats.dailyPnL)))") : "$0.00")
                         .font(.title3)
                         .fontWeight(.black)
-                        .foregroundColor(realTimeStats.dailyPnL >= 0 ? .green : .red)
+                        .foregroundColor(realTimeStats.hasEverTraded ? (realTimeStats.dailyPnL >= 0 ? .green : .red) : .gray)
                         .scaleEffect(animateNumbers ? 1.0 : 0.8)
                         .animation(.spring(response: 0.6, dampingFraction: 0.8).delay(0.2), value: animateNumbers)
                 }
@@ -152,7 +166,7 @@ struct ProTraderDashboardView: View {
             }) {
                 HStack {
                     Image(systemName: "bolt.fill")
-                    Text(deployedBots.isEmpty ? "DEPLOY ALL BOTS" : "MANAGE DEPLOYMENT")
+                    Text(deployedBots.isEmpty ? (realTimeStats.hasEverTraded ? "RESTART BOTS" : "DEPLOY ALL BOTS") : "MANAGE DEPLOYMENT")
                         .fontWeight(.black)
                         .tracking(1.2)
                     Image(systemName: "bolt.fill")
@@ -240,32 +254,32 @@ struct ProTraderDashboardView: View {
             ProTraderStatCard(
                 title: "ACTIVE BOTS",
                 value: "\(deployedBots.count)",
-                subtitle: "Training on VPS",
-                color: .green,
+                subtitle: deployedBots.isEmpty ? (realTimeStats.hasEverTraded ? "Stopped" : "Ready to Deploy") : "Training on VPS",
+                color: deployedBots.isEmpty ? (realTimeStats.hasEverTraded ? .orange : .gray) : .green,
                 icon: "bolt.fill"
             )
             
             ProTraderStatCard(
                 title: "WIN RATE",
-                value: "\(String(format: "%.1f", realTimeStats.winRate))%",
-                subtitle: "Live Performance",
-                color: .blue,
+                value: realTimeStats.hasEverTraded ? "\(String(format: "%.1f", realTimeStats.winRate))%" : "0.0%",
+                subtitle: realTimeStats.hasEverTraded ? "\(realTimeStats.totalTrades) Total Trades" : "No Data",
+                color: realTimeStats.hasEverTraded ? (realTimeStats.winRate >= 50 ? .green : .red) : .gray,
                 icon: "chart.line.uptrend.xyaxis"
             )
             
             ProTraderStatCard(
                 title: "TOTAL P&L",
-                value: "$\(String(format: "%.0f", realTimeStats.totalPnL))",
-                subtitle: "All Time",
-                color: .purple,
+                value: realTimeStats.hasEverTraded ? (realTimeStats.totalPnL >= 0 ? "+$\(String(format: "%.0f", realTimeStats.totalPnL))" : "-$\(String(format: "%.0f", abs(realTimeStats.totalPnL)))") : "$0",
+                subtitle: realTimeStats.hasEverTraded ? "All Time Performance" : "No Trades",
+                color: realTimeStats.hasEverTraded ? (realTimeStats.totalPnL >= 0 ? .green : .red) : .gray,
                 icon: "dollarsign.circle.fill"
             )
             
             ProTraderStatCard(
                 title: "GODMODE",
                 value: "\(deployedBots.filter { $0.isGodModeEnabled }.count)",
-                subtitle: "Active",
-                color: .orange,
+                subtitle: deployedBots.isEmpty ? (realTimeStats.hasEverTraded ? "Inactive" : "Not Deployed") : "Active",
+                color: deployedBots.isEmpty ? (realTimeStats.hasEverTraded ? .orange : .gray) : .orange,
                 icon: "crown.fill"
             )
         }
@@ -369,15 +383,36 @@ struct ProTraderDashboardView: View {
     }
     
     private func updateRealTimeStats() async {
-        guard !deployedBots.isEmpty else { return }
+        // Only generate NEW trades if bots are deployed, but keep historical data
+        guard !deployedBots.isEmpty else { 
+            // DON'T reset stats when bots are stopped - preserve historical data
+            return 
+        }
         
-        // Simulate real trading data updates
+        // Simulate real trading data updates only when bots are active
         await MainActor.run {
-            realTimeStats.dailyPnL += Double.random(in: -50...100)
-            realTimeStats.totalPnL += Double.random(in: -25...75)
-            realTimeStats.winRate = Double.random(in: 75...92)
+            // Mark that we've had trading activity
+            realTimeStats.hasEverTraded = true
             
-            // Add new trade
+            // Update P&L values
+            let dailyChange = Double.random(in: -50...100)
+            let totalChange = Double.random(in: -25...75)
+            
+            realTimeStats.dailyPnL += dailyChange
+            realTimeStats.totalPnL += totalChange
+            
+            // Update trade counters for accurate win rate
+            realTimeStats.totalTrades += 1
+            if totalChange > 0 {
+                realTimeStats.winningTrades += 1
+            }
+            
+            // Calculate accurate win rate based on actual trades
+            if realTimeStats.totalTrades > 0 {
+                realTimeStats.winRate = (Double(realTimeStats.winningTrades) / Double(realTimeStats.totalTrades)) * 100
+            }
+            
+            // Add new trade to recent activity
             let symbols = ["XAUUSD", "EURUSD", "GBPUSD", "USDJPY", "AUDUSD"]
             let actions = ["BUY", "SELL"]
             
@@ -387,7 +422,7 @@ struct ProTraderDashboardView: View {
                 symbol: symbols.randomElement()!,
                 action: actions.randomElement()!,
                 price: Double.random(in: 1.0...2000.0),
-                profit: Double.random(in: -100...200),
+                profit: totalChange,
                 timestamp: Date()
             )
             
@@ -395,6 +430,9 @@ struct ProTraderDashboardView: View {
             if realTimeStats.recentTrades.count > 20 {
                 realTimeStats.recentTrades.removeLast()
             }
+            
+            // NEW: Save updated stats automatically
+            realTimeStats.save()
         }
     }
 
@@ -404,6 +442,57 @@ struct ProTraderDashboardView: View {
     
     private func generateRealInsights(for bot: RealTimeProTraderBot) -> [ClaudeInsight] {
         return bot.insights
+    }
+    
+    // NEW: Save deployed bots to UserDefaults (optional)
+    private func saveDeployedBots() {
+        let botNames = deployedBots.map { $0.name }
+        UserDefaults.standard.set(botNames, forKey: "DeployedBotNames")
+        UserDefaults.standard.set(deployedBots.count, forKey: "DeployedBotCount")
+        print("🤖 Deployed bot info saved")
+    }
+    
+    // NEW: Load previously deployed bots (optional)
+    private func loadDeployedBots() {
+        let botCount = UserDefaults.standard.integer(forKey: "DeployedBotCount")
+        if botCount > 0 {
+            print("🔄 Found \(botCount) previously deployed bots")
+            // Note: You might want to reconstruct the bot objects here
+            // For now, just show that bots were previously active
+        }
+    }
+    
+    // NEW: Handle deployment completion with persistence
+    private func handleDeploymentCompletion(_ bots: [RealTimeProTraderBot]) {
+        deployedBots = bots
+        saveDeployedBots()
+        
+        if !realTimeStats.hasEverTraded {
+            print("🚀 First deployment - Starting fresh trading data tracking")
+        } else {
+            print("🔄 Redeploying bots - Continuing from previous session")
+            print("📊 Current stats: P&L: $\(realTimeStats.totalPnL), Win Rate: \(realTimeStats.winRate)%")
+        }
+    }
+    
+    // NEW: Add manual save option (for testing or explicit saves)
+    private func saveTradingData() {
+        realTimeStats.save()
+        saveDeployedBots()
+        print("💾 All trading data saved manually")
+    }
+    
+    // NEW: Add reset option (if user wants to start completely fresh)
+    private func resetAllTradingData() {
+        realTimeStats = TradingStats()
+        deployedBots = []
+        
+        // Clear UserDefaults
+        UserDefaults.standard.removeObject(forKey: "TradingStats")
+        UserDefaults.standard.removeObject(forKey: "DeployedBotNames")
+        UserDefaults.standard.removeObject(forKey: "DeployedBotCount")
+        
+        print("🗑️ All trading data reset and cleared from storage")
     }
 }
 
@@ -828,14 +917,49 @@ struct QuickDeploymentSheet: View {
 }
 
 // MARK: - Data Models
-struct TradingStats {
+struct TradingStats: Codable {  // Added Codable for persistence
     var dailyPnL: Double = 0.0
-    var totalPnL: Double = 47892.0
-    var winRate: Double = 87.5
+    var totalPnL: Double = 0.0
+    var winRate: Double = 0.0
     var recentTrades: [TradeActivity] = []
+    var hasEverTraded: Bool = false
+    var totalTrades: Int = 0
+    var winningTrades: Int = 0
+    var lastTradingDate: Date = Date()  // Track when we last traded
+    
+    // NEW: Save to UserDefaults
+    func save() {
+        if let encoded = try? JSONEncoder().encode(self) {
+            UserDefaults.standard.set(encoded, forKey: "TradingStats")
+            print("💾 Trading stats saved to UserDefaults")
+        }
+    }
+    
+    // NEW: Load from UserDefaults
+    static func load() -> TradingStats {
+        if let data = UserDefaults.standard.data(forKey: "TradingStats"),
+           let stats = try? JSONDecoder().decode(TradingStats.self, from: data) {
+            print("📱 Trading stats loaded from UserDefaults")
+            return stats
+        } else {
+            print("🆕 No saved trading stats found - starting fresh")
+            return TradingStats()
+        }
+    }
+    
+    // NEW: Check if it's a new trading day and reset daily P&L
+    mutating func checkNewTradingDay() {
+        let calendar = Calendar.current
+        if !calendar.isDate(lastTradingDate, inSameDayAs: Date()) {
+            print("📅 New trading day detected - resetting daily P&L")
+            dailyPnL = 0.0
+            lastTradingDate = Date()
+            save() // Save the reset
+        }
+    }
 }
 
-struct TradeActivity: Identifiable {
+struct TradeActivity: Identifiable, Codable {  // Added Codable for persistence
     let id: UUID
     let botName: String
     let symbol: String
