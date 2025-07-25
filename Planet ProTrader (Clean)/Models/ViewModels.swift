@@ -37,7 +37,7 @@ enum VPSConnectionStatus: String, CaseIterable {
 }
 
 // MARK: - VPS Status View Model
-class VPSStatusViewModel: ObservableObject {
+class MyVPSStatusViewModel: ObservableObject {
     @Published var connectionStatus: VPSConnectionStatus = .disconnected
     @Published var serverInfo: ServerInfo?
     @Published var isCheckingStatus = false

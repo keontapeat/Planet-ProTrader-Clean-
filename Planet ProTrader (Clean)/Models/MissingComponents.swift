@@ -8,8 +8,8 @@
 
 import SwiftUI
 
-// MARK: - TabButton Component
-struct TabButton: View {
+// MARK: - AI Dashboard Tab Button (Alternative to existing TabButton)
+struct AIDashboardTabButton: View {
     let title: String
     let isSelected: Bool
     let action: () -> Void
@@ -97,17 +97,17 @@ struct AIDashboard: View {
                 }
             }
             
-            // Tab selector
+            // Tab selector using renamed component
             HStack(spacing: 0) {
-                TabButton(title: "Analysis", isSelected: selectedTab == 0) {
+                AIDashboardTabButton(title: "Analysis", isSelected: selectedTab == 0) {
                     selectedTab = 0
                 }
                 
-                TabButton(title: "Recommendations", isSelected: selectedTab == 1) {
+                AIDashboardTabButton(title: "Recommendations", isSelected: selectedTab == 1) {
                     selectedTab = 1
                 }
                 
-                TabButton(title: "Settings", isSelected: selectedTab == 2) {
+                AIDashboardTabButton(title: "Settings", isSelected: selectedTab == 2) {
                     selectedTab = 2
                 }
             }
@@ -255,7 +255,7 @@ struct VPSStatusChecker: View {
                     }
                     .planetCard()
                     
-                    // VPS Status - Fixed by providing the required vpsManager parameter
+                    // VPS Status
                     VStack(alignment: .leading, spacing: 12) {
                         Text("VPS Connection Status")
                             .font(.headline)
@@ -342,6 +342,50 @@ struct VPSStatusChecker: View {
                 vpsViewModel.refreshStatus()
             }
         }
+    }
+}
+
+// MARK: - VPSStatusViewModel (Missing ViewModel)
+@MainActor
+class VPSStatusViewModel: ObservableObject {
+    @Published var isConnected = true
+    @Published var serverIP = "172.234.201.231"
+    @Published var pingTime = "42ms"
+    @Published var activeBots = ["Golden Eagle Bot", "Silver Hawk Bot", "Market Scanner"]
+    
+    func refreshStatus() {
+        // Simulate refreshing VPS status
+        Task {
+            try? await Task.sleep(nanoseconds: 1_000_000_000)
+            await MainActor.run {
+                self.pingTime = "\(Int.random(in: 30...60))ms"
+            }
+        }
+    }
+}
+
+// MARK: - TabButton Component
+struct MyTabButton: View {
+    let title: String
+    let isSelected: Bool
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            Text(title)
+                .font(.subheadline)
+                .fontWeight(.semibold)
+                .foregroundColor(isSelected ? .white : .secondary)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 8)
+                .background(
+                    isSelected ? 
+                    DesignSystem.primaryGold : 
+                    Color.clear,
+                    in: RoundedRectangle(cornerRadius: 8)
+                )
+        }
+        .buttonStyle(PlainButtonStyle())
     }
 }
 

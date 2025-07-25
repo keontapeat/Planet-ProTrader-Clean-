@@ -137,7 +137,7 @@ struct LearningSession {
 
 // MARK: - ProTrader Army Manager
 @MainActor
-class ProTraderArmyManager: ObservableObject {
+class AProTraderArmyManager: ObservableObject {
     @Published var bots: [ProTraderBot] = []
     @Published var isTraining = false
     @Published var trainingProgress: Double = 0.0

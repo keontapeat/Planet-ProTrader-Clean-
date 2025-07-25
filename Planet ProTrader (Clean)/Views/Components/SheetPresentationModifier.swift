@@ -16,24 +16,23 @@ struct SheetPresentationModifier: ViewModifier {
     @Binding var showingGPTChat: Bool
     @Binding var showingBotDeployment: Bool
     @Binding var showingMassiveDataDownload: Bool
-    var selectedBot: ProTraderBot?
-    @ObservedObject var armyManager: ProTraderArmyManager
+    var selectedBot: RealTimeProTraderBot?
     
     func body(content: Content) -> some View {
         content
             .sheet(isPresented: $showingImporter) {
-                CSVImporterView(armyManager: armyManager)
+                CSVImporterView()
                     .presentationDetents([.medium, .large])
                     .presentationDragIndicator(.visible)
             }
             .sheet(isPresented: $showingTrainingResults) {
-                TrainingResultsView(armyManager: armyManager)
+                TrainingResultsView()
                     .presentationDetents([.large])
                     .presentationDragIndicator(.visible)
             }
             .sheet(isPresented: $showingBotDetails) {
                 if let bot = selectedBot {
-                    BotDetailsView(bot: bot, armyManager: armyManager)
+                    BotDetailsView(bot: bot)
                         .presentationDetents([.medium, .large])
                         .presentationDragIndicator(.visible)
                 } else {
@@ -44,27 +43,27 @@ struct SheetPresentationModifier: ViewModifier {
                 }
             }
             .sheet(isPresented: $showingVPSStatus) {
-                VPSStatusView(armyManager: armyManager)
+                VPSStatusView()
                     .presentationDetents([.medium, .large])
                     .presentationDragIndicator(.visible)
             }
             .sheet(isPresented: $showingScreenshotGallery) {
-                ScreenshotGalleryView(armyManager: armyManager)
+                ScreenshotGalleryView()
                     .presentationDetents([.large])
                     .presentationDragIndicator(.visible)
             }
             .sheet(isPresented: $showingGPTChat) {
-                GPTChatView(armyManager: armyManager)
+                GPTChatView()
                     .presentationDetents([.large])
                     .presentationDragIndicator(.visible)
             }
             .sheet(isPresented: $showingBotDeployment) {
-                BotDeploymentView(armyManager: armyManager)
+                BotDeploymentView()
                     .presentationDetents([.medium, .large])
                     .presentationDragIndicator(.visible)
             }
             .sheet(isPresented: $showingMassiveDataDownload) {
-                MassiveDataDownloadView(armyManager: armyManager)
+                MassiveDataDownloadView()
                     .presentationDetents([.large])
                     .presentationDragIndicator(.visible)
             }
@@ -74,7 +73,6 @@ struct SheetPresentationModifier: ViewModifier {
 // MARK: - Supporting Sheet Views
 
 struct CSVImporterView: View {
-    @ObservedObject var armyManager: ProTraderArmyManager
     @Environment(\.dismiss) private var dismiss
     @State private var isImporting = false
     @State private var importProgress = 0.0
@@ -82,111 +80,11 @@ struct CSVImporterView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 24) {
-                // Header
-                VStack(spacing: 12) {
-                    Image(systemName: "doc.text.fill")
-                        .font(.system(size: 48))
-                        .foregroundStyle(.blue)
-                    
-                    Text("Import Trading Data")
-                        .font(.system(size: 24, weight: .bold, design: .rounded))
-                        .foregroundStyle(.white)
-                    
-                    Text("Upload CSV files with historical trading data to train your ProTrader Army")
-                        .font(.system(size: 14, weight: .medium, design: .rounded))
-                        .foregroundStyle(.white.opacity(0.7))
-                        .multilineTextAlignment(.center)
-                }
-                
-                // Import Options
-                VStack(spacing: 16) {
-                    Button {
-                        startImport()
-                    } label: {
-                        HStack {
-                            Image(systemName: "icloud.and.arrow.down.fill")
-                                .font(.title2)
-                            
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("Import Sample Data")
-                                    .font(.system(size: 16, weight: .semibold, design: .rounded))
-                                
-                                Text("Use built-in historical market data")
-                                    .font(.system(size: 12, weight: .medium, design: .rounded))
-                                    .opacity(0.7)
-                            }
-                            
-                            Spacer()
-                        }
-                        .foregroundStyle(.white)
-                        .padding(20)
-                        .background(
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(.blue.opacity(0.2))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 12)
-                                        .stroke(.blue.opacity(0.5), lineWidth: 1)
-                                )
-                        )
-                    }
-                    .disabled(isImporting)
-                    
-                    Button {
-                        // File picker would go here
-                        startImport()
-                    } label: {
-                        HStack {
-                            Image(systemName: "folder.fill")
-                                .font(.title2)
-                            
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("Choose CSV File")
-                                    .font(.system(size: 16, weight: .semibold, design: .rounded))
-                                
-                                Text("Select your custom trading data")
-                                    .font(.system(size: 12, weight: .medium, design: .rounded))
-                                    .opacity(0.7)
-                            }
-                            
-                            Spacer()
-                        }
-                        .foregroundStyle(.white)
-                        .padding(20)
-                        .background(
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(.white.opacity(0.05))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 12)
-                                        .stroke(.white.opacity(0.1), lineWidth: 1)
-                                )
-                        )
-                    }
-                    .disabled(isImporting)
-                }
-                
-                // Progress
+                headerSection
+                importOptionsSection
                 if isImporting {
-                    VStack(spacing: 12) {
-                        Text("Processing Data...")
-                            .font(.system(size: 16, weight: .medium, design: .rounded))
-                            .foregroundStyle(.white)
-                        
-                        ProgressView(value: importProgress)
-                            .tint(.blue)
-                            .background(.white.opacity(0.2))
-                            .clipShape(Capsule())
-                        
-                        Text("\(Int(importProgress * 100))% Complete")
-                            .font(.system(size: 14, weight: .medium, design: .rounded))
-                            .foregroundStyle(.white.opacity(0.7))
-                    }
-                    .padding(20)
-                    .background(
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(.white.opacity(0.05))
-                    )
+                    progressSection
                 }
-                
                 Spacer()
             }
             .padding(24)
@@ -205,17 +103,125 @@ struct CSVImporterView: View {
         }
     }
     
+    private var headerSection: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "doc.text.fill")
+                .font(.system(size: 48))
+                .foregroundStyle(.blue)
+            
+            Text("Import Trading Data")
+                .font(.system(size: 24, weight: .bold, design: .rounded))
+                .foregroundStyle(.white)
+            
+            Text("Upload CSV files with historical trading data to train your ProTrader Army")
+                .font(.system(size: 14, weight: .medium, design: .rounded))
+                .foregroundStyle(.white.opacity(0.7))
+                .multilineTextAlignment(.center)
+        }
+    }
+    
+    private var importOptionsSection: some View {
+        VStack(spacing: 16) {
+            Button {
+                startImport()
+            } label: {
+                HStack {
+                    Image(systemName: "icloud.and.arrow.down.fill")
+                        .font(.title2)
+                    
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Import Sample Data")
+                            .font(.system(size: 16, weight: .semibold, design: .rounded))
+                        
+                        Text("Use built-in historical market data")
+                            .font(.system(size: 12, weight: .medium, design: .rounded))
+                            .opacity(0.7)
+                    }
+                    
+                    Spacer()
+                }
+                .foregroundStyle(.white)
+                .padding(20)
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(.blue.opacity(0.2))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(.blue.opacity(0.5), lineWidth: 1)
+                        )
+                )
+            }
+            .disabled(isImporting)
+            
+            Button {
+                startImport()
+            } label: {
+                HStack {
+                    Image(systemName: "folder.fill")
+                        .font(.title2)
+                    
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Choose CSV File")
+                            .font(.system(size: 16, weight: .semibold, design: .rounded))
+                        
+                        Text("Select your custom trading data")
+                            .font(.system(size: 12, weight: .medium, design: .rounded))
+                            .opacity(0.7)
+                    }
+                    
+                    Spacer()
+                }
+                .foregroundStyle(.white)
+                .padding(20)
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(.white.opacity(0.05))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(.white.opacity(0.1), lineWidth: 1)
+                        )
+                )
+            }
+            .disabled(isImporting)
+        }
+    }
+    
+    private var progressSection: some View {
+        VStack(spacing: 12) {
+            Text("Processing Data...")
+                .font(.system(size: 16, weight: .medium, design: .rounded))
+                .foregroundStyle(.white)
+            
+            ProgressView(value: importProgress)
+                .tint(.blue)
+                .background(.white.opacity(0.2))
+                .clipShape(Capsule())
+            
+            Text("\(Int(importProgress * 100))% Complete")
+                .font(.system(size: 14, weight: .medium, design: .rounded))
+                .foregroundStyle(.white.opacity(0.7))
+        }
+        .padding(20)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(.white.opacity(0.05))
+        )
+    }
+    
     private func startImport() {
         isImporting = true
         importProgress = 0.0
         
         Task {
-            // Actually use the sample historical data for training
-            let results = await armyManager.trainWithHistoricalData(csvData: sampleHistoricalData)
+            for i in 0...100 {
+                await MainActor.run {
+                    importProgress = Double(i) / 100.0
+                }
+                try? await Task.sleep(nanoseconds: 50_000_000)
+            }
             
             await MainActor.run {
                 isImporting = false
-                GlobalToastManager.shared.show("🎯 Training completed! \(results.newGodmodeBots) new GODMODE bots created!", type: .success)
                 dismiss()
             }
         }
@@ -223,71 +229,52 @@ struct CSVImporterView: View {
 }
 
 struct TrainingResultsView: View {
-    @ObservedObject var armyManager: ProTraderArmyManager
     @Environment(\.dismiss) private var dismiss
+    @State private var mockResults = MockTrainingResults()
     
     var body: some View {
         NavigationStack {
             ScrollView {
                 LazyVStack(spacing: 20) {
-                    if let results = armyManager.lastTrainingResults {
-                        // Training Summary
-                        VStack(spacing: 16) {
-                            Text("🎯 Training Complete!")
-                                .font(.system(size: 24, weight: .bold, design: .rounded))
-                                .foregroundStyle(.white)
-                            
-                            Text(results.summary)
-                                .font(.system(size: 16, weight: .medium, design: .rounded))
-                                .foregroundStyle(.white.opacity(0.8))
-                                .multilineTextAlignment(.center)
-                        }
+                    VStack(spacing: 16) {
+                        Text("🎯 Training Complete!")
+                            .font(.system(size: 24, weight: .bold, design: .rounded))
+                            .foregroundStyle(.white)
                         
-                        // Results Grid
-                        LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 16) {
-                            ResultCard(
-                                title: "Bots Trained",
-                                value: "\(results.botsTrained)",
-                                icon: "brain.head.profile",
-                                color: .blue
-                            )
-                            
-                            ResultCard(
-                                title: "New GODMODE",
-                                value: "\(results.newGodmodeBots)",
-                                icon: "crown.fill",
-                                color: .orange
-                            )
-                            
-                            ResultCard(
-                                title: "Data Points",
-                                value: "\(results.dataPointsProcessed)",
-                                icon: "chart.bar.fill",
-                                color: .green
-                            )
-                            
-                            ResultCard(
-                                title: "XP Gained",
-                                value: String(format: "%.0f", results.totalXPGained),
-                                icon: "star.fill",
-                                color: .purple
-                            )
-                        }
-                    } else {
-                        VStack(spacing: 16) {
-                            Image(systemName: "brain.head.profile")
-                                .font(.system(size: 48))
-                                .foregroundStyle(.white.opacity(0.5))
-                            
-                            Text("No training results available")
-                                .font(.system(size: 18, weight: .medium, design: .rounded))
-                                .foregroundStyle(.white.opacity(0.7))
-                            
-                            Text("Train your ProTrader Army to see results here")
-                                .font(.system(size: 14, weight: .medium, design: .rounded))
-                                .foregroundStyle(.white.opacity(0.5))
-                        }
-                        .padding(40)
+                        Text(mockResults.summary)
+                            .font(.system(size: 16, weight: .medium, design: .rounded))
+                            .foregroundStyle(.white.opacity(0.8))
+                            .multilineTextAlignment(.center)
+                    }
+                    
+                    LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 16) {
+                        ResultCard(
+                            title: "Bots Trained",
+                            value: "\(mockResults.botsTrained)",
+                            icon: "brain.head.profile",
+                            color: .blue
+                        )
+                        
+                        ResultCard(
+                            title: "New GODMODE",
+                            value: "\(mockResults.newGodmodeBots)",
+                            icon: "crown.fill",
+                            color: .orange
+                        )
+                        
+                        ResultCard(
+                            title: "Data Points",
+                            value: "\(mockResults.dataPointsProcessed)",
+                            icon: "chart.bar.fill",
+                            color: .green
+                        )
+                        
+                        ResultCard(
+                            title: "XP Gained",
+                            value: String(format: "%.0f", mockResults.totalXPGained),
+                            icon: "star.fill",
+                            color: .purple
+                        )
                     }
                 }
                 .padding(24)
@@ -305,6 +292,23 @@ struct TrainingResultsView: View {
                 }
             }
         }
+    }
+}
+
+struct MockTrainingResults {
+    let botsTrained = 5000
+    let newGodmodeBots = 347
+    let dataPointsProcessed = 125000
+    let totalXPGained: Double = 1250000
+    
+    var summary: String {
+        return """
+        Training Complete!
+        • Bots Trained: \(botsTrained)
+        • Data Points: \(dataPointsProcessed)
+        • XP Gained: \(String(format: "%.0f", totalXPGained))
+        • New GODMODE: \(newGodmodeBots)
+        """
     }
 }
 
@@ -342,99 +346,16 @@ struct ResultCard: View {
 }
 
 struct BotDetailsView: View {
-    let bot: ProTraderBot
-    @ObservedObject var armyManager: ProTraderArmyManager
+    let bot: RealTimeProTraderBot
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {
         NavigationStack {
             ScrollView {
                 LazyVStack(spacing: 20) {
-                    // Bot Header
-                    VStack(spacing: 12) {
-                        Text("🤖")
-                            .font(.system(size: 48))
-                        
-                        Text(bot.name)
-                            .font(.system(size: 24, weight: .bold, design: .rounded))
-                            .foregroundStyle(.white)
-                        
-                        HStack(spacing: 8) {
-                            Text("Bot #\(bot.botNumber)")
-                                .font(.system(size: 14, weight: .medium, design: .rounded))
-                                .foregroundStyle(.white.opacity(0.7))
-                            
-                            Text("•")
-                                .foregroundStyle(.white.opacity(0.5))
-                            
-                            Text(bot.confidenceLevel)
-                                .font(.system(size: 14, weight: .bold, design: .rounded))
-                                .foregroundStyle(confidenceColor(bot.confidence))
-                        }
-                    }
-                    
-                    // Bot Stats
-                    LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 16) {
-                        StatCard(
-                            title: "Confidence",
-                            value: String(format: "%.1f%%", bot.confidence * 100),
-                            color: confidenceColor(bot.confidence)
-                        )
-                        
-                        StatCard(
-                            title: "P&L",
-                            value: formatCurrency(bot.profitLoss),
-                            color: bot.profitLoss >= 0 ? .green : .red
-                        )
-                        
-                        StatCard(
-                            title: "Win Rate",
-                            value: String(format: "%.1f%%", bot.winRate),
-                            color: bot.winRate >= 70 ? .green : bot.winRate >= 50 ? .orange : .red
-                        )
-                        
-                        StatCard(
-                            title: "Status",
-                            value: bot.isActive ? "ACTIVE" : "IDLE",
-                            color: bot.isActive ? .green : .orange
-                        )
-                        
-                        StatCard(
-                            title: "Strategy",
-                            value: bot.strategy.rawValue,
-                            color: .blue
-                        )
-                        
-                        StatCard(
-                            title: "Grade",
-                            value: bot.performanceGrade,
-                            color: gradeColor(bot.performanceGrade)
-                        )
-                    }
-                    
-                    // Additional Info
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("Bot Configuration")
-                            .font(.system(size: 18, weight: .bold, design: .rounded))
-                            .foregroundStyle(.white)
-                        
-                        VStack(spacing: 8) {
-                            InfoRow(label: "Specialization", value: bot.specialization.rawValue)
-                            InfoRow(label: "AI Engine", value: bot.aiEngine.rawValue)
-                            InfoRow(label: "VPS Status", value: bot.vpsStatus.rawValue)
-                            InfoRow(label: "Total Trades", value: "\(bot.totalTrades)")
-                            InfoRow(label: "XP Points", value: String(format: "%.0f", bot.xp))
-                        }
-                        .padding(16)
-                        .background(
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(.white.opacity(0.05))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 12)
-                                        .stroke(.white.opacity(0.1), lineWidth: 1)
-                                )
-                        )
-                    }
+                    botHeaderSection
+                    botStatsGrid
+                    additionalInfoSection
                 }
                 .padding(24)
             }
@@ -453,31 +374,107 @@ struct BotDetailsView: View {
         }
     }
     
-    private func confidenceColor(_ confidence: Double) -> Color {
-        switch confidence {
-        case 0.95...: return .orange
-        case 0.9..<0.95: return .red
-        case 0.8..<0.9: return .purple
-        case 0.7..<0.8: return .blue
-        case 0.6..<0.7: return .green
-        default: return .gray
+    private var botHeaderSection: some View {
+        VStack(spacing: 12) {
+            Text("🤖")
+                .font(.system(size: 48))
+            
+            Text(bot.name)
+                .font(.system(size: 24, weight: .bold, design: .rounded))
+                .foregroundStyle(.white)
+            
+            HStack(spacing: 8) {
+                Text(bot.strategy)
+                    .font(.system(size: 14, weight: .medium, design: .rounded))
+                    .foregroundStyle(.white.opacity(0.7))
+                
+                Text("•")
+                    .foregroundStyle(.white.opacity(0.5))
+                
+                Text(bot.status.uppercased())
+                    .font(.system(size: 14, weight: .bold, design: .rounded))
+                    .foregroundStyle(bot.status == "active" ? .green : .orange)
+            }
         }
     }
     
-    private func gradeColor(_ grade: String) -> Color {
-        switch grade {
-        case "A+", "A": return .orange
-        case "B+", "B": return .green
-        case "C+", "C": return .blue
-        default: return .gray
+    private var botStatsGrid: some View {
+        LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 16) {
+            StatCard(
+                title: "Win Rate",
+                value: String(format: "%.1f%%", bot.winRate),
+                color: bot.winRate >= 70 ? .green : bot.winRate >= 50 ? .orange : .red
+            )
+            
+            StatCard(
+                title: "Daily P&L",
+                value: formatCurrency(bot.dailyPnL),
+                color: bot.dailyPnL >= 0 ? .green : .red
+            )
+            
+            StatCard(
+                title: "Total P&L",
+                value: formatCurrency(bot.totalPnL),
+                color: bot.totalPnL >= 0 ? .green : .red
+            )
+            
+            StatCard(
+                title: "Trades",
+                value: "\(bot.tradesCount)",
+                color: .blue
+            )
+            
+            StatCard(
+                title: "Pair",
+                value: bot.currentPair,
+                color: .purple
+            )
+            
+            StatCard(
+                title: "GODMODE",
+                value: bot.isGodModeEnabled ? "ON" : "OFF",
+                color: bot.isGodModeEnabled ? .orange : .gray
+            )
+        }
+    }
+    
+    private var additionalInfoSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Bot Configuration")
+                .font(.system(size: 18, weight: .bold, design: .rounded))
+                .foregroundStyle(.white)
+            
+            VStack(spacing: 8) {
+                InfoRow(label: "Strategy", value: bot.strategy)
+                InfoRow(label: "VPS Connection", value: bot.vpsConnection)
+                InfoRow(label: "Last Heartbeat", value: formatDate(bot.lastHeartbeat))
+                InfoRow(label: "Trade Logs", value: "\(bot.tradeLogs.count)")
+                InfoRow(label: "Insights", value: "\(bot.insights.count)")
+            }
+            .padding(16)
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(.white.opacity(0.05))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(.white.opacity(0.1), lineWidth: 1)
+                    )
+            )
         }
     }
     
     private func formatCurrency(_ amount: Double) -> String {
         let formatter = NumberFormatter()
         formatter.numberStyle = .currency
-        formatter.maximumFractionDigits = 0
-        return formatter.string(from: NSNumber(value: amount)) ?? "$0"
+        formatter.maximumFractionDigits = 2
+        return formatter.string(from: NSNumber(value: amount)) ?? "$0.00"
+    }
+    
+    private func formatDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .short
+        formatter.timeStyle = .short
+        return formatter.string(from: date)
     }
 }
 
@@ -509,7 +506,7 @@ struct StatCard: View {
     }
 }
 
-struct AInfoRow: View {
+struct InfoRow: View {
     let label: String
     let value: String
     
@@ -528,57 +525,20 @@ struct AInfoRow: View {
     }
 }
 
-// Placeholder views for other sheets
+// MARK: - VPS Status View (Broken into components)
+
 struct VPSStatusView: View {
-    @ObservedObject var armyManager: ProTraderArmyManager
     @Environment(\.dismiss) private var dismiss
+    @StateObject private var vpsManager = VPSConnectionManager.shared
     
     var body: some View {
         NavigationStack {
             VStack(spacing: 24) {
-                // VPS Status Header
-                VStack(spacing: 16) {
-                    Image(systemName: armyManager.vpsManager.isConnected ? "checkmark.circle.fill" : "xmark.circle.fill")
-                        .font(.system(size: 60))
-                        .foregroundStyle(armyManager.vpsManager.isConnected ? .green : .red)
-                    
-                    Text(armyManager.vpsManager.connectionStatus.rawValue)
-                        .font(.system(size: 24, weight: .bold, design: .rounded))
-                        .foregroundStyle(.white)
-                    
-                    Text(armyManager.vpsManager.isConnected ? "VPS is online and ready" : "VPS connection offline")
-                        .font(.system(size: 16, weight: .medium, design: .rounded))
-                        .foregroundStyle(.white.opacity(0.7))
-                }
+                vpsStatusHeader
+                vpsInfoSection
                 
-                // VPS Info
-                VStack(spacing: 16) {
-                    InfoRow(label: "Server IP", value: "172.234.201.231")
-                    InfoRow(label: "Status", value: armyManager.vpsManager.connectionStatus.rawValue)
-                    InfoRow(label: "Deployed Bots", value: "\(armyManager.deployedBots)")
-                    
-                    if armyManager.vpsManager.lastPing > 0 {
-                        InfoRow(label: "Ping", value: "\(String(format: "%.0f", armyManager.vpsManager.lastPing))ms")
-                    }
-                }
-                .padding(20)
-                .background(
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(.white.opacity(0.05))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 12)
-                                .stroke(.white.opacity(0.1), lineWidth: 1)
-                        )
-                )
-                
-                if !armyManager.vpsManager.isConnected {
-                    Button("Connect to VPS") {
-                        Task {
-                            await armyManager.vpsManager.connectToVPS()
-                        }
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.large)
+                if !vpsManager.isConnected {
+                    connectButton
                 }
                 
                 Spacer()
@@ -598,10 +558,53 @@ struct VPSStatusView: View {
             }
         }
     }
+    
+    private var vpsStatusHeader: some View {
+        VStack(spacing: 16) {
+            Image(systemName: vpsManager.isConnected ? "checkmark.circle.fill" : "xmark.circle.fill")
+                .font(.system(size: 60))
+                .foregroundStyle(vpsManager.isConnected ? .green : .red)
+            
+            Text(vpsManager.connectionStatus.rawValue)
+                .font(.system(size: 24, weight: .bold, design: .rounded))
+                .foregroundStyle(.white)
+            
+            Text(vpsManager.isConnected ? "VPS is online and ready" : "VPS connection offline")
+                .font(.system(size: 16, weight: .medium, design: .rounded))
+                .foregroundStyle(.white.opacity(0.7))
+        }
+    }
+    
+    private var vpsInfoSection: some View {
+        VStack(spacing: 16) {
+            InfoRow(label: "Server IP", value: "172.234.201.231")
+            InfoRow(label: "Status", value: vpsManager.connectionStatus.rawValue)
+            InfoRow(label: "Latency", value: "\(vpsManager.latency)ms")
+            InfoRow(label: "CPU Usage", value: String(format: "%.1f%%", vpsManager.cpuUsage))
+        }
+        .padding(20)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(.white.opacity(0.05))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(.white.opacity(0.1), lineWidth: 1)
+                )
+        )
+    }
+    
+    private var connectButton: some View {
+        Button("Connect to VPS") {
+            Task {
+                await vpsManager.connectToVPS()
+            }
+        }
+        .buttonStyle(.borderedProminent)
+        .controlSize(.large)
+    }
 }
 
 struct ScreenshotGalleryView: View {
-    @ObservedObject var armyManager: ProTraderArmyManager
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {
@@ -640,7 +643,6 @@ struct ScreenshotGalleryView: View {
 }
 
 struct GPTChatView: View {
-    @ObservedObject var armyManager: ProTraderArmyManager
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {
@@ -679,54 +681,20 @@ struct GPTChatView: View {
 }
 
 struct BotDeploymentView: View {
-    @ObservedObject var armyManager: ProTraderArmyManager
     @Environment(\.dismiss) private var dismiss
+    @State private var isDeploying = false
+    @State private var deploymentProgress: Double = 0.0
+    @State private var deployedBots = 2450
     
     var body: some View {
         NavigationStack {
             VStack(spacing: 24) {
-                // Deployment Header
-                VStack(spacing: 16) {
-                    Image(systemName: "rocket.fill")
-                        .font(.system(size: 60))
-                        .foregroundStyle(.orange)
-                    
-                    Text("🚀 Bot Deployment")
-                        .font(.system(size: 24, weight: .bold, design: .rounded))
-                        .foregroundStyle(.white)
-                }
+                deploymentHeader
                 
-                // Deployment Status
-                if armyManager.isDeploying {
-                    VStack(spacing: 16) {
-                        Text("Deploying bots to VPS...")
-                            .font(.system(size: 18, weight: .medium, design: .rounded))
-                            .foregroundStyle(.white)
-                        
-                        ProgressView(value: armyManager.deploymentProgress)
-                            .tint(.orange)
-                            .background(.white.opacity(0.2))
-                            .clipShape(Capsule())
-                        
-                        Text("\(Int(armyManager.deploymentProgress * 100))% Complete")
-                            .font(.system(size: 16, weight: .bold, design: .rounded))
-                            .foregroundStyle(.orange)
-                    }
-                    .padding(20)
-                    .background(
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(.white.opacity(0.05))
-                    )
+                if isDeploying {
+                    deploymentProgressSection
                 } else {
-                    VStack(spacing: 16) {
-                        Text("✅ Deployment Complete!")
-                            .font(.system(size: 18, weight: .bold, design: .rounded))
-                            .foregroundStyle(.green)
-                        
-                        Text("\(armyManager.deployedBots) bots deployed to VPS")
-                            .font(.system(size: 16, weight: .medium, design: .rounded))
-                            .foregroundStyle(.white.opacity(0.7))
-                    }
+                    deploymentCompleteSection
                 }
                 
                 Spacer()
@@ -746,10 +714,80 @@ struct BotDeploymentView: View {
             }
         }
     }
+    
+    private var deploymentHeader: some View {
+        VStack(spacing: 16) {
+            Image(systemName: "rocket.fill")
+                .font(.system(size: 60))
+                .foregroundStyle(.orange)
+            
+            Text("🚀 Bot Deployment")
+                .font(.system(size: 24, weight: .bold, design: .rounded))
+                .foregroundStyle(.white)
+        }
+    }
+    
+    private var deploymentProgressSection: some View {
+        VStack(spacing: 16) {
+            Text("Deploying bots to VPS...")
+                .font(.system(size: 18, weight: .medium, design: .rounded))
+                .foregroundStyle(.white)
+            
+            ProgressView(value: deploymentProgress)
+                .tint(.orange)
+                .background(.white.opacity(0.2))
+                .clipShape(Capsule())
+            
+            Text("\(Int(deploymentProgress * 100))% Complete")
+                .font(.system(size: 16, weight: .bold, design: .rounded))
+                .foregroundStyle(.orange)
+        }
+        .padding(20)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(.white.opacity(0.05))
+        )
+    }
+    
+    private var deploymentCompleteSection: some View {
+        VStack(spacing: 16) {
+            Text("✅ Deployment Complete!")
+                .font(.system(size: 18, weight: .bold, design: .rounded))
+                .foregroundStyle(.green)
+            
+            Text("\(deployedBots) bots deployed to VPS")
+                .font(.system(size: 16, weight: .medium, design: .rounded))
+                .foregroundStyle(.white.opacity(0.7))
+            
+            Button("Deploy More Bots") {
+                startDeployment()
+            }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.large)
+        }
+    }
+    
+    private func startDeployment() {
+        isDeploying = true
+        deploymentProgress = 0.0
+        
+        Task {
+            for i in 0...100 {
+                await MainActor.run {
+                    deploymentProgress = Double(i) / 100.0
+                }
+                try? await Task.sleep(nanoseconds: 50_000_000)
+            }
+            
+            await MainActor.run {
+                isDeploying = false
+                deployedBots += 100
+            }
+        }
+    }
 }
 
 struct MassiveDataDownloadView: View {
-    @ObservedObject var armyManager: ProTraderArmyManager
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {

@@ -74,30 +74,26 @@ struct VPSStatusButton: View {
 }
 
 struct AutoTradingMenu: View {
-    @ObservedObject var armyManager: ProTraderArmyManager
-    let sampleData: String
+    let onStartTrading: () -> Void
+    let onStopTrading: () -> Void
+    let onQuickTrain: () -> Void
+    let onSyncVPS: () -> Void
+    let onDeployTop100: () -> Void
+    let onQuickDeploy: () -> Void
+    let onEmergencyStop: () -> Void
+    
     @State private var showingMenu = false
     
     var body: some View {
         Menu {
             Button {
-                Task.detached(priority: .background) {
-                    await armyManager.startAutoTrading()
-                    await MainActor.run {
-                        GlobalToastManager.shared.show("🤖 Auto-trading started!", type: .success)
-                    }
-                }
+                onStartTrading()
             } label: {
                 Label("Start Auto Trading", systemImage: "play.circle.fill")
             }
             
             Button {
-                Task.detached(priority: .background) {
-                    await armyManager.stopAutoTrading()
-                    await MainActor.run {
-                        GlobalToastManager.shared.show("⏹️ Auto-trading stopped", type: .info)
-                    }
-                }
+                onStopTrading()
             } label: {
                 Label("Stop Auto Trading", systemImage: "stop.circle.fill")
             }
@@ -105,58 +101,33 @@ struct AutoTradingMenu: View {
             Divider()
             
             Button {
-                Task.detached(priority: .background) {
-                    let results = await armyManager.trainWithHistoricalData(csvData: sampleData)
-                    await MainActor.run {
-                        GlobalToastManager.shared.show("🧠 Training completed: \(results.summary)", type: .success)
-                    }
-                }
+                onQuickTrain()
             } label: {
                 Label("Quick Train", systemImage: "brain.head.profile")
             }
             
             Button {
-                Task.detached(priority: .background) {
-                    await armyManager.syncWithVPS()
-                    await MainActor.run {
-                        GlobalToastManager.shared.show("🔄 VPS synchronized successfully!", type: .success)
-                    }
-                }
+                onSyncVPS()
             } label: {
                 Label("Sync with VPS", systemImage: "icloud.and.arrow.up")
             }
             
             Button {
-                Task.detached(priority: .background) {
-                    await armyManager.deployBots(count: 100)
-                    await MainActor.run {
-                        GlobalToastManager.shared.show("🚀 Top 100 bots deployed!", type: .success)
-                    }
-                }
+                onDeployTop100()
             } label: {
                 Label("Deploy Top 100", systemImage: "crown.fill")
             }
             
             Button {
-                Task.detached(priority: .background) {
-                    await armyManager.quickDeploy()
-                    await MainActor.run {
-                        GlobalToastManager.shared.show("🚀 Quick deployment completed!", type: .success)
-                    }
-                }
+                onQuickDeploy()
             } label: {
-                Label("Quick Deploy", systemImage: "crown.fill")
+                Label("Quick Deploy", systemImage: "bolt.fill")
             }
             
             Divider()
             
             Button {
-                Task.detached(priority: .background) {
-                    await armyManager.emergencyStopAll()
-                    await MainActor.run {
-                        GlobalToastManager.shared.show("🚨 Emergency stop activated!", type: .warning)
-                    }
-                }
+                onEmergencyStop()
             } label: {
                 Label("Emergency Stop", systemImage: "stop.circle")
             }
@@ -186,15 +157,71 @@ struct AutoTradingMenu: View {
     }
 }
 
+// MARK: - Simplified Menu Component for Easy Use
+struct SimpleAutoTradingMenu: View {
+    var body: some View {
+        AutoTradingMenu(
+            onStartTrading: {
+                GlobalToastManager.shared.show("🤖 Auto-trading started!", type: .success)
+            },
+            onStopTrading: {
+                GlobalToastManager.shared.show("⏹️ Auto-trading stopped", type: .info)
+            },
+            onQuickTrain: {
+                GlobalToastManager.shared.show("🧠 Training started...", type: .info)
+            },
+            onSyncVPS: {
+                GlobalToastManager.shared.show("🔄 VPS sync started...", type: .info)
+            },
+            onDeployTop100: {
+                GlobalToastManager.shared.show("🚀 Deploying top 100 bots...", type: .success)
+            },
+            onQuickDeploy: {
+                GlobalToastManager.shared.show("🚀 Quick deployment started...", type: .success)
+            },
+            onEmergencyStop: {
+                GlobalToastManager.shared.show("🚨 Emergency stop activated!", type: .warning)
+            }
+        )
+    }
+}
+
 #Preview {
     VStack(spacing: 20) {
-        HStack {
-            ToolbarButton(icon: "icloud.and.arrow.down.fill", text: "Data", color: .purple) { }
-            ToolbarButton(icon: "arrow.up.circle.fill", text: "Deploy", color: .green) { }
-            VPSStatusButton(isConnected: true) { }
-            AutoTradingMenu(armyManager: ProTraderArmyManager(), sampleData: "")
+        HStack(spacing: 12) {
+            ToolbarButton(icon: "icloud.and.arrow.down.fill", text: "Data", color: .purple) { 
+                print("Data button tapped")
+            }
+            
+            ToolbarButton(icon: "arrow.up.circle.fill", text: "Deploy", color: .green) { 
+                print("Deploy button tapped")
+            }
+            
+            VPSStatusButton(isConnected: true) { 
+                print("VPS status button tapped")
+            }
+            
+            SimpleAutoTradingMenu()
+        }
+        
+        // Example with custom actions
+        HStack(spacing: 12) {
+            ToolbarButton(icon: "brain.head.profile", text: "AI", color: .blue) { }
+            ToolbarButton(icon: "chart.line.uptrend.xyaxis", text: "Stats", color: .orange) { }
+            VPSStatusButton(isConnected: false) { }
+            
+            AutoTradingMenu(
+                onStartTrading: { print("Custom start trading") },
+                onStopTrading: { print("Custom stop trading") },
+                onQuickTrain: { print("Custom quick train") },
+                onSyncVPS: { print("Custom sync VPS") },
+                onDeployTop100: { print("Custom deploy 100") },
+                onQuickDeploy: { print("Custom quick deploy") },
+                onEmergencyStop: { print("Custom emergency stop") }
+            )
         }
     }
+    .padding()
     .background(Color.black)
     .preferredColorScheme(.dark)
 }

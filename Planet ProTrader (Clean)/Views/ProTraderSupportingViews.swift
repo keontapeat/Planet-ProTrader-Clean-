@@ -404,13 +404,13 @@ struct BotDetailView: View {
                             .foregroundStyle(.white)
                         
                         VStack(spacing: 12) {
-                            InfoRow(label: "Strategy", value: bot.strategy.rawValue)
-                            InfoRow(label: "Specialization", value: bot.specialization.rawValue)
-                            InfoRow(label: "AI Engine", value: bot.aiEngine.rawValue)
-                            InfoRow(label: "VPS Status", value: bot.vpsStatus.rawValue)
+                            ProTraderInfoRow(label: "Strategy", value: bot.strategy.rawValue)
+                            ProTraderInfoRow(label: "Specialization", value: bot.specialization.rawValue)
+                            ProTraderInfoRow(label: "AI Engine", value: bot.aiEngine.rawValue)
+                            ProTraderInfoRow(label: "VPS Status", value: bot.vpsStatus.rawValue)
                             
                             if let lastTraining = bot.lastTraining {
-                                InfoRow(label: "Last Training", value: formatDate(lastTraining))
+                                ProTraderInfoRow(label: "Last Training", value: formatDate(lastTraining))
                             }
                         }
                         .padding(16)
@@ -495,7 +495,7 @@ struct MyStatCard: View {
     }
 }
 
-struct InfoRow: View {
+struct ProTraderInfoRow: View {
     let label: String
     let value: String
     

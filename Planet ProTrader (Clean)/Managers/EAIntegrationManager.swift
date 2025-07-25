@@ -37,8 +37,13 @@ class EAIntegrationManager: ObservableObject {
         currency: "USD"
     )
     
-    private let vpsManager = VPSConnectionManager.shared
-    private let liveManager = LiveTradingManager.shared
+    private var vpsManager: VPSConnectionManager {
+        VPSConnectionManager.shared
+    }
+    
+    private var liveManager: LiveTradingManager {
+        LiveTradingManager.shared
+    }
     
     enum EAStatus: Equatable {
         case notDeployed

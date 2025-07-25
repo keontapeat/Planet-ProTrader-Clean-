@@ -109,7 +109,7 @@ struct ContentView: View {
     // FIXED: Async, non-blocking initialization
     @MainActor
     private func initializeSystemSafely() async {
-        print("🚀 Planet ProTrader initializing...")
+        print(" Planet ProTrader initializing...")
         
         // Give UI time to render first
         try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 second
@@ -122,7 +122,7 @@ struct ContentView: View {
             await audioManager.playNotification()
         }
         
-        print("✅ System ready!")
+        print(" System ready!")
     }
 }
 
@@ -179,7 +179,7 @@ struct ProfessionalMoreTabView: View {
     
     private var headerSection: some View {
         VStack(spacing: 16) {
-            Text("🌌")
+            Text("")
                 .font(.title2.bold())
                 .foregroundStyle(
                     LinearGradient(
@@ -199,7 +199,7 @@ struct ProfessionalMoreTabView: View {
     
     private var professionalToolsSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("🛠 Professional Tools")
+            Text(" Professional Tools")
                 .font(.headline.bold())
                 .foregroundColor(.white)
             
@@ -253,7 +253,7 @@ struct ProfessionalMoreTabView: View {
     
     private var accountSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("👤 Account & Settings")
+            Text(" Account & Settings")
                 .font(.headline.bold())
                 .foregroundColor(.white)
             
@@ -271,7 +271,7 @@ struct ProfessionalMoreTabView: View {
     
     private var supportSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("❓ Help & Support")
+            Text(" Help & Support")
                 .font(.headline.bold())
                 .foregroundColor(.white)
             
@@ -310,7 +310,7 @@ struct ProfessionalMoreTabView: View {
     
     private func showComingSoon(_ feature: String) {
         // Removed GlobalToastManager usage
-        print("🌟 Feature \(feature) is coming soon!")
+        print(" Feature \(feature) is coming soon!")
     }
 }
 
@@ -384,7 +384,7 @@ struct PremiumProfileView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 20) {
-                Text("👤")
+                Text("")
                     .font(.title.bold())
                 
                 Text("Profile management coming soon!")
@@ -411,7 +411,7 @@ struct AdvancedSettingsView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 20) {
-                Text("⚙️")
+                Text("")
                     .font(.title.bold())
                 
                 Text("Settings panel coming soon!")
@@ -436,7 +436,6 @@ struct AdvancedSettingsView: View {
 #Preview {
     ContentView()
         .environmentObject(TradingManager.shared)
-        .environmentObject(ProTraderArmyManager())
         .environmentObject(AudioManager.shared)
         .environmentObject(RealTimeBalanceManager())
 }
