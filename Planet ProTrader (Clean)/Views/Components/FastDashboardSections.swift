@@ -1,4 +1,4 @@
-// 
+//
 //  FastDashboardSections.swift
 //  Planet ProTrader (Clean)
 //
