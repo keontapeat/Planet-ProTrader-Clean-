@@ -81,6 +81,19 @@ struct TradingTerminal: View {
                             }
                             
                             Spacer()
+                            
+                            // TradingView-Style Reset Button at Bottom Middle
+                            if !isFullScreen {
+                                tradingViewResetButton
+                                    .padding(.bottom, 20)
+                            }
+                            
+                            // Fullscreen Controls
+                            if isFullScreen {
+                                fullScreenControls
+                                    .padding(.bottom, 20)
+                                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                            }
                         }
                         
                         // Removed old full screen exit gesture
@@ -363,115 +376,57 @@ struct TradingTerminal: View {
     // MARK: - Full Screen Controls
     private var fullScreenControls: some View {
         VStack(spacing: 12) {
-            // Professional Trading Toolbar
-            HStack(spacing: 0) {
-                // Chart Type Selector
-                HStack(spacing: 8) {
-                    ForEach(ChartType.allCases, id: \.self) { type in
-                        Button(action: {
-                            currentChartType = type
-                            tradingViewManager.changeChartType(type.rawValue)
-                            hapticManager.impact()
-                        }) {
-                            Image(systemName: type.icon)
-                                .font(.system(size: 16, weight: .medium))
-                                .foregroundColor(currentChartType == type ? .black : .white)
-                                .frame(width: 32, height: 32)
-                                .background(currentChartType == type ? Color.white : Color.white.opacity(0.1))
-                                .clipShape(Circle())
-                        }
+            // Reset Button and Toolbar Toggle
+            HStack(spacing: 20) {
+                // Reset Button
+                Button(action: {
+                    withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                        resetChart()
                     }
+                    hapticManager.impact()
+                }) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "arrow.clockwise")
+                            .font(.system(size: 14, weight: .semibold))
+                        Text("Reset")
+                            .font(.system(size: 14, weight: .semibold))
+                    }
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                    .background(.black.opacity(0.8), in: Capsule())
+                    .overlay(
+                        Capsule()
+                            .stroke(.white.opacity(0.3), lineWidth: 1)
+                    )
                 }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
-                .background(.black.opacity(0.8), in: Capsule())
+                .buttonStyle(PlainButtonStyle())
                 
-                Spacer()
-                
-                // Quick Actions
-                HStack(spacing: 12) {
-                    // Drawing Tools
-                    Button(action: {
-                        showDrawingTools.toggle()
-                        hapticManager.impact()
-                    }) {
-                        Image(systemName: "pencil.tip.crop.circle")
-                            .font(.system(size: 20, weight: .medium))
-                            .foregroundColor(showDrawingTools ? .yellow : .white)
+                // Toolbar Toggle Button
+                Button(action: {
+                    withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                        toolbarHidden.toggle()
+                        tradingViewManager.toggleToolbar(!toolbarHidden)
                     }
-                    
-                    // Indicators
-                    Button(action: {
-                        showIndicators.toggle()
-                        hapticManager.impact()
-                    }) {
-                        Image(systemName: "chart.line.uptrend.xyaxis")
-                            .font(.system(size: 20, weight: .medium))
-                            .foregroundColor(showIndicators ? .cyan : .white)
+                    hapticManager.impact()
+                }) {
+                    HStack(spacing: 8) {
+                        Image(systemName: toolbarHidden ? "eye" : "eye.slash")
+                            .font(.system(size: 14, weight: .semibold))
+                        Text(toolbarHidden ? "Show" : "Hide")
+                            .font(.system(size: 14, weight: .semibold))
                     }
-                    
-                    // Price Alerts
-                    Button(action: {
-                        showPriceAlerts.toggle()
-                        hapticManager.impact()
-                    }) {
-                        Image(systemName: "bell.badge")
-                            .font(.system(size: 20, weight: .medium))
-                            .foregroundColor(showPriceAlerts ? .orange : .white)
-                    }
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                    .background(.black.opacity(0.8), in: Capsule())
+                    .overlay(
+                        Capsule()
+                            .stroke(.white.opacity(0.3), lineWidth: 1)
+                    )
                 }
-                
-                Spacer()
-                
-                // Trade Actions
-                HStack(spacing: 8) {
-                    // Quick Sell
-                    Button(action: {
-                        executeMT5Sell()
-                    }) {
-                        Text("SELL")
-                            .font(.system(size: 14, weight: .bold))
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 20)
-                            .padding(.vertical, 10)
-                            .background(.red, in: Capsule())
-                    }
-                    
-                    // Quick Buy
-                    Button(action: {
-                        executeMT5Buy()
-                    }) {
-                        Text("BUY")
-                            .font(.system(size: 14, weight: .bold))
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 20)
-                            .padding(.vertical, 10)
-                            .background(.green, in: Capsule())
-                    }
-                }
+                .buttonStyle(PlainButtonStyle())
             }
-            .padding(.horizontal, 20)
-            
-            // Volume Slider for Full Screen Trade
-            VStack(spacing: 8) {
-                HStack {
-                    Text("Volume")
-                        .font(.caption)
-                        .foregroundColor(.gray)
-                    Spacer()
-                    Text(String(format: "%.2f", tradeVolume))
-                        .font(.caption)
-                        .fontWeight(.bold)
-                        .foregroundColor(.white)
-                }
-                
-                Slider(value: $tradeVolume, in: 0.01...1.0, step: 0.01)
-                    .accentColor(.yellow)
-            }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 12)
-            .background(.black.opacity(0.8), in: RoundedRectangle(cornerRadius: 12))
-            .padding(.horizontal, 20)
         }
     }
     
@@ -1013,8 +968,8 @@ struct TradingTerminal: View {
                 .frame(width: 36, height: 3)
                 .padding(.top, 6)
             
-            VStack(spacing: 8) {
-                // Balance Row (Flush & Compact)
+            VStack(spacing: 4) {
+                // Balance Row (Flush & Compact) - Moved closer to top
                 HStack(spacing: 8) {
                     TradeLockerStatCard(title: "Balance", value: "$10,425", color: .blue)
                     TradeLockerStatCard(title: "Equity", value: "$10,687", color: .green)
@@ -1022,125 +977,122 @@ struct TradingTerminal: View {
                     TradeLockerStatCard(title: "Margin", value: "12%", color: .orange)
                 }
                 
-                // Professional Trading Interface (Flush)
-                VStack(spacing: 8) {
-                    // Margin Display (from image)
-                    VStack(spacing: 6) {
-                        // Warning indicators (red triangles from image)
-                        HStack {
-                            HStack(spacing: 8) {
-                                Image(systemName: "exclamationmark.triangle.fill")
-                                    .font(.system(size: 14))
-                                    .foregroundColor(.red)
-                            }
-                            
-                            Spacer()
-                            
-                            HStack(spacing: 8) {
-                                Image(systemName: "exclamationmark.triangle.fill")
-                                    .font(.system(size: 14))
-                                    .foregroundColor(.red)
-                            }
-                        }
-                        
-                        // Init. Margin display
-                        Text("Init. Margin: ~$11.76 (∞)")
-                            .font(.system(size: 14, weight: .medium))
-                            .foregroundColor(.gray)
+                // Warning indicators (moved down to be flush above trading interface)
+                HStack {
+                    HStack(spacing: 8) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .font(.system(size: 14))
+                            .foregroundColor(.red)
                     }
                     
-                    // Trading Interface (Exact from image)
-                    HStack(spacing: 0) {
-                        // SELL Button
+                    Spacer()
+                    
+                    // Init. Margin display (centered)
+                    Text("Init. Margin: ~$11.76 (∞)")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(.gray)
+                    
+                    Spacer()
+                    
+                    HStack(spacing: 8) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .font(.system(size: 14))
+                            .foregroundColor(.red)
+                    }
+                }
+                .padding(.horizontal, 4)
+                
+                // Trading Interface (Exact from image) - Flush below triangles
+                HStack(spacing: 0) {
+                    // SELL Button
+                    Button(action: {
+                        executeMT5Sell()
+                    }) {
+                        VStack(spacing: 4) {
+                            Text("117,496.25")
+                                .font(.system(size: 16, weight: .bold, design: .rounded))
+                                .foregroundColor(.white)
+                            Text("SELL")
+                                .font(.system(size: 12, weight: .bold))
+                                .foregroundColor(.gray)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 70)
+                        .background(Color(red: 0.2, green: 0.2, blue: 0.2))
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    
+                    // Center Volume Control
+                    VStack(spacing: 0) {
+                        // Minus button
                         Button(action: {
-                            executeMT5Sell()
-                        }) {
-                            VStack(spacing: 4) {
-                                Text("117,496.25")
-                                    .font(.system(size: 16, weight: .bold, design: .rounded))
-                                    .foregroundColor(.white)
-                                Text("SELL")
-                                    .font(.system(size: 12, weight: .bold))
-                                    .foregroundColor(.gray)
+                            if tradeVolume > 0.01 {
+                                tradeVolume = max(0.01, tradeVolume - 0.01)
                             }
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 70)
-                            .background(Color(red: 0.2, green: 0.2, blue: 0.2))
+                            hapticManager.impact()
+                        }) {
+                            Image(systemName: "minus")
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundColor(.gray)
+                                .frame(height: 16)
                         }
                         .buttonStyle(PlainButtonStyle())
                         
-                        // Center Volume Control
-                        VStack(spacing: 0) {
-                            // Minus button
-                            Button(action: {
-                                if tradeVolume > 0.01 {
-                                    tradeVolume = max(0.01, tradeVolume - 0.01)
-                                }
-                                hapticManager.impact()
-                            }) {
-                                Image(systemName: "minus")
-                                    .font(.system(size: 16, weight: .bold))
-                                    .foregroundColor(.gray)
-                                    .frame(height: 16)
-                            }
-                            .buttonStyle(PlainButtonStyle())
-                            
-                            // Volume display
-                            VStack(spacing: 1) {
-                                Text(String(format: "%.2f", tradeVolume))
-                                    .font(.system(size: 24, weight: .bold, design: .rounded))
-                                    .foregroundColor(.white)
-                                Text("lots")
-                                    .font(.system(size: 12, weight: .medium))
-                                    .foregroundColor(.gray)
-                            }
-                            .frame(height: 38)
-                            
-                            // Plus button
-                            Button(action: {
-                                tradeVolume = min(1.0, tradeVolume + 0.01)
-                                hapticManager.impact()
-                            }) {
-                                Image(systemName: "plus")
-                                    .font(.system(size: 16, weight: .bold))
-                                    .foregroundColor(.gray)
-                                    .frame(height: 16)
-                            }
-                            .buttonStyle(PlainButtonStyle())
+                        // Volume display
+                        VStack(spacing: 1) {
+                            Text(String(format: "%.2f", tradeVolume))
+                                .font(.system(size: 24, weight: .bold, design: .rounded))
+                                .foregroundColor(.white)
+                            Text("lots")
+                                .font(.system(size: 12, weight: .medium))
+                                .foregroundColor(.gray)
                         }
-                        .frame(width: 100)
-                        .frame(height: 70)
-                        .background(Color.black)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 8)
-                                .stroke(.gray.opacity(0.3), lineWidth: 1)
-                        )
+                        .frame(height: 38)
                         
-                        // BUY Button
+                        // Plus button
                         Button(action: {
-                            executeMT5Buy()
+                            tradeVolume = min(1.0, tradeVolume + 0.01)
+                            hapticManager.impact()
                         }) {
-                            VStack(spacing: 4) {
-                                Text("117,677.50")
-                                    .font(.system(size: 16, weight: .bold, design: .rounded))
-                                    .foregroundColor(.white)
-                                Text("BUY")
-                                    .font(.system(size: 12, weight: .bold))
-                                    .foregroundColor(.gray)
-                            }
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 70)
-                            .background(Color(red: 0.2, green: 0.2, blue: 0.2))
+                            Image(systemName: "plus")
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundColor(.gray)
+                                .frame(height: 16)
                         }
                         .buttonStyle(PlainButtonStyle())
                     }
+                    .frame(width: 100)
+                    .frame(height: 70)
                     .background(Color.black)
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
                     .overlay(
                         RoundedRectangle(cornerRadius: 8)
-                            .stroke(.gray.opacity(0.2), lineWidth: 1)
+                            .stroke(.gray.opacity(0.3), lineWidth: 1)
                     )
+                    
+                    // BUY Button
+                    Button(action: {
+                        executeMT5Buy()
+                    }) {
+                        VStack(spacing: 4) {
+                            Text("117,677.50")
+                                .font(.system(size: 16, weight: .bold, design: .rounded))
+                                .foregroundColor(.white)
+                            Text("BUY")
+                                .font(.system(size: 12, weight: .bold))
+                                .foregroundColor(.gray)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 70)
+                        .background(Color(red: 0.2, green: 0.2, blue: 0.2))
+                    }
+                    .buttonStyle(PlainButtonStyle())
                 }
+                .background(Color.black)
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(.gray.opacity(0.2), lineWidth: 1)
+                )
                 
                 // Bottom Tabs (Positions, Orders, History)
                 HStack(spacing: 0) {
@@ -1157,7 +1109,7 @@ struct TradingTerminal: View {
                 .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
             }
             .padding(.horizontal, 12)
-            .padding(.vertical, 12)
+            .padding(.vertical, 8)
         }
         .background(.regularMaterial)
         .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
