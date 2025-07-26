@@ -72,44 +72,75 @@ struct TradingTerminal: View {
                         VStack {
                             HStack {
                                 Spacer()
-                                
+								
+                                // X button always visible in fullscreen
                                 if isFullScreen {
                                     backToNormalButton
                                         .padding(.trailing, 16)
                                         .padding(.top, 16)
+                                        .zIndex(100) // Keep X button above everything
                                 }
                             }
                             
                             Spacer()
-                            
+							
                             // TradingView-Style Reset Button at Bottom Middle
                             if !isFullScreen {
                                 tradingViewResetButton
                                     .padding(.bottom, 20)
                             }
-                            
-                            // Fullscreen Controls
+							
+                            // Fullscreen Controls - TradingView Style Auto-Hide (but NOT the X button)
                             if isFullScreen {
                                 fullScreenControls
                                     .padding(.bottom, 20)
-                                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                                    .opacity(toolbarHidden ? 0 : 1)
+                                    .animation(.easeInOut(duration: 0.3), value: toolbarHidden)
+                                    .onAppear {
+                                        // Enable price scaling in fullscreen
+                                        tradingViewManager.enablePriceScaling(true)
+										
+                                        // Auto-hide after 3 seconds like TradingView
+                                        DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                                            withAnimation(.easeOut(duration: 0.3)) {
+                                                toolbarHidden = true
+                                            }
+                                        }
+                                    }
                             }
                         }
-                        
-                        // Removed old full screen exit gesture
+						
+                        // TradingView-style toolbar reveal on chart interaction
                         if isFullScreen {
                             Color.clear
                                 .contentShape(Rectangle())
-                                .onTapGesture {
+                                .onTapGesture(count: 2) {
+                                    // Double tap to exit fullscreen
                                     withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
                                         isFullScreen = false
+                                        tradingViewManager.enablePriceScaling(false)
                                     }
+                                    hapticManager.impact()
+                                }
+                                .onTapGesture(count: 1) {
+                                    // Single tap to show toolbar
+                                    withAnimation(.easeIn(duration: 0.2)) {
+                                        toolbarHidden = false
+                                    }
+									
+                                    // Auto-hide again after 3 seconds
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                                        withAnimation(.easeOut(duration: 0.3)) {
+                                            toolbarHidden = true
+                                        }
+                                    }
+									
                                     hapticManager.impact()
                                 }
                                 .allowsHitTesting(true)
                         }
                     }
-                    
+					
                     // TradeLocker Style Bottom Panel
                     if !isFullScreen && !toolbarHidden {
                         tradeLockerBottomPanel
@@ -135,28 +166,28 @@ struct TradingTerminal: View {
                                     }
                             )
                     }
-                    
+					
                     // Overlays
                     if showingWatchlist {
                         tradeLockerWatchlistOverlay
                             .zIndex(10)
                     }
-                    
+					
                     if showingTradePanel {
                         tradeLockerTradePanelOverlay
                             .zIndex(10)
                     }
-                    
+					
                     if showingPositions {
                         tradeLockerPositionsOverlay
                             .zIndex(10)
                     }
-                    
+					
                     if showingOrders {
                         tradeLockerOrdersOverlay
                             .zIndex(10)
                     }
-                    
+					
                     if showingHistory {
                         tradeLockerHistoryOverlay
                             .zIndex(10)
@@ -356,6 +387,8 @@ struct TradingTerminal: View {
                 showingHistory = false
                 overlayOffset = 0
                 tradePanelOffset = 0
+                // Disable price scaling when exiting fullscreen
+                tradingViewManager.enablePriceScaling(false)
             }
             hapticManager.impact()
         }) {
@@ -376,8 +409,10 @@ struct TradingTerminal: View {
     // MARK: - Full Screen Controls
     private var fullScreenControls: some View {
         VStack(spacing: 12) {
-            // Reset Button and Toolbar Toggle
-            HStack(spacing: 20) {
+            // Just Reset Button - Clean & Simple
+            HStack {
+                Spacer()
+				
                 // Reset Button
                 Button(action: {
                     withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
@@ -401,31 +436,8 @@ struct TradingTerminal: View {
                     )
                 }
                 .buttonStyle(PlainButtonStyle())
-                
-                // Toolbar Toggle Button
-                Button(action: {
-                    withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
-                        toolbarHidden.toggle()
-                        tradingViewManager.toggleToolbar(!toolbarHidden)
-                    }
-                    hapticManager.impact()
-                }) {
-                    HStack(spacing: 8) {
-                        Image(systemName: toolbarHidden ? "eye" : "eye.slash")
-                            .font(.system(size: 14, weight: .semibold))
-                        Text(toolbarHidden ? "Show" : "Hide")
-                            .font(.system(size: 14, weight: .semibold))
-                    }
-                    .foregroundColor(.white)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 8)
-                    .background(.black.opacity(0.8), in: Capsule())
-                    .overlay(
-                        Capsule()
-                            .stroke(.white.opacity(0.3), lineWidth: 1)
-                    )
-                }
-                .buttonStyle(PlainButtonStyle())
+				
+                Spacer()
             }
         }
     }
@@ -808,8 +820,6 @@ struct TradingTerminal: View {
                             )
                         }
                     }
-                    .padding(.horizontal, 24)
-                    .padding(.vertical, 16)
                 }
                 .background(.regularMaterial)
             }
@@ -876,8 +886,6 @@ struct TradingTerminal: View {
                             )
                         }
                     }
-                    .padding(.horizontal, 24)
-                    .padding(.vertical, 16)
                 }
                 .background(.regularMaterial)
             }
@@ -946,8 +954,6 @@ struct TradingTerminal: View {
                             )
                         }
                     }
-                    .padding(.horizontal, 24)
-                    .padding(.vertical, 16)
                 }
                 .background(.regularMaterial)
             }
@@ -1353,7 +1359,7 @@ class TradingViewManager: ObservableObject {
     }
     
     func resetChart() {
-        executeJavaScript("resetChart'")
+        executeJavaScript("resetChart()")
     }
     
     func toggleToolbar(_ show: Bool) {
@@ -1783,6 +1789,50 @@ struct TradeLockerHistoryCard: View {
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
         .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+    }
+}
+
+// MARK: - TradingView WebSocket
+class TradingViewWebSocket: ObservableObject {
+    @Published var isConnected: Bool = false
+    @Published var pingTimeout: TimeInterval = 2
+    
+    private let url = "wss://stream.tradingview.com/session/"
+    private var webSocketTask: URLSessionWebSocketTask?
+    
+    func connect() {
+        var request = URLRequest(url: URL(string: url)!, cachePolicy: .returnCacheDataElseLoad)
+        request.timeoutInterval = 10
+        
+        webSocketTask = URLSession.shared.webSocketTask(with: request)
+        
+        webSocketTask?.resume()
+        
+        receiveMessage()
+        
+        Timer.scheduledTimer(withTimeInterval: pingTimeout, repeats: true) { _ in
+            self.webSocketTask?.send(URLSessionWebSocketTask.Message.string("\\n"), completionHandler: { error in
+                if let error = error {
+                    print("Error sending ping: \(error)")
+                }
+            })
+        }
+    }
+    
+    func receiveMessage() {
+        webSocketTask?.receive { [weak self] result in
+            switch result {
+            case .failure(let error):
+                print("Error receiving message: \(error)")
+            case .success(let message):
+                if case .string(let text) = message {
+                    print("Received message: \(text)")
+                    self?.isConnected = true
+                }
+            }
+            
+            self?.receiveMessage()
+        }
     }
 }
 
