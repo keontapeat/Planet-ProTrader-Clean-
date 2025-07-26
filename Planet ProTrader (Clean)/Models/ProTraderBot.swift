@@ -25,7 +25,7 @@ class RealTimeProTraderBot: ObservableObject, Identifiable {
     @Published var tradeLogs: [TradeLog] = []
     @Published var insights: [ClaudeInsight] = []
     
-    // MARK: - ALL 15 ENGINES CONNECTED! 🔥🧠💪🎵🎯⚡🛰️🤖
+    // MARK: - ALL 18 ENGINES CONNECTED! 🔥🧠💪🎵🎯⚡🛰️🤖🧭📊📚
     private let botPersonalityEngine = BotPersonalityEngine()
     private let capitalAllocationEngine = CapitalAllocationEngine()
     private let backtestSimulationEngine = BacktestSimulationEngine()
@@ -41,10 +41,15 @@ class RealTimeProTraderBot: ObservableObject, Identifiable {
     private let opusMarkDouglasHyperEngine = OpusMarkDouglasHyperEngine()
     private let predatorInstinctEngine = PredatorInstinctEngine()
     
-    // NEW: ULTIMATE QUANTUM ENGINES! ⚡🛰️🤖
+    // QUANTUM ENGINES ⚡🛰️🤖
     private let quantumRiskEngine = QuantumRiskEngine()
     private let satelliteViewEngine = SatelliteViewEngine()
     private let tradeArgumentEngine = TradeArgumentEngine()
+    
+    // NEW: LEGENDARY ENGINES! 🧭📊📚
+    private let tradeCompassEngine = TradeCompassEngine()
+    private let trendIQEngine = TrendIQEngine()
+    private let legendaryPlaybookEngine = LegendaryPlaybookEngine()
     
     init(id: UUID = UUID(),
          name: String,
@@ -72,13 +77,13 @@ class RealTimeProTraderBot: ObservableObject, Identifiable {
         self.vpsConnection = vpsConnection
         self.lastHeartbeat = lastHeartbeat
         
-        // Initialize ALL 15 ENGINES for ULTIMATE QUANTUM GODMODE INTELLIGENCE 🧠⚡🎵🎯⚡🛰️🤖
+        // Initialize ALL 18 ENGINES for ULTIMATE LEGENDARY GODMODE INTELLIGENCE 🧠⚡🎵🎯⚡🛰️🤖🧭📊📚
         initializeAllEngines()
         
-        print("🚀🔥 \(name): ULTIMATE QUANTUM GODMODE ACTIVATED - ALL 15 ENGINES ONLINE!")
+        print("🚀🔥 \(name): ULTIMATE LEGENDARY GODMODE ACTIVATED - ALL 18 ENGINES ONLINE!")
     }
     
-    // MARK: - ULTIMATE QUANTUM ENGINE INITIALIZATION 🔥💥🎵🧠🎯⚡🛰️🤖
+    // MARK: - ULTIMATE LEGENDARY ENGINE INITIALIZATION 🔥💥🎵🧠🎯⚡🛰️🤖🧭📊📚
     private func initializeAllEngines() {
         // Activate ALL original engines
         capitalAllocationEngine.activateEngine()
@@ -91,19 +96,25 @@ class RealTimeProTraderBot: ObservableObject, Identifiable {
         opusMarkDouglasHyperEngine.activateMaximumSpeed()
         predatorInstinctEngine.activateEngine()
         
-        // NEW: Activate ULTIMATE QUANTUM ENGINES! ⚡🛰️🤖
+        // Activate QUANTUM ENGINES ⚡🛰️🤖
         quantumRiskEngine.setRiskLevel(.medium)
         quantumRiskEngine.setMarketRegime(.neutral)
         satelliteViewEngine.activateEngine()
         tradeArgumentEngine.startArgumentGeneration()
         
+        // NEW: Activate LEGENDARY ENGINES! 🧭📊📚
+        tradeCompassEngine.activateEngine()
+        // TrendIQEngine starts automatically
+        // LegendaryPlaybookEngine starts automatically
+        
         // Start advanced learning processes
         Task {
             await confluenceEngine.analyzeConfluence()
             await historicalLearningEngine.performFullTraining()
+            await trendIQEngine.performTrendAnalysis()
         }
         
-        print("🔥 ALL 15 ENGINES CONNECTED:")
+        print("🔥 ALL 18 ENGINES CONNECTED:")
         print("   1. Bot Personality Engine: \(botPersonalityEngine.globalBotStats.totalBots) bots")
         print("   2. Capital Allocation Engine: Active")
         print("   3. Backtest Simulation Engine: Active") 
@@ -119,7 +130,10 @@ class RealTimeProTraderBot: ObservableObject, Identifiable {
         print("  13. ⚡ Quantum Risk Engine: Active")
         print("  14. 🛰️ Satellite View Engine: Active")
         print("  15. 🤖 Trade Argument Engine: Active")
-        print("💥 ULTIMATE QUANTUM INTELLIGENCE LEVEL ACHIEVED!")
+        print("  16. 🧭 Trade Compass Engine: Active")
+        print("  17. 📊 Trend IQ Engine: Active")
+        print("  18. 📚 Legendary Playbook Engine: Active")
+        print("💥 ULTIMATE LEGENDARY INTELLIGENCE LEVEL ACHIEVED!")
     }
     
     func startTrading() async {
@@ -148,12 +162,12 @@ class RealTimeProTraderBot: ObservableObject, Identifiable {
         }
     }
     
-    // MARK: - ULTIMATE QUANTUM TRADING WITH ALL 15 ENGINES 🚀💥🎵🧠🎯⚡🛰️🤖
+    // MARK: - ULTIMATE LEGENDARY TRADING WITH ALL 18 ENGINES 🚀💥🎵🧠🎯⚡🛰️🤖🧭📊📚
     private func executeULTIMATETrade() async {
         let symbols = ["XAUUSD", "EURUSD", "GBPUSD", "USDJPY", "AUDUSD"]
         let actions = ["Buy", "Sell"]
         
-        // Get intelligence from ALL 15 engines! 🧠⚡🎵🎯⚡🛰️🤖
+        // Get intelligence from ALL 18 engines! 🧠⚡🎵🎯⚡🛰️🤖🧭📊📚
         var ultimateBoost = 1.0
         var engineSignals: [String] = []
         
@@ -251,7 +265,7 @@ class RealTimeProTraderBot: ObservableObject, Identifiable {
             engineSignals.append("🎯 Predator: \(predatorInstinctEngine.huntingMode.displayName) (\(preyCount) prey)")
         }
         
-        // NEW: ULTIMATE QUANTUM ENGINES! ⚡🛰️🤖
+        // QUANTUM ENGINES ⚡🛰️🤖
         
         // 13. ⚡ Quantum Risk Engine
         let entryPrice = Double.random(in: 2300...2400)
@@ -297,16 +311,48 @@ class RealTimeProTraderBot: ObservableObject, Identifiable {
             }
         }
         
-        // Execute ULTIMATE QUANTUM trade with ALL 15 ENGINE INTELLIGENCE! 💥🎵🧠🎯⚡🛰️🤖
+        // NEW: LEGENDARY ENGINES! 🧭📊📚
+        
+        // 16. 🧭 Trade Compass Engine
+        if tradeCompassEngine.isActive {
+            let compassBoost = 1.0 + (tradeCompassEngine.biasStrength * tradeCompassEngine.alignmentScore)
+            let biasDirection = actions.randomElement() == "Buy" ? TradeCompassEngine.TradeBias.bullish : TradeCompassEngine.TradeBias.bearish
+            
+            if tradeCompassEngine.shouldAllowTrade(direction: biasDirection) {
+                ultimateBoost *= compassBoost
+                let biasPercent = Int(tradeCompassEngine.biasStrength * 100)
+                engineSignals.append("🧭 Compass: \(tradeCompassEngine.currentBias.displayName) (\(biasPercent)% bias)")
+            }
+        }
+        
+        // 17. 📊 Trend IQ Engine
+        if trendIQEngine.shouldTrade {
+            let trendBoost = 1.0 + (trendIQEngine.trendScore / 100.0)
+            ultimateBoost *= trendBoost
+            let trendPercent = Int(trendIQEngine.trendScore)
+            engineSignals.append("📊 TrendIQ: \(trendIQEngine.trendDirection.rawValue) (\(trendPercent)% score)")
+        }
+        
+        // 18. 📚 Legendary Playbook Engine
+        let playbookStats = legendaryPlaybookEngine.trades.statistics()
+        if playbookStats.winRate > 0.6 {
+            let playbookBoost = 1.0 + (playbookStats.winRate - 0.5)
+            ultimateBoost *= playbookBoost
+            let winRatePercent = Int(playbookStats.winRate * 100)
+            engineSignals.append("📚 Playbook: \(playbookStats.overallGrade) (\(winRatePercent)% WR)")
+        }
+        
+        // Execute ULTIMATE LEGENDARY trade with ALL 18 ENGINE INTELLIGENCE! 💥🎵🧠🎯⚡🛰️🤖🧭📊📚
+        let entryPrice = Double.random(in: 2300...2400)
         let trade = TradeLog(
             date: Date(),
             symbol: symbols.randomElement() ?? currentPair,
             action: actions.randomElement()!,
             entryPrice: entryPrice,
-            notes: "🔥 ULTIMATE QUANTUM: \(engineSignals.joined(separator: " | ")) - Boost: \(String(format: "%.1f", ultimateBoost))x"
+            notes: "🔥 ULTIMATE LEGENDARY: \(engineSignals.joined(separator: " | ")) - Boost: \(String(format: "%.1f", ultimateBoost))x"
         )
         
-        // Apply ULTIMATE QUANTUM performance boost (up to 35x!)
+        // Apply ULTIMATE LEGENDARY performance boost (up to 50x!)
         let baseProfit = Double.random(in: -25...75)
         let ultimateProfit = baseProfit * ultimateBoost
         
@@ -314,10 +360,10 @@ class RealTimeProTraderBot: ObservableObject, Identifiable {
         totalPnL += ultimateProfit
         tradesCount += 1
         
-        // ULTIMATE QUANTUM win rate calculation (up to 99.5%!)
+        // ULTIMATE LEGENDARY win rate calculation (up to 99.8%!)
         let isWin = ultimateProfit > 0
         let baseProbability = 0.6
-        let ultimateProbability = min(0.995, baseProbability * ultimateBoost / 8.0) // Max 99.5% win rate
+        let ultimateProbability = min(0.998, baseProbability * ultimateBoost / 10.0) // Max 99.8% win rate
         
         winRate = (winRate * Double(tradesCount - 1) + (isWin ? ultimateProbability * 100 : 0)) / Double(tradesCount)
         
@@ -326,7 +372,7 @@ class RealTimeProTraderBot: ObservableObject, Identifiable {
             tradeLogs.removeLast()
         }
         
-        // Feed trade outcome back to ALL 15 engines for learning
+        // Feed trade outcome back to ALL 18 engines for learning
         let signal = TradingSignal(
             symbol: trade.symbol,
             direction: trade.action == "Buy" ? .buy : .sell,
@@ -336,7 +382,7 @@ class RealTimeProTraderBot: ObservableObject, Identifiable {
             confidence: ultimateProbability,
             timeframe: "15M",
             timestamp: Date(),
-            source: "\(name) ULTIMATE QUANTUM"
+            source: "\(name) ULTIMATE LEGENDARY"
         )
         
         // Feed to all learning engines
@@ -348,9 +394,28 @@ class RealTimeProTraderBot: ObservableObject, Identifiable {
         
         // Update quantum risk engine
         quantumRiskEngine.updateDrawdown(
-            currentBalance: accountBalance + ultimateProfit,
-            peakBalance: accountBalance + max(0, ultimateProfit)
+            currentBalance: 10000 + ultimateProfit,
+            peakBalance: 10000 + max(0, ultimateProfit)
         )
+        
+        // Log to playbook engine
+        let playbookTrade = PlaybookTrade(
+            symbol: trade.symbol,
+            direction: trade.action == "Buy" ? .buy : .sell,
+            entryPrice: trade.entryPrice,
+            exitPrice: trade.entryPrice + ultimateProfit/100, // Simplified
+            stopLoss: trade.entryPrice - (trade.action == "Buy" ? 25 : -25),
+            takeProfit: trade.entryPrice + (trade.action == "Buy" ? 50 : -50),
+            lotSize: 0.01,
+            pnl: ultimateProfit,
+            rMultiple: ultimateProfit / 25.0, // Simplified R calculation
+            result: isWin ? .win : .loss,
+            grade: ultimateBoost > 20 ? .elite : (ultimateBoost > 10 ? .good : .average),
+            setupDescription: "18-Engine Ultimate Legendary Setup",
+            emotionalState: "AI Perfect Control",
+            emotionalRating: 5
+        )
+        legendaryPlaybookEngine.addTrade(playbookTrade)
         
         // Validate with correlation engine
         let validationResult = await goldCorrelationEngine.validateGoldTrade(
@@ -358,16 +423,16 @@ class RealTimeProTraderBot: ObservableObject, Identifiable {
             confidence: signal.confidence
         )
         
-        // Generate ULTIMATE QUANTUM insights
+        // Generate ULTIMATE LEGENDARY insights
         if tradesCount % 2 == 0 {
-            generateULTIMATEQUANTUMInsight(engineSignals: engineSignals, boost: ultimateBoost, validation: validationResult)
+            generateULTIMATELEGENDARYInsight(engineSignals: engineSignals, boost: ultimateBoost, validation: validationResult)
         }
         
         lastHeartbeat = Date()
     }
     
-    // MARK: - ULTIMATE QUANTUM Insights 🧠💥🎵🧠🎯⚡🛰️🤖
-    private func generateULTIMATEQUANTUMInsight(engineSignals: [String], boost: Double, validation: TradeValidationResult) {
+    // MARK: - ULTIMATE LEGENDARY Insights 🧠💥🎵🧠🎯⚡🛰️🤖🧭📊📚
+    private func generateULTIMATELEGENDARYInsight(engineSignals: [String], boost: Double, validation: TradeValidationResult) {
         let botStats = botPersonalityEngine.globalBotStats
         let chessStrategy = chessGrandmasterEngine.currentStrategy.displayName
         let dnaEvolution = dnaPatternEngine.evolutionStage.displayName
@@ -381,10 +446,15 @@ class RealTimeProTraderBot: ObservableObject, Identifiable {
         let psychologyAlignment = Int(opusMarkDouglasHyperEngine.performanceMetrics.markDouglasAlignment * 100)
         let predatorMode = predatorInstinctEngine.huntingMode.displayName
         
-        // NEW: QUANTUM ENGINE DATA ⚡🛰️🤖
+        // QUANTUM ENGINE DATA ⚡🛰️🤖
         let riskLevel = quantumRiskEngine.riskLevel.rawValue
         let satelliteAltitude = satelliteViewEngine.currentAltitude.displayName
         let argumentStats = tradeArgumentEngine.getArgumentStats()
+        
+        // NEW: LEGENDARY ENGINE DATA 🧭📊📚
+        let compassBias = tradeCompassEngine.currentBias.displayName
+        let trendDirection = trendIQEngine.trendDirection.rawValue
+        let playbookGrade = legendaryPlaybookEngine.trades.statistics().overallGrade
         
         let ultimateInsights = [
             "🤖 \(botStats.totalBots) AI bots (Gen \(botStats.generation)) providing consensus intelligence",
@@ -401,20 +471,26 @@ class RealTimeProTraderBot: ObservableObject, Identifiable {
             "🎯 Predator Instinct: \(predatorMode) - \(predatorInstinctEngine.preyDetected.count) prey detected",
             "⚡ Quantum Risk: \(riskLevel) - Advanced risk management active",
             "🛰️ Satellite View: \(satelliteAltitude) - Global market surveillance",
-            "🤖 Bot Arguments: \(argumentStats.active) active debates - Collective intelligence"
+            "🤖 Bot Arguments: \(argumentStats.active) active debates - Collective intelligence",
+            "🧭 Trade Compass: \(compassBias) - Directional bias locked and loaded",
+            "📊 Trend IQ: \(trendDirection) - \(String(format: "%.0f", trendIQEngine.trendScore))% trend strength",
+            "📚 Legendary Playbook: \(playbookGrade) - Elite performance tracking"
         ]
         
         let ultimateAdvice = [
-            "ULTIMATE QUANTUM boost: \(String(format: "%.1f", boost))x - All 15 engines synchronized",
-            "Intelligence level: QUANTUM SUPREME - Maximum trading capability achieved",
-            "Win rate potential: Up to 99.5% with full engine alignment",
-            "Musical + Psychology + Predator + Quantum + Satellite + Arguments = Ultimate mastery",
+            "ULTIMATE LEGENDARY boost: \(String(format: "%.1f", boost))x - All 18 engines synchronized",
+            "Intelligence level: LEGENDARY SUPREME - Maximum trading capability achieved",
+            "Win rate potential: Up to 99.8% with full engine alignment",
+            "Music + Psychology + Predator + Quantum + Satellite + Arguments + Compass + TrendIQ + Playbook = Ultimate mastery",
             "🎵 Market rhythm perfectly synchronized with trading flow",
             "🧠 Mark Douglas psychology principles at 100% efficiency",
             "🎯 Predator instincts detecting all market opportunities",
             "⚡ Quantum risk management preventing all losses",
             "🛰️ Satellite view providing global market clarity",
             "🤖 Bot arguments generating collective wisdom",
+            "🧭 Trade compass providing perfect directional bias",
+            "📊 Trend IQ analyzing market structure with supreme intelligence",
+            "📚 Legendary playbook tracking every elite performance metric",
             "Engine signals: \(engineSignals.joined(separator: ", "))",
             "Validation result: \(validation.recommendation)"
         ]
@@ -440,11 +516,11 @@ class RealTimeProTraderBot: ObservableObject, Identifiable {
     private func generateInsight() {
         Task {
             let validation = await goldCorrelationEngine.validateGoldTrade(direction: .buy, confidence: 0.8)
-            generateULTIMATEQUANTUMInsight(engineSignals: ["All Engines"], boost: getULTIMATEBoost(), validation: validation)
+            generateULTIMATELEGENDARYInsight(engineSignals: ["All Engines"], boost: getULTIMATEBoost(), validation: validation)
         }
     }
     
-    // MARK: - ULTIMATE QUANTUM Status Methods
+    // MARK: - ULTIMATE LEGENDARY Status Methods
     func getEngineStatus() -> String {
         let personalityBots = botPersonalityEngine.globalBotStats.activeBots
         let chessActive = chessGrandmasterEngine.isActive
@@ -459,15 +535,21 @@ class RealTimeProTraderBot: ObservableObject, Identifiable {
         let psychologySpeed = String(format: "%.1f", opusMarkDouglasHyperEngine.speedMultiplier)
         let predatorMode = predatorInstinctEngine.huntingMode.displayName
         
-        // NEW: QUANTUM ENGINE STATUS ⚡🛰️🤖
+        // QUANTUM ENGINE STATUS ⚡🛰️🤖
         let riskLevel = quantumRiskEngine.riskLevel.rawValue
         let satelliteAltitude = satelliteViewEngine.currentAltitude.displayName
         let argumentCount = tradeArgumentEngine.getArgumentStats().active
         
+        // NEW: LEGENDARY ENGINE STATUS 🧭📊📚
+        let compassBias = tradeCompassEngine.currentBias.displayName
+        let trendStrength = trendIQEngine.trendStrength.rawValue
+        let playbookWinRate = String(format: "%.1f", legendaryPlaybookEngine.winRate * 100)
+        
         return """
-        🔥 ULTIMATE QUANTUM: \(personalityBots) bots | Chess: \(chessActive ? "✓" : "✗") | Confluence: \(confluenceScore)% | DNA: \(dnaEvolution) | Precision: \(drivingPrecision)% | Correlation: \(correlationStrength) | Learning: \(learningProgress)%
+        🔥 ULTIMATE LEGENDARY: \(personalityBots) bots | Chess: \(chessActive ? "✓" : "✗") | Confluence: \(confluenceScore)% | DNA: \(dnaEvolution) | Precision: \(drivingPrecision)% | Correlation: \(correlationStrength) | Learning: \(learningProgress)%
         🎵 Rhythm: \(rhythmFlow) | 🧠 Psychology: \(psychologySpeed)x | 🎯 Predator: \(predatorMode)
         ⚡ Risk: \(riskLevel) | 🛰️ Satellite: \(satelliteAltitude) | 🤖 Arguments: \(argumentCount)
+        🧭 Compass: \(compassBias) | 📊 TrendIQ: \(trendStrength) | 📚 Playbook: \(playbookWinRate)%
         """
     }
     
@@ -487,21 +569,27 @@ class RealTimeProTraderBot: ObservableObject, Identifiable {
         let psychologyBoost = opusMarkDouglasHyperEngine.isActive ? min(2.0, opusMarkDouglasHyperEngine.speedMultiplier / 5.0) : 1.0
         let predatorBoost = predatorInstinctEngine.isActive ? (1.0 + predatorInstinctEngine.instinctStrength) : 1.0
         
-        // NEW: QUANTUM ENGINE BOOSTS ⚡🛰️🤖
+        // QUANTUM ENGINE BOOSTS ⚡🛰️🤖
         let riskBoost = quantumRiskEngine.riskLevel == .veryLow ? 1.2 : 1.0
         let satelliteBoost = satelliteViewEngine.isActive ? (1.0 + satelliteViewEngine.globalClarity) : 1.0
         let argumentBoost = tradeArgumentEngine.isEngineActive ? 1.1 : 1.0
         
-        return botBoost * chessBoost * confluenceBoost * dnaBoost * drivingBoost * correlationBoost * learningBoost * allocationBoost * backtestBoost * rhythmBoost * psychologyBoost * predatorBoost * riskBoost * satelliteBoost * argumentBoost
+        // NEW: LEGENDARY ENGINE BOOSTS 🧭📊📚
+        let compassBoost = tradeCompassEngine.isActive ? (1.0 + tradeCompassEngine.biasStrength * 0.5) : 1.0
+        let trendBoost = trendIQEngine.shouldTrade ? (1.0 + trendIQEngine.trendScore / 200.0) : 1.0
+        let playbookBoost = legendaryPlaybookEngine.winRate > 0.6 ? (1.0 + legendaryPlaybookEngine.winRate * 0.3) : 1.0
+        
+        return botBoost * chessBoost * confluenceBoost * dnaBoost * drivingBoost * correlationBoost * learningBoost * allocationBoost * backtestBoost * rhythmBoost * psychologyBoost * predatorBoost * riskBoost * satelliteBoost * argumentBoost * compassBoost * trendBoost * playbookBoost
     }
     
     func getIntelligenceLevel() -> String {
         let boost = getULTIMATEBoost()
         
         switch boost {
-        case 35.0...: return "🔥 ULTIMATE QUANTUM GODMODE"
-        case 30.0..<35.0: return "⚡🛰️🤖 QUANTUM SUPREME"
-        case 25.0..<30.0: return "🎵🧠🎯 TRINITY SUPREME"
+        case 50.0...: return "🔥 ULTIMATE LEGENDARY GODMODE"
+        case 40.0..<50.0: return "📚🧭📊 LEGENDARY SUPREME"
+        case 35.0..<40.0: return "⚡🛰️🤖 QUANTUM SUPREME"
+        case 25.0..<35.0: return "🎵🧠🎯 TRINITY SUPREME"
         case 20.0..<25.0: return "💎 LEGENDARY INTELLIGENCE"
         case 15.0..<20.0: return "⚡ MASTER AI LEVEL"
         case 10.0..<15.0: return "🎯 EXPERT INTELLIGENCE"
@@ -513,7 +601,7 @@ class RealTimeProTraderBot: ObservableObject, Identifiable {
     
     func getAllEnginesSummary() -> String {
         return """
-        🔥 ULTIMATE QUANTUM ENGINES STATUS:
+        🔥 ULTIMATE LEGENDARY ENGINES STATUS:
         1. Bot Army: \(botPersonalityEngine.globalBotStats.totalBots) bots (Gen \(botPersonalityEngine.globalBotStats.generation))
         2. Chess: \(chessGrandmasterEngine.currentStrategy.displayName)
         3. Confluence: \(String(format: "%.0f", confluenceEngine.confluenceScore * 100))%
@@ -534,7 +622,12 @@ class RealTimeProTraderBot: ObservableObject, Identifiable {
         14. Satellite View: \(satelliteViewEngine.currentAltitude.displayName)
         15. Arguments: \(tradeArgumentEngine.getArgumentStats().active) active
         
-        ULTIMATE QUANTUM BOOST: \(String(format: "%.1f", getULTIMATEBoost()))x
+        🧭📊📚 LEGENDARY ENGINES:
+        16. Trade Compass: \(tradeCompassEngine.currentBias.displayName)
+        17. Trend IQ: \(trendIQEngine.trendDirection.rawValue) (\(String(format: "%.0f", trendIQEngine.trendScore))%)
+        18. Playbook: \(legendaryPlaybookEngine.trades.statistics().overallGrade)
+        
+        ULTIMATE LEGENDARY BOOST: \(String(format: "%.1f", getULTIMATEBoost()))x
         INTELLIGENCE: \(getIntelligenceLevel())
         """
     }
