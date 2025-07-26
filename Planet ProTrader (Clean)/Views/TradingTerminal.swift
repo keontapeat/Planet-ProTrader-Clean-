@@ -47,7 +47,7 @@ struct TradingTerminal: View {
                 Color.black.ignoresSafeArea()
                 
                 VStack(spacing: 0) {
-                    // Clean Header
+                    // Clean Header (Without Timeframe)
                     if !isFullScreen && !toolbarHidden {
                         tradeLockerHeader
                             .transition(.move(edge: .top).combined(with: .opacity))
@@ -68,11 +68,46 @@ struct TradingTerminal: View {
                                 hapticManager.impact()
                             }
                         
+                        // Timeframe Selector Overlaid ON TOP of Chart (Flush)
+                        if !isFullScreen && !toolbarHidden {
+                            VStack {
+                                ScrollView(.horizontal, showsIndicators: false) {
+                                    HStack(spacing: 8) {
+                                        ForEach(ChartTimeframe.allCases, id: \.self) { timeframe in
+                                            TradeLockerTimeframeButton(
+                                                timeframe: timeframe,
+                                                isSelected: selectedTimeframe == timeframe
+                                            ) {
+                                                selectedTimeframe = timeframe
+                                                tradingViewManager.changeTimeframe(timeframe.tradingViewInterval)
+                                                hapticManager.impact()
+                                            }
+                                        }
+                                        
+                                        // Add some trailing space
+                                        Spacer(minLength: 24)
+                                    }
+                                    .padding(.leading, 24)
+                                }
+                                .frame(height: 44)
+                                .background(.black.opacity(0.9)) // Semi-transparent over chart
+                                .overlay(
+                                    Rectangle()
+                                        .fill(.white.opacity(0.1))
+                                        .frame(height: 1),
+                                    alignment: .bottom
+                                )
+                                
+                                Spacer() // Push timeframe to top
+                            }
+                            .transition(.move(edge: .top).combined(with: .opacity))
+                        }
+                        
                         // Chart Controls
                         VStack {
                             HStack {
                                 Spacer()
-								
+                                
                                 // X button always visible in fullscreen
                                 if isFullScreen {
                                     backToNormalButton
@@ -83,13 +118,13 @@ struct TradingTerminal: View {
                             }
                             
                             Spacer()
-							
+                            
                             // TradingView-Style Reset Button at Bottom Middle
                             if !isFullScreen {
                                 tradingViewResetButton
                                     .padding(.bottom, 20)
                             }
-							
+                            
                             // Fullscreen Controls - TradingView Style Auto-Hide (but NOT the X button)
                             if isFullScreen {
                                 fullScreenControls
@@ -99,7 +134,7 @@ struct TradingTerminal: View {
                                     .onAppear {
                                         // Enable price scaling in fullscreen
                                         tradingViewManager.enablePriceScaling(true)
-										
+                                        
                                         // Auto-hide after 3 seconds like TradingView
                                         DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
                                             withAnimation(.easeOut(duration: 0.3)) {
@@ -109,7 +144,7 @@ struct TradingTerminal: View {
                                     }
                             }
                         }
-						
+                        
                         // TradingView-style toolbar reveal on chart interaction
                         if isFullScreen {
                             Color.clear
@@ -127,21 +162,21 @@ struct TradingTerminal: View {
                                     withAnimation(.easeIn(duration: 0.2)) {
                                         toolbarHidden = false
                                     }
-									
+                                    
                                     // Auto-hide again after 3 seconds
                                     DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
                                         withAnimation(.easeOut(duration: 0.3)) {
                                             toolbarHidden = true
                                         }
                                     }
-									
+                                    
                                     hapticManager.impact()
                                 }
                                 .allowsHitTesting(true)
                         }
                     }
-					
-                    // TradeLocker Style Bottom Panel
+                    
+                    // TradeLocker Bottom Panel
                     if !isFullScreen && !toolbarHidden {
                         tradeLockerBottomPanel
                             .offset(y: tradePanelOffset)
@@ -166,28 +201,28 @@ struct TradingTerminal: View {
                                     }
                             )
                     }
-					
+                    
                     // Overlays
                     if showingWatchlist {
                         tradeLockerWatchlistOverlay
                             .zIndex(10)
                     }
-					
+                    
                     if showingTradePanel {
                         tradeLockerTradePanelOverlay
                             .zIndex(10)
                     }
-					
+                    
                     if showingPositions {
                         tradeLockerPositionsOverlay
                             .zIndex(10)
                     }
-					
+                    
                     if showingOrders {
                         tradeLockerOrdersOverlay
                             .zIndex(10)
                     }
-					
+                    
                     if showingHistory {
                         tradeLockerHistoryOverlay
                             .zIndex(10)
@@ -204,39 +239,6 @@ struct TradingTerminal: View {
                     tradeLockerToast
                 }
             }
-        }
-    }
-    
-    // MARK: - TradingView-Style Reset Button
-    private var tradingViewResetButton: some View {
-        HStack {
-            Spacer()
-            
-            Button(action: {
-                withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
-                    resetChart()
-                }
-                hapticManager.impact()
-            }) {
-                HStack(spacing: 8) {
-                    Image(systemName: "arrow.clockwise")
-                        .font(.system(size: 14, weight: .semibold))
-                    Text("Reset")
-                        .font(.system(size: 14, weight: .semibold))
-                }
-                .foregroundColor(.white)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
-                .background(.black.opacity(0.8), in: Capsule())
-                .overlay(
-                    Capsule()
-                        .stroke(.white.opacity(0.3), lineWidth: 1)
-                )
-                .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 2)
-            }
-            .buttonStyle(PlainButtonStyle())
-            
-            Spacer()
         }
     }
     
@@ -346,35 +348,41 @@ struct TradingTerminal: View {
             }
             .padding(.horizontal, 24)
             .padding(.bottom, 20)
-            
-            // Timeframe Selector (Flush to Edge - TradeLocker Style)
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
-                    ForEach(ChartTimeframe.allCases, id: \.self) { timeframe in
-                        TradeLockerTimeframeButton(
-                            timeframe: timeframe,
-                            isSelected: selectedTimeframe == timeframe
-                        ) {
-                            selectedTimeframe = timeframe
-                            tradingViewManager.changeTimeframe(timeframe.tradingViewInterval)
-                            hapticManager.impact()
-                        }
-                    }
-                    
-                    // Add some trailing space
-                    Spacer(minLength: 24)
-                }
-                .padding(.leading, 24)
-            }
-            .padding(.bottom, 0)
         }
         .background(.regularMaterial)
-        .overlay(
-            Rectangle()
-                .fill(.white.opacity(0.1))
-                .frame(height: 1),
-            alignment: .bottom
-        )
+    }
+    
+    // MARK: - TradingView-Style Reset Button
+    private var tradingViewResetButton: some View {
+        HStack {
+            Spacer()
+            
+            Button(action: {
+                withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                    resetChart()
+                }
+                hapticManager.impact()
+            }) {
+                HStack(spacing: 8) {
+                    Image(systemName: "arrow.clockwise")
+                        .font(.system(size: 14, weight: .semibold))
+                    Text("Reset")
+                        .font(.system(size: 14, weight: .semibold))
+                }
+                .foregroundColor(.white)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                .background(.black.opacity(0.8), in: Capsule())
+                .overlay(
+                    Capsule()
+                        .stroke(.white.opacity(0.3), lineWidth: 1)
+                )
+                .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 2)
+            }
+            .buttonStyle(PlainButtonStyle())
+            
+            Spacer()
+        }
     }
     
     // MARK: - Back to Normal Button
@@ -412,7 +420,7 @@ struct TradingTerminal: View {
             // Just Reset Button - Clean & Simple
             HStack {
                 Spacer()
-				
+                
                 // Reset Button
                 Button(action: {
                     withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
@@ -436,7 +444,7 @@ struct TradingTerminal: View {
                     )
                 }
                 .buttonStyle(PlainButtonStyle())
-				
+                
                 Spacer()
             }
         }
@@ -1043,6 +1051,7 @@ struct TradingTerminal: View {
                                 .frame(height: 16)
                         }
                         .buttonStyle(PlainButtonStyle())
+
                         
                         // Volume display
                         VStack(spacing: 1) {

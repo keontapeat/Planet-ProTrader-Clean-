@@ -40,6 +40,89 @@ struct DesignSystem {
     static let warningOrange = Color.orange
     static let infoBlue = Color.blue
     
+    // MARK: - Animated Starfield Component
+    struct AnimatedStarField: View {
+        @State private var stars: [AnimatedStar] = []
+        @State private var animationOffset: Double = 0
+        @State private var isAnimating = true
+        
+        var body: some View {
+            ZStack {
+                // Base space gradient
+                RadialGradient(
+                    colors: [spaceBlack, deepSpace.opacity(0.8), cosmicBlue.opacity(0.2)],
+                    center: .center,
+                    startRadius: 50,
+                    endRadius: 400
+                )
+                
+                // Animated moving stars
+                ForEach(stars) { star in
+                    Circle()
+                        .fill(Color.white.opacity(star.opacity))
+                        .frame(width: star.size, height: star.size)
+                        .position(
+                            x: star.basePosition.x + cos(animationOffset * star.speed + star.phase) * star.radius,
+                            y: star.basePosition.y + sin(animationOffset * star.speed + star.phase) * star.radius * 0.5
+                        )
+                        .scaleEffect(1 + sin(animationOffset * star.twinkleSpeed + star.phase) * 0.4)
+                        .opacity(0.6 + sin(animationOffset * star.twinkleSpeed * 0.7 + star.phase) * 0.4)
+                }
+                
+                // Invisible animation driver - separate from audio
+                TimelineView(.animation(minimumInterval: 0.016, paused: !isAnimating)) { context in
+                    Color.clear
+                        .onChange(of: context.date) { oldValue, newValue in
+                            // Update animation offset independently of audio
+                            let timeInterval = newValue.timeIntervalSince1970
+                            animationOffset = timeInterval * 0.5 // Smooth continuous movement
+                        }
+                }
+            }
+            .onAppear {
+                initializeStars()
+                isAnimating = true
+            }
+            .onDisappear {
+                isAnimating = false
+            }
+        }
+        
+        private func initializeStars() {
+            let screenWidth = UIScreen.main.bounds.width
+            let screenHeight = UIScreen.main.bounds.height
+            
+            // Create 120 constantly moving stars
+            stars = (0..<120).map { _ in
+                AnimatedStar(
+                    id: UUID(),
+                    basePosition: CGPoint(
+                        x: CGFloat.random(in: 0...screenWidth),
+                        y: CGFloat.random(in: 0...screenHeight)
+                    ),
+                    speed: Double.random(in: 0.3...1.2),      // Movement speed
+                    radius: CGFloat.random(in: 20...80),       // Orbit radius
+                    size: CGFloat.random(in: 1...3),          // Star size
+                    opacity: Double.random(in: 0.4...1.0),    // Star brightness
+                    twinkleSpeed: Double.random(in: 2.0...5.0), // Twinkle rate
+                    phase: Double.random(in: 0...2 * .pi)     // Random phase offset
+                )
+            }
+        }
+    }
+    
+    // Updated Star data model
+    struct AnimatedStar: Identifiable {
+        let id: UUID
+        let basePosition: CGPoint    // Base position around which star orbits
+        let speed: Double           // How fast it moves
+        let radius: CGFloat         // How far it moves from base position
+        let size: CGFloat          // Star size
+        let opacity: Double        // Star brightness
+        let twinkleSpeed: Double   // How fast it twinkles
+        let phase: Double          // Phase offset for varied movement
+    }
+    
     // MARK: - Cosmic Gradients
     static let galaxyGradient = LinearGradient(
         colors: [spaceBlack, deepSpace, cosmicBlue.opacity(0.3)],
@@ -65,6 +148,7 @@ struct DesignSystem {
         endPoint: .bottomTrailing
     )
     
+    // UPDATED: Now uses animated starfield instead of static gradient
     static let spaceGradient = RadialGradient(
         colors: [spaceBlack, deepSpace.opacity(0.8), cosmicBlue.opacity(0.2)],
         center: .center,
@@ -201,7 +285,8 @@ extension View {
     }
     
     func starField() -> some View {
-        self.background(DesignSystem.spaceGradient)
+        // UPDATED: Return animated starfield instead of static background
+        DesignSystem.AnimatedStarField()
     }
     
     func cosmicText() -> some View {

@@ -22,8 +22,8 @@ struct ContentView: View {
     
     var body: some View {
         ZStack {
-            // Space Background
-            DesignSystem.spaceGradient
+            // UPDATED: Animated Space Background with moving stars
+            DesignSystem.AnimatedStarField()
                 .ignoresSafeArea()
             
             TabView(selection: $selectedTab) {
@@ -159,13 +159,9 @@ struct ProfessionalMoreTabView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                // OPTIMIZED: Simpler gradient
-                LinearGradient(
-                    colors: [Color.black, DesignSystem.cosmicBlue.opacity(0.3), Color.black],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-                .ignoresSafeArea()
+                // UPDATED: Use animated starfield background
+                DesignSystem.AnimatedStarField()
+                    .ignoresSafeArea()
                 
                 ScrollView {
                     LazyVStack(spacing: 20) {
@@ -465,7 +461,7 @@ struct SafeProfileView: View {
                 Spacer()
             }
             .padding()
-            .background(DesignSystem.spaceGradient.ignoresSafeArea())
+            .background(DesignSystem.AnimatedStarField().ignoresSafeArea())
             .navigationTitle("Profile")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -492,7 +488,7 @@ struct SafeSettingsView: View {
                 Spacer()
             }
             .padding()
-            .background(DesignSystem.spaceGradient.ignoresSafeArea())
+            .background(DesignSystem.AnimatedStarField().ignoresSafeArea())
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -519,7 +515,7 @@ struct SafeVPSSetupView: View {
                 Spacer()
             }
             .padding()
-            .background(DesignSystem.spaceGradient.ignoresSafeArea())
+            .background(DesignSystem.AnimatedStarField().ignoresSafeArea())
             .navigationTitle("VPS Setup")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -588,7 +584,7 @@ struct SafeFallbackView: View {
             .buttonStyle(.primary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(DesignSystem.spaceGradient.ignoresSafeArea())
+        .background(DesignSystem.AnimatedStarField().ignoresSafeArea())
     }
 }
 
