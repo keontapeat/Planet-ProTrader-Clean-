@@ -1035,7 +1035,7 @@ struct QuantumWinnerCard: View {
                                     
                                     Text(" WINNER")
                                         .font(.caption)
-                                        .fontWeight(.black)
+                                        .fontWeight(.bold)
                                         .foregroundStyle(.white)
                                         .padding(.horizontal, 8)
                                         .padding(.vertical, 2)
@@ -1125,7 +1125,7 @@ struct QuantumLearningCard: View {
                                     
                                     Text(" LESSON")
                                         .font(.caption)
-                                        .fontWeight(.black)
+                                        .fontWeight(.bold)
                                         .foregroundStyle(.white)
                                         .padding(.horizontal, 8)
                                         .padding(.vertical, 2)
@@ -1211,6 +1211,1079 @@ struct QuantumEmptyState: View {
         }
     }
 }
+
+struct TradeChartSection: View {
+    let trade: PlaybookTrade
+    @State private var selectedTimeframe = "5m"
+    @State private var showingFullScreen = false
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack {
+                Text("Trade Chart")
+                    .font(.headline)
+                
+                Spacer()
+                
+                // Timeframe selector
+                Picker("Timeframe", selection: $selectedTimeframe) {
+                    Text("1m").tag("1m")
+                    Text("5m").tag("5m")
+                    Text("15m").tag("15m")
+                    Text("Daily").tag("D")
+                }
+                .pickerStyle(.segmented)
+                .frame(width: 180)
+            }
+            
+            // Trade Chart with annotations
+            ZStack {
+                // Chart placeholder - in real app would be actual chart
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color.black)
+                    .frame(height: 300)
+                    .overlay(
+                        Text("Chart Screenshot Area")
+                            .foregroundColor(.gray)
+                    )
+                
+                // Fullscreen button
+                VStack {
+                    HStack {
+                        Spacer()
+                        Button(action: { showingFullScreen = true }) {
+                            Image(systemName: "arrow.up.left.and.arrow.down.right")
+                                .foregroundColor(.white)
+                                .padding(8)
+                                .background(Color.black.opacity(0.7))
+                                .clipShape(Circle())
+                        }
+                        .padding()
+                    }
+                    Spacer()
+                }
+            }
+            
+            // Key levels
+            HStack(spacing: 20) {
+                ChartLevelIndicator(label: "Entry", price: trade.formattedEntryPrice, color: .blue)
+                ChartLevelIndicator(label: "Stop", price: trade.formattedStopPrice, color: .red)
+                ChartLevelIndicator(label: "Target", price: trade.formattedTargetPrice, color: .green)
+                ChartLevelIndicator(label: "Exit", price: trade.formattedExitPrice, color: .orange)
+            }
+        }
+        .padding()
+        .background(Color.gray.opacity(0.1))
+        .cornerRadius(12)
+        .sheet(isPresented: $showingFullScreen) {
+            FullScreenChartView(trade: trade)
+        }
+    }
+}
+
+struct ChartLevelIndicator: View {
+    let label: String
+    let price: String
+    let color: Color
+    
+    var body: some View {
+        VStack(spacing: 4) {
+            Text(label)
+                .font(.caption2)
+                .foregroundColor(.gray)
+            
+            Text(price)
+                .font(.caption)
+                .fontWeight(.semibold)
+                .foregroundColor(color)
+        }
+        .frame(maxWidth: .infinity)
+    }
+}
+
+struct AIAnalysisSection: View {
+    let trade: PlaybookTrade
+    @Binding var isLoading: Bool
+    @State private var aiAnalysis: AITradeAnalysis?
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack {
+                Image(systemName: "brain")
+                    .foregroundColor(.purple)
+                Text("AI Trade Analysis")
+                    .font(.headline)
+                
+                Spacer()
+                
+                if isLoading {
+                    ProgressView()
+                        .scaleEffect(0.8)
+                } else {
+                    Button("Refresh") {
+                        generateAIAnalysis()
+                    }
+                    .font(.caption)
+                    .foregroundColor(.purple)
+                }
+            }
+            
+            if let analysis = aiAnalysis {
+                VStack(alignment: .leading, spacing: 12) {
+                    // AI Score
+                    HStack {
+                        Text("AI Trade Score:")
+                            .font(.subheadline)
+                            .foregroundColor(.gray)
+                        
+                        Spacer()
+                        
+                        Text("\(analysis.score)/100")
+                            .font(.title3)
+                            .fontWeight(.bold)
+                            .foregroundColor(analysis.scoreColor)
+                        
+                        Image(systemName: "sparkles")
+                            .foregroundColor(analysis.scoreColor)
+                    }
+                    
+                    // Key Insights
+                    ForEach(analysis.insights, id: \.self) { insight in
+                        HStack(alignment: .top) {
+                            Image(systemName: "lightbulb.fill")
+                                .foregroundColor(.yellow)
+                            Text(insight)
+                                .font(.subheadline)
+                                .foregroundColor(.white)
+                        }
+                    }
+                    
+                    // Pattern Recognition
+                    if !analysis.patterns.isEmpty {
+                        Divider()
+                        
+                        Text("Patterns Detected:")
+                            .font(.subheadline)
+                            .fontWeight(.semibold)
+                            .foregroundColor(.white)
+                        
+                        HStack {
+                            ForEach(analysis.patterns, id: \.self) { pattern in
+                                PatternTag(pattern: pattern)
+                            }
+                            Spacer()
+                        }
+                    }
+                }
+            } else {
+                Button(action: generateAIAnalysis) {
+                    HStack {
+                        Image(systemName: "sparkles")
+                        Text("Generate AI Analysis")
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(Color.purple.opacity(0.2))
+                    .cornerRadius(8)
+                }
+            }
+        }
+        .padding()
+        .background(Color.purple.opacity(0.1))
+        .cornerRadius(12)
+        .onAppear {
+            generateAIAnalysis()
+        }
+    }
+    
+    private func generateAIAnalysis() {
+        isLoading = true
+        
+        // Simulate AI analysis
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+            aiAnalysis = AITradeAnalysis(
+                score: Int.random(in: 65...95),
+                insights: [
+                    "Strong entry at key support level with volume confirmation",
+                    "Exit timing could be improved - left 0.35 points on the table",
+                    "Risk management was excellent with 1:2.5 risk/reward achieved",
+                    "Pattern recognition: Classic bull flag breakout on 5-min chart"
+                ],
+                patterns: ["Bull Flag", "Volume Breakout", "Support Bounce"],
+                recommendations: [
+                    "Consider scaling out 1/3 position at 1R profit",
+                    "Watch for divergence on RSI for better exit timing",
+                    "This setup has 73% win rate based on your last 50 similar trades"
+                ]
+            )
+            isLoading = false
+        }
+    }
+}
+
+struct AITradeAnalysis {
+    let score: Int
+    let insights: [String]
+    let patterns: [String]
+    let recommendations: [String]
+    
+    var scoreColor: Color {
+        if score >= 85 { return .green }
+        else if score >= 70 { return .blue }
+        else if score >= 50 { return .orange }
+        else { return .red }
+    }
+}
+
+struct PatternTag: View {
+    let pattern: String
+    
+    var body: some View {
+        Text(pattern)
+            .font(.caption)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .background(Color.blue.opacity(0.2))
+            .cornerRadius(12)
+    }
+}
+
+struct TechnicalAnalysisCard: View {
+    let trade: PlaybookTrade
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Technical Analysis")
+                .font(.headline)
+            
+            // Market Context
+            AnalysisRow(
+                icon: "chart.line.uptrend.xyaxis",
+                title: "Market Context",
+                value: "Uptrend",
+                detail: "SPY +0.8%, above VWAP",
+                color: .green
+            )
+            
+            // Key Levels
+            AnalysisRow(
+                icon: "chart.bar.xaxis",
+                title: "Key Levels",
+                value: "Support Bounce",
+                detail: "Entered at daily S1 pivot",
+                color: .blue
+            )
+            
+            // Volume Analysis
+            AnalysisRow(
+                icon: "chart.bar.fill",
+                title: "Volume",
+                value: "Above Average",
+                detail: "2.3x relative volume",
+                color: .purple
+            )
+            
+            // Indicators
+            AnalysisRow(
+                icon: "waveform.path.ecg",
+                title: "Indicators",
+                value: "Aligned",
+                detail: "RSI: 45→62, MACD: Bullish cross",
+                color: .orange
+            )
+        }
+        .padding()
+        .background(Color.gray.opacity(0.1))
+        .cornerRadius(12)
+    }
+}
+
+struct ExecutionAnalysisCard: View {
+    let trade: PlaybookTrade
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Execution Analysis")
+                .font(.headline)
+            
+            // Entry Execution
+            ExecutionMetric(
+                title: "Entry Execution",
+                rating: 4,
+                detail: "Entered within 0.05 of target price",
+                suggestion: "Consider using limit orders for better fills"
+            )
+            
+            // Position Sizing
+            ExecutionMetric(
+                title: "Position Sizing",
+                rating: 5,
+                detail: "Perfect 1% risk maintained",
+                suggestion: nil
+            )
+            
+            // Stop Placement
+            ExecutionMetric(
+                title: "Stop Placement",
+                rating: 3,
+                detail: "Stop was slightly too tight",
+                suggestion: "Give trades more room based on ATR"
+            )
+            
+            // Exit Execution
+            ExecutionMetric(
+                title: "Exit Execution",
+                rating: 3,
+                detail: "Exited early - left money on table",
+                suggestion: "Use trailing stops or scale out strategy"
+            )
+        }
+        .padding()
+        .background(Color.gray.opacity(0.1))
+        .cornerRadius(12)
+    }
+}
+
+struct ExecutionMetric: View {
+    let title: String
+    let rating: Int
+    let detail: String
+    let suggestion: String?
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text(title)
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                
+                Spacer()
+                
+                HStack(spacing: 2) {
+                    ForEach(1...5, id: \.self) { star in
+                        Image(systemName: star <= rating ? "star.fill" : "star")
+                            .font(.caption)
+                            .foregroundColor(star <= rating ? .yellow : .gray)
+                    }
+                }
+            }
+            
+            Text(detail)
+                .font(.caption)
+                .foregroundColor(.gray)
+            
+            if let suggestion = suggestion {
+                HStack {
+                    Image(systemName: "lightbulb.fill")
+                        .font(.caption)
+                        .foregroundColor(.yellow)
+                    
+                    Text(suggestion)
+                        .font(.caption)
+                        .foregroundColor(.yellow)
+                }
+            }
+        }
+        .padding(.vertical, 4)
+    }
+}
+
+struct RiskManagementCard: View {
+    let trade: PlaybookTrade
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Risk Management")
+                .font(.headline)
+            
+            // Risk metrics grid
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
+                RiskMetric(
+                    title: "R-Multiple",
+                    value: trade.rMultiple,
+                    color: trade.rMultipleValue > 0 ? .green : .red
+                )
+                
+                RiskMetric(
+                    title: "Risk %",
+                    value: "1.0%",
+                    color: .blue
+                )
+                
+                RiskMetric(
+                    title: "Win Probability",
+                    value: "68%",
+                    color: .purple
+                )
+                
+                RiskMetric(
+                    title: "Expected Value",
+                    value: "+$127",
+                    color: .green
+                )
+            }
+            
+            Divider()
+            
+            // Risk Assessment
+            Text("Risk Assessment")
+                .font(.subheadline)
+                .fontWeight(.semibold)
+            
+            HStack {
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundColor(.green)
+                Text("Position size aligned with account risk rules")
+                    .font(.caption)
+            }
+            
+            HStack {
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundColor(.green)
+                Text("Stop loss placed below key support")
+                    .font(.caption)
+            }
+            
+            HStack {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .foregroundColor(.orange)
+                Text("Consider wider stop based on recent volatility")
+                    .font(.caption)
+            }
+        }
+        .padding()
+        .background(Color.gray.opacity(0.1))
+        .cornerRadius(12)
+    }
+}
+
+struct RiskMetric: View {
+    let title: String
+    let value: String
+    let color: Color
+    
+    var body: some View {
+        VStack(spacing: 8) {
+            Text(title)
+                .font(.caption)
+                .foregroundColor(.gray)
+            
+            Text(value)
+                .font(.title3)
+                .fontWeight(.bold)
+                .foregroundColor(color)
+        }
+        .frame(maxWidth: .infinity)
+        .padding()
+        .background(color.opacity(0.1))
+        .cornerRadius(8)
+    }
+}
+
+struct SMBStyleReviewCard: View {
+    let trade: PlaybookTrade
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack {
+                Image(systemName: "person.circle.fill")
+                    .foregroundColor(.orange)
+                Text("SMB Capital Style Review")
+                    .font(.headline)
+            }
+            
+            Text("\"One Good Trade\" Analysis")
+                .font(.subheadline)
+                .foregroundColor(.gray)
+            
+            // Categories Mike Bellafiore emphasizes
+            ReviewCategory(
+                title: "Preparation",
+                grade: "B+",
+                comment: "Good pre-market prep, identified key levels. Could improve by reviewing similar historical setups."
+            )
+            
+            ReviewCategory(
+                title: "Entry Execution",
+                grade: "A-",
+                comment: "Waited for confirmation, sized appropriately. Excellent patience shown."
+            )
+            
+            ReviewCategory(
+                title: "Trade Management",
+                grade: "B",
+                comment: "Followed initial plan but could have scaled out for better profit optimization."
+            )
+            
+            ReviewCategory(
+                title: "Mental Game",
+                grade: "A",
+                comment: "Stayed disciplined, no emotional decisions. This is elite-level emotional control."
+            )
+            
+            // Overall recommendation
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Coach's Note:")
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.orange)
+                
+                Text("This trade shows strong process adherence. To move from good to great, focus on optimizing exits through scaling strategies. Consider adding this setup to your A+ playbook after 5 more successful iterations.")
+                    .font(.caption)
+                    .foregroundColor(.white)
+                    .italic()
+            }
+            .padding()
+            .background(Color.orange.opacity(0.1))
+            .cornerRadius(8)
+        }
+        .padding()
+        .background(Color.gray.opacity(0.1))
+        .cornerRadius(12)
+    }
+}
+
+struct ReviewCategory: View {
+    let title: String
+    let grade: String
+    let comment: String
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack {
+                Text(title)
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                
+                Spacer()
+                
+                Text(grade)
+                    .font(.subheadline)
+                    .fontWeight(.bold)
+                    .foregroundColor(gradeColor)
+            }
+            
+            Text(comment)
+                .font(.caption)
+                .foregroundColor(.gray)
+        }
+        .padding(.vertical, 4)
+    }
+    
+    var gradeColor: Color {
+        if grade.contains("A") { return .green }
+        else if grade.contains("B") { return .blue }
+        else if grade.contains("C") { return .orange }
+        else { return .red }
+    }
+}
+
+struct AnalysisRow: View {
+    let icon: String
+    let title: String
+    let value: String
+    let detail: String
+    let color: Color
+    
+    var body: some View {
+        HStack {
+            Image(systemName: icon)
+                .foregroundColor(color)
+                .frame(width: 30)
+            
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.caption)
+                    .foregroundColor(.gray)
+                
+                Text(value)
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                    .foregroundColor(color)
+            }
+            
+            Spacer()
+            
+            Text(detail)
+                .font(.caption)
+                .foregroundColor(.gray)
+        }
+        .padding(.vertical, 4)
+    }
+}
+
+struct FullScreenChartView: View {
+    let trade: PlaybookTrade
+    @Environment(\.dismiss) var dismiss
+    
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                Color.black.ignoresSafeArea()
+                
+                // Full screen chart placeholder
+                Text("Full Screen Chart View")
+                    .foregroundColor(.white)
+                    .font(.title)
+            }
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                    .foregroundColor(.white)
+                }
+            }
+        }
+    }
+}
+
+struct ShareSheet: View {
+    let trade: PlaybookTrade
+    @Environment(\.dismiss) var dismiss
+    
+    var body: some View {
+        NavigationStack {
+            VStack {
+                Text("Share Trade Analysis")
+                    .font(.headline)
+                    .padding()
+                
+                // Preview of what will be shared
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 16) {
+                        // Trade summary
+                        ShareableTradeCard(trade: trade)
+                        
+                        // Chart preview
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(Color.gray.opacity(0.2))
+                            .frame(height: 200)
+                            .overlay(
+                                Text("Chart Screenshot")
+                                    .foregroundColor(.gray)
+                            )
+                        
+                        // Key insights
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Key Insights:")
+                                .font(.headline)
+                            
+                            Text("• Entry at key support level")
+                            Text("• Risk/Reward: 1:2.5")
+                            Text("• Pattern: Bull flag breakout")
+                            Text("• Exit: Scaled out at targets")
+                        }
+                        .font(.subheadline)
+                        .padding()
+                        .background(Color.gray.opacity(0.1))
+                        .cornerRadius(8)
+                    }
+                    .padding()
+                }
+                
+                HStack(spacing: 20) {
+                    ShareButton(title: "Twitter", icon: "message.fill", color: .blue) {
+                        // Share to Twitter
+                    }
+                    
+                    ShareButton(title: "Discord", icon: "person.3.fill", color: .purple) {
+                        // Share to Discord
+                    }
+                    
+                    ShareButton(title: "Export", icon: "square.and.arrow.up", color: .green) {
+                        // Export as PDF
+                    }
+                }
+                .padding()
+            }
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
+                }
+            }
+        }
+    }
+}
+
+struct ShareableTradeCard: View {
+    let trade: PlaybookTrade
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text(trade.symbol)
+                    .font(.title2)
+                    .fontWeight(.bold)
+                
+                Spacer()
+                
+                Text(trade.formattedPnL)
+                    .font(.title2)
+                    .fontWeight(.bold)
+                    .foregroundColor(trade.pnl > 0 ? .green : .red)
+            }
+            
+            HStack {
+                Label("Strategy: \(trade.strategy)", systemImage: "chart.line.uptrend.xyaxis")
+                    .font(.caption)
+                
+                Spacer()
+                
+                Text(trade.date.formatted(.dateTime.month().day().hour().minute()))
+                    .font(.caption)
+                    .foregroundColor(.gray)
+            }
+        }
+        .padding()
+        .background(Color.gray.opacity(0.1))
+        .cornerRadius(12)
+    }
+}
+
+struct ShareButton: View {
+    let title: String
+    let icon: String
+    let color: Color
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 8) {
+                Image(systemName: icon)
+                    .font(.title2)
+                    .foregroundColor(color)
+                
+                Text(title)
+                    .font(.caption)
+                    .foregroundColor(.white)
+            }
+            .frame(maxWidth: .infinity)
+            .padding()
+            .background(color.opacity(0.2))
+            .cornerRadius(12)
+        }
+    }
+}
+
+// MARK: - Enhanced PlaybookTrade Model
+
+extension PlaybookTrade {
+    var formattedStopPrice: String {
+        let stopPrice = entryPrice - (entryPrice * 0.02) // 2% stop
+        return String(format: "$%.2f", stopPrice)
+    }
+    
+    var formattedTargetPrice: String {
+        let targetPrice = entryPrice + (entryPrice * 0.05) // 5% target
+        return String(format: "$%.2f", targetPrice)
+    }
+    
+    var rMultiple: String {
+        let risk = entryPrice - (entryPrice * 0.02)
+        let reward = exitPrice - entryPrice
+        let riskAmount = entryPrice - risk
+        let rMultipleValue = riskAmount > 0 ? reward / riskAmount : 0
+        return String(format: "%.1fR", rMultipleValue)
+    }
+    
+    var rMultipleValue: Double {
+        let risk = entryPrice - (entryPrice * 0.02)
+        let reward = exitPrice - entryPrice
+        let riskAmount = entryPrice - risk
+        return riskAmount > 0 ? reward / riskAmount : 0
+    }
+}
+
+// MARK: - Screenshot Functionality
+
+struct ScreenshotView: View {
+    let trade: PlaybookTrade
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            // Header
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Trade Analysis Report")
+                        .font(.headline)
+                    Text(Date().formatted(.dateTime.month().day().year()))
+                        .font(.caption)
+                        .foregroundColor(.gray)
+                }
+                
+                Spacer()
+                
+                Image(systemName: "checkmark.seal.fill")
+                    .font(.title)
+                    .foregroundColor(.green)
+            }
+            .padding()
+            .background(Color.black)
+            
+            // Trade Info
+            HStack {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(trade.symbol)
+                        .font(.largeTitle)
+                        .fontWeight(.bold)
+                    
+                    Text(trade.strategy)
+                        .font(.subheadline)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 4)
+                        .background(Color.blue)
+                        .cornerRadius(20)
+                }
+                
+                Spacer()
+                
+                VStack(alignment: .trailing, spacing: 8) {
+                    Text(trade.formattedPnL)
+                        .font(.largeTitle)
+                        .fontWeight(.bold)
+                        .foregroundColor(trade.pnl > 0 ? .green : .red)
+                    
+                    Text(trade.rMultiple)
+                        .font(.headline)
+                        .foregroundColor(.gray)
+                }
+            }
+            .padding()
+            
+            // Chart placeholder
+            Rectangle()
+                .fill(Color.gray.opacity(0.1))
+                .frame(height: 300)
+                .overlay(
+                    Text("Chart with entry/exit markers")
+                        .foregroundColor(.gray)
+                )
+            
+            // Key Metrics
+            HStack(spacing: 20) {
+                MetricBox(title: "Entry", value: trade.formattedEntryPrice, color: .blue)
+                MetricBox(title: "Exit", value: trade.formattedExitPrice, color: .orange)
+                MetricBox(title: "Stop", value: trade.formattedStopPrice, color: .red)
+                MetricBox(title: "Risk", value: "1%", color: .purple)
+            }
+            .padding()
+            
+            // AI Analysis Summary
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    Image(systemName: "brain")
+                        .foregroundColor(.purple)
+                    Text("AI Analysis")
+                        .font(.headline)
+                    Spacer()
+                    Text("Score: 88/100")
+                        .font(.subheadline)
+                        .foregroundColor(.green)
+                }
+                
+                VStack(alignment: .leading, spacing: 8) {
+                    BulletPoint(text: "Excellent entry at key support level", color: .green)
+                    BulletPoint(text: "Strong risk management with 1:2.5 R/R", color: .green)
+                    BulletPoint(text: "Exit timing could be optimized", color: .orange)
+                    BulletPoint(text: "Pattern: Bull flag breakout confirmed", color: .blue)
+                }
+            }
+            .padding()
+            .background(Color.purple.opacity(0.1))
+            .cornerRadius(12)
+            .padding()
+            
+            // Footer
+            HStack {
+                Text("Generated by ProTrader Playbook")
+                    .font(.caption)
+                    .foregroundColor(.gray)
+                
+                Spacer()
+                
+                Text("@YourTradingHandle")
+                    .font(.caption)
+                    .foregroundColor(.gray)
+            }
+            .padding()
+        }
+        .background(Color.black)
+        .foregroundColor(.white)
+    }
+}
+
+struct MetricBox: View {
+    let title: String
+    let value: String
+    let color: Color
+    
+    var body: some View {
+        VStack(spacing: 4) {
+            Text(title)
+                .font(.caption)
+                .foregroundColor(.gray)
+            
+            Text(value)
+                .font(.headline)
+                .foregroundColor(color)
+        }
+        .frame(maxWidth: .infinity)
+    }
+}
+
+struct BulletPoint: View {
+    let text: String
+    let color: Color
+    
+    var body: some View {
+        HStack(alignment: .top) {
+            Circle()
+                .fill(color)
+                .frame(width: 6, height: 6)
+                .offset(y: 6)
+            
+            Text(text)
+                .font(.subheadline)
+        }
+    }
+}
+
+// MARK: - AI Coaching Suggestions
+
+struct AICoachingView: View {
+    let trade: PlaybookTrade
+    @State private var coachingInsights: [CoachingInsight] = []
+    @State private var isLoading = false
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack {
+                Image(systemName: "person.fill.questionmark")
+                    .foregroundColor(.orange)
+                Text("AI Coaching Insights")
+                    .font(.headline)
+                
+                Spacer()
+                
+                if isLoading {
+                    ProgressView()
+                        .scaleEffect(0.8)
+                }
+            }
+            
+            if coachingInsights.isEmpty && !isLoading {
+                Button(action: generateCoachingInsights) {
+                    Label("Generate Coaching Insights", systemImage: "sparkles")
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color.orange.opacity(0.2))
+                        .cornerRadius(8)
+                }
+            } else {
+                ForEach(coachingInsights) { insight in
+                    CoachingInsightRow(insight: insight)
+                }
+            }
+        }
+        .padding()
+        .background(Color.gray.opacity(0.1))
+        .cornerRadius(12)
+    }
+    
+    private func generateCoachingInsights() {
+        isLoading = true
+        
+        // Simulate AI analysis
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+            coachingInsights = [
+                CoachingInsight(
+                    category: "Entry Timing",
+                    observation: "You entered after the second candle confirmation",
+                    coaching: "Consider entering on the first confirmation with smaller size to improve R/R",
+                    priority: .medium
+                ),
+                CoachingInsight(
+                    category: "Position Management",
+                    observation: "Full position exit at first target",
+                    coaching: "Try scaling out: 1/3 at 1R, 1/3 at 2R, let 1/3 run with trailing stop",
+                    priority: .high
+                ),
+                CoachingInsight(
+                    category: "Psychology",
+                    observation: "Quick exit suggests fear of giving back profits",
+                    coaching: "Trust your analysis. Set alerts and walk away to avoid micromanaging",
+                    priority: .medium
+                )
+            ]
+            isLoading = false
+        }
+    }
+}
+
+struct CoachingInsight: Identifiable {
+    let id = UUID()
+    let category: String
+    let observation: String
+    let coaching: String
+    let priority: Priority
+    
+    enum Priority {
+        case high, medium, low
+        
+        var color: Color {
+            switch self {
+            case .high: return .red
+            case .medium: return .orange
+            case .low: return .yellow
+            }
+        }
+    }
+}
+
+struct CoachingInsightRow: View {
+    let insight: CoachingInsight
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text(insight.category)
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                
+                Spacer()
+                
+                Circle()
+                    .fill(insight.priority.color)
+                    .frame(width: 8, height: 8)
+            }
+            
+            Text(insight.observation)
+                .font(.caption)
+                .foregroundColor(.gray)
+            
+            HStack {
+                Image(systemName: "lightbulb.fill")
+                    .font(.caption)
+                    .foregroundColor(.yellow)
+                
+                Text(insight.coaching)
+                    .font(.caption)
+                    .foregroundColor(.yellow)
+            }
+            .padding(8)
+            .background(Color.yellow.opacity(0.1))
+            .cornerRadius(6)
+        }
+        .padding(.vertical, 4)
+    }
+}
+
+// ... existing code ...
 
 struct PlaybookView_Previews: PreviewProvider {
     static var previews: some View {

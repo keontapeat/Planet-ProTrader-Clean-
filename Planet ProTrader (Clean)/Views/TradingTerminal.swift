@@ -328,22 +328,27 @@ struct TradingTerminal: View {
         VStack(spacing: 0) {
             // Top Row: Title & Status
             HStack {
-                Text("ProTrader")
-                    .font(.title2)
-                    .fontWeight(.black)
+                // CLEAN MINIMAL TERMINAL TEXT
+                Text("TERMINAL")
+                    .font(.system(size: 26, weight: .black, design: .rounded))
                     .foregroundStyle(
                         LinearGradient(
-                            colors: [Color(red: 1.0, green: 0.8, blue: 0.0), Color(red: 1.0, green: 0.6, blue: 0.0)],
-                            startPoint: .leading,
-                            endPoint: .trailing
+                            colors: [
+                                Color(red: 1.0, green: 1.0, blue: 1.0),
+                                Color(red: 1.0, green: 0.9, blue: 0.0),
+                                Color(red: 1.0, green: 0.7, blue: 0.0),
+                                Color(red: 1.0, green: 0.5, blue: 0.0)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
                         )
                     )
                 
                 Spacer()
                 
-                HStack(spacing: 12) {
-                    // Live Status
-                    HStack(spacing: 4) {
+                HStack(spacing: 16) {
+                    // Clean Live Status
+                    HStack(spacing: 6) {
                         Circle()
                             .fill(.green)
                             .frame(width: 6, height: 6)
@@ -351,33 +356,36 @@ struct TradingTerminal: View {
                             .animation(.easeInOut(duration: 1.0).repeatForever(autoreverses: true), value: tradingManager.isConnected)
                         
                         Text("LIVE")
-                            .font(.caption2)
-                            .fontWeight(.black)
+                            .font(.system(size: 11, weight: .black, design: .rounded))
                             .foregroundColor(.green)
                     }
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 3)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 4)
                     .background(.green.opacity(0.15), in: Capsule())
+                    .overlay(
+                        Capsule()
+                            .stroke(.green.opacity(0.3), lineWidth: 1)
+                    )
                     
-                    // Settings
+                    // Clean Settings Button
                     Button(action: {}) {
                         Image(systemName: "line.3.horizontal")
                             .font(.system(size: 16, weight: .medium))
                             .foregroundColor(.white)
                     }
+                    .buttonStyle(PlainButtonStyle())
                 }
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 16)
-            .padding(.bottom, 12)
+            .padding(.horizontal, 24)
+            .padding(.top, 20)
+            .padding(.bottom, 16)
             
-            // Symbol & Price Row
+            // Symbol & Price Row - Clean & Minimal
             HStack(alignment: .center) {
-                VStack(alignment: .leading, spacing: 3) {
-                    HStack(spacing: 6) {
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack(spacing: 8) {
                         Text(selectedSymbol)
-                            .font(.title)
-                            .fontWeight(.bold)
+                            .font(.system(size: 28, weight: .bold, design: .rounded))
                             .foregroundColor(.white)
                         
                         Button(action: { 
@@ -388,38 +396,43 @@ struct TradingTerminal: View {
                                 .font(.system(size: 18))
                                 .foregroundColor(.white.opacity(0.6))
                         }
+                        .buttonStyle(PlainButtonStyle())
                     }
                     
                     Text("Gold Spot / US Dollar")
-                        .font(.caption)
+                        .font(.system(size: 13, weight: .medium))
                         .foregroundColor(.gray)
                 }
                 
                 Spacer()
                 
-                VStack(alignment: .trailing, spacing: 3) {
+                VStack(alignment: .trailing, spacing: 6) {
                     Text("$2,374.85")
-                        .font(.system(size: 28, weight: .bold, design: .rounded))
+                        .font(.system(size: 24, weight: .bold, design: .rounded))
                         .foregroundColor(.white)
                     
                     HStack(spacing: 6) {
                         Image(systemName: "arrow.up.right")
                             .font(.system(size: 10, weight: .bold))
                         Text("+12.45 (+0.52%)")
+                            .font(.system(size: 13, weight: .semibold))
                     }
-                    .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(.green)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 3)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 4)
                     .background(.green.opacity(0.15), in: Capsule())
+                    .overlay(
+                        Capsule()
+                            .stroke(.green.opacity(0.3), lineWidth: 1)
+                    )
                 }
             }
-            .padding(.horizontal, 20)
-            .padding(.bottom, 16)
+            .padding(.horizontal, 24)
+            .padding(.bottom, 20)
             
             // Timeframe Selector (Flush to Edge - TradeLocker Style)
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 6) {
+                HStack(spacing: 8) {
                     ForEach(ChartTimeframe.allCases, id: \.self) { timeframe in
                         TradeLockerTimeframeButton(
                             timeframe: timeframe,
@@ -432,11 +445,11 @@ struct TradingTerminal: View {
                     }
                     
                     // Add some trailing space
-                    Spacer(minLength: 20)
+                    Spacer(minLength: 24)
                 }
-                .padding(.leading, 20) // Only left padding like TradeLocker
+                .padding(.leading, 24)
             }
-            .padding(.bottom, 0) // Remove bottom padding to make it flush
+            .padding(.bottom, 0)
         }
         .background(.regularMaterial)
         .overlay(

@@ -153,6 +153,7 @@ struct ProfessionalMoreTabView: View {
     @State private var showingProfile = false
     @State private var showingSettings = false
     @State private var showingVPSSetup = false
+    @State private var showingPlaybook = false
     @State private var animateCards = false
     
     var body: some View {
@@ -197,6 +198,11 @@ struct ProfessionalMoreTabView: View {
         .sheet(isPresented: $showingProfile) { SafeProfileView() }
         .sheet(isPresented: $showingSettings) { SafeSettingsView() }
         .sheet(isPresented: $showingVPSSetup) { SafeVPSSetupView() }
+        .sheet(isPresented: $showingPlaybook) { 
+            NavigationStack {
+                PlaybookView()
+            }
+        }
     }
     
     private var headerSection: some View {
@@ -226,6 +232,13 @@ struct ProfessionalMoreTabView: View {
                 .foregroundColor(.white)
             
             LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 12) {
+                MoreFeatureCard(
+                    title: "Trading Playbook",
+                    icon: "book.closed.fill",
+                    color: DesignSystem.primaryGold,
+                    action: { showingPlaybook = true }
+                )
+                
                 MoreFeatureCard(
                     title: "VPS Setup",
                     icon: "server.rack",
@@ -259,13 +272,6 @@ struct ProfessionalMoreTabView: View {
                     icon: "magnifyingglass.circle",
                     color: .indigo,
                     action: { showComingSoon("Market Scanner") }
-                )
-                
-                MoreFeatureCard(
-                    title: "Portfolio Tracker",
-                    icon: "briefcase.fill",
-                    color: .teal,
-                    action: { showComingSoon("Portfolio Tracker") }
                 )
             }
         }
