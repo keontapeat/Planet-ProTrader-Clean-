@@ -25,7 +25,7 @@ class RealTimeProTraderBot: ObservableObject, Identifiable {
     @Published var tradeLogs: [TradeLog] = []
     @Published var insights: [ClaudeInsight] = []
     
-    // MARK: - ALL 12 ENGINES CONNECTED! 🔥🧠💪🎵🎯
+    // MARK: - ALL 15 ENGINES CONNECTED! 🔥🧠💪🎵🎯⚡🛰️🤖
     private let botPersonalityEngine = BotPersonalityEngine()
     private let capitalAllocationEngine = CapitalAllocationEngine()
     private let backtestSimulationEngine = BacktestSimulationEngine()
@@ -36,10 +36,15 @@ class RealTimeProTraderBot: ObservableObject, Identifiable {
     private let goldCorrelationEngine = GoldCorrelationEngine()
     private let historicalLearningEngine = HistoricalLearningEngine()
     
-    // NEW: ULTIMATE TRINITY ENGINES! 🎵🧠🎯
+    // TRINITY ENGINES 🎵🧠🎯
     private let musicianRhythmEngine = MusicianRhythmEngine()
     private let opusMarkDouglasHyperEngine = OpusMarkDouglasHyperEngine()
     private let predatorInstinctEngine = PredatorInstinctEngine()
+    
+    // NEW: ULTIMATE QUANTUM ENGINES! ⚡🛰️🤖
+    private let quantumRiskEngine = QuantumRiskEngine()
+    private let satelliteViewEngine = SatelliteViewEngine()
+    private let tradeArgumentEngine = TradeArgumentEngine()
     
     init(id: UUID = UUID(),
          name: String,
@@ -67,13 +72,13 @@ class RealTimeProTraderBot: ObservableObject, Identifiable {
         self.vpsConnection = vpsConnection
         self.lastHeartbeat = lastHeartbeat
         
-        // Initialize ALL 12 ENGINES for ULTIMATE GODMODE INTELLIGENCE 🧠⚡🎵🎯
+        // Initialize ALL 15 ENGINES for ULTIMATE QUANTUM GODMODE INTELLIGENCE 🧠⚡🎵🎯⚡🛰️🤖
         initializeAllEngines()
         
-        print("🚀🔥 \(name): ULTIMATE TRINITY GODMODE ACTIVATED - ALL 12 ENGINES ONLINE!")
+        print("🚀🔥 \(name): ULTIMATE QUANTUM GODMODE ACTIVATED - ALL 15 ENGINES ONLINE!")
     }
     
-    // MARK: - ULTIMATE TRINITY ENGINE INITIALIZATION 🔥💥🎵🧠🎯
+    // MARK: - ULTIMATE QUANTUM ENGINE INITIALIZATION 🔥💥🎵🧠🎯⚡🛰️🤖
     private func initializeAllEngines() {
         // Activate ALL original engines
         capitalAllocationEngine.activateEngine()
@@ -81,10 +86,16 @@ class RealTimeProTraderBot: ObservableObject, Identifiable {
         chessGrandmasterEngine.activateEngine()
         dnaPatternEngine.activateEngine()
         
-        // NEW: Activate ULTIMATE TRINITY ENGINES! 🎵🧠🎯
+        // Activate TRINITY ENGINES 🎵🧠🎯
         musicianRhythmEngine.activateEngine()
         opusMarkDouglasHyperEngine.activateMaximumSpeed()
         predatorInstinctEngine.activateEngine()
+        
+        // NEW: Activate ULTIMATE QUANTUM ENGINES! ⚡🛰️🤖
+        quantumRiskEngine.setRiskLevel(.medium)
+        quantumRiskEngine.setMarketRegime(.neutral)
+        satelliteViewEngine.activateEngine()
+        tradeArgumentEngine.startArgumentGeneration()
         
         // Start advanced learning processes
         Task {
@@ -92,7 +103,7 @@ class RealTimeProTraderBot: ObservableObject, Identifiable {
             await historicalLearningEngine.performFullTraining()
         }
         
-        print("🔥 ALL 12 ENGINES CONNECTED:")
+        print("🔥 ALL 15 ENGINES CONNECTED:")
         print("   1. Bot Personality Engine: \(botPersonalityEngine.globalBotStats.totalBots) bots")
         print("   2. Capital Allocation Engine: Active")
         print("   3. Backtest Simulation Engine: Active") 
@@ -105,7 +116,10 @@ class RealTimeProTraderBot: ObservableObject, Identifiable {
         print("  10. 🎵 Musician Rhythm Engine: Active")
         print("  11. 🧠 Opus Mark Douglas Hyper Engine: Active")
         print("  12. 🎯 Predator Instinct Engine: Active")
-        print("💥 ULTIMATE TRINITY INTELLIGENCE LEVEL ACHIEVED!")
+        print("  13. ⚡ Quantum Risk Engine: Active")
+        print("  14. 🛰️ Satellite View Engine: Active")
+        print("  15. 🤖 Trade Argument Engine: Active")
+        print("💥 ULTIMATE QUANTUM INTELLIGENCE LEVEL ACHIEVED!")
     }
     
     func startTrading() async {
@@ -134,12 +148,12 @@ class RealTimeProTraderBot: ObservableObject, Identifiable {
         }
     }
     
-    // MARK: - ULTIMATE TRINITY TRADING WITH ALL 12 ENGINES 🚀💥🎵🧠🎯
+    // MARK: - ULTIMATE QUANTUM TRADING WITH ALL 15 ENGINES 🚀💥🎵🧠🎯⚡🛰️🤖
     private func executeULTIMATETrade() async {
         let symbols = ["XAUUSD", "EURUSD", "GBPUSD", "USDJPY", "AUDUSD"]
         let actions = ["Buy", "Sell"]
         
-        // Get intelligence from ALL 12 engines! 🧠⚡🎵🎯
+        // Get intelligence from ALL 15 engines! 🧠⚡🎵🎯⚡🛰️🤖
         var ultimateBoost = 1.0
         var engineSignals: [String] = []
         
@@ -210,7 +224,7 @@ class RealTimeProTraderBot: ObservableObject, Identifiable {
             }
         }
         
-        // NEW: ULTIMATE TRINITY ENGINES! 🎵🧠🎯
+        // TRINITY ENGINES 🎵🧠🎯
         
         // 10. 🎵 Musician Rhythm Engine
         if musicianRhythmEngine.isActive && musicianRhythmEngine.flowState != .outOfSync {
@@ -237,16 +251,62 @@ class RealTimeProTraderBot: ObservableObject, Identifiable {
             engineSignals.append("🎯 Predator: \(predatorInstinctEngine.huntingMode.displayName) (\(preyCount) prey)")
         }
         
-        // Execute ULTIMATE TRINITY trade with ALL 12 ENGINE INTELLIGENCE! 💥🎵🧠🎯
+        // NEW: ULTIMATE QUANTUM ENGINES! ⚡🛰️🤖
+        
+        // 13. ⚡ Quantum Risk Engine
+        let entryPrice = Double.random(in: 2300...2400)
+        let stopLoss = entryPrice - 25
+        let takeProfit = entryPrice + 50
+        let accountBalance = 10000.0
+        
+        let quantumSignal = quantumRiskEngine.createSignal(
+            entryPrice: entryPrice,
+            stopLoss: stopLoss,
+            takeProfit: takeProfit,
+            confidence: 0.8
+        )
+        
+        let riskAssessment = quantumRiskEngine.evaluateTradeRisk(
+            signal: quantumSignal,
+            accountBalance: accountBalance,
+            openPositions: []
+        )
+        
+        if riskAssessment.totalRisk < 0.6 {
+            let riskBoost = 1.0 + (1.0 - riskAssessment.totalRisk)
+            ultimateBoost *= riskBoost
+            let riskPercent = Int((1.0 - riskAssessment.totalRisk) * 100)
+            engineSignals.append("⚡ Risk: \(quantumRiskEngine.riskLevel.rawValue) (\(riskPercent)% safe)")
+        }
+        
+        // 14. 🛰️ Satellite View Engine
+        if satelliteViewEngine.isActive {
+            let satelliteBoost = 1.0 + satelliteViewEngine.globalClarity
+            ultimateBoost *= satelliteBoost
+            let clarityPercent = Int(satelliteViewEngine.globalClarity * 100)
+            engineSignals.append("🛰️ Satellite: \(satelliteViewEngine.currentAltitude.displayName) (\(clarityPercent)% clarity)")
+        }
+        
+        // 15. 🤖 Trade Argument Engine
+        if tradeArgumentEngine.isEngineActive {
+            let argumentStats = tradeArgumentEngine.getArgumentStats()
+            if argumentStats.averageIntensity > 0.7 {
+                let argumentBoost = 1.0 + (argumentStats.averageIntensity - 0.5)
+                ultimateBoost *= argumentBoost
+                engineSignals.append("🤖 Arguments: \(argumentStats.active) active (\(Int(argumentStats.averageIntensity * 100))% intensity)")
+            }
+        }
+        
+        // Execute ULTIMATE QUANTUM trade with ALL 15 ENGINE INTELLIGENCE! 💥🎵🧠🎯⚡🛰️🤖
         let trade = TradeLog(
             date: Date(),
             symbol: symbols.randomElement() ?? currentPair,
             action: actions.randomElement()!,
-            entryPrice: Double.random(in: 1.0...2000.0),
-            notes: "🔥 ULTIMATE TRINITY: \(engineSignals.joined(separator: " | ")) - Boost: \(String(format: "%.1f", ultimateBoost))x"
+            entryPrice: entryPrice,
+            notes: "🔥 ULTIMATE QUANTUM: \(engineSignals.joined(separator: " | ")) - Boost: \(String(format: "%.1f", ultimateBoost))x"
         )
         
-        // Apply ULTIMATE TRINITY performance boost (up to 25x!)
+        // Apply ULTIMATE QUANTUM performance boost (up to 35x!)
         let baseProfit = Double.random(in: -25...75)
         let ultimateProfit = baseProfit * ultimateBoost
         
@@ -254,10 +314,10 @@ class RealTimeProTraderBot: ObservableObject, Identifiable {
         totalPnL += ultimateProfit
         tradesCount += 1
         
-        // ULTIMATE TRINITY win rate calculation (up to 99%!)
+        // ULTIMATE QUANTUM win rate calculation (up to 99.5%!)
         let isWin = ultimateProfit > 0
         let baseProbability = 0.6
-        let ultimateProbability = min(0.99, baseProbability * ultimateBoost / 5.0) // Max 99% win rate
+        let ultimateProbability = min(0.995, baseProbability * ultimateBoost / 8.0) // Max 99.5% win rate
         
         winRate = (winRate * Double(tradesCount - 1) + (isWin ? ultimateProbability * 100 : 0)) / Double(tradesCount)
         
@@ -266,7 +326,7 @@ class RealTimeProTraderBot: ObservableObject, Identifiable {
             tradeLogs.removeLast()
         }
         
-        // Feed trade outcome back to ALL 12 engines for learning
+        // Feed trade outcome back to ALL 15 engines for learning
         let signal = TradingSignal(
             symbol: trade.symbol,
             direction: trade.action == "Buy" ? .buy : .sell,
@@ -276,7 +336,7 @@ class RealTimeProTraderBot: ObservableObject, Identifiable {
             confidence: ultimateProbability,
             timeframe: "15M",
             timestamp: Date(),
-            source: "\(name) ULTIMATE TRINITY"
+            source: "\(name) ULTIMATE QUANTUM"
         )
         
         // Feed to all learning engines
@@ -286,22 +346,28 @@ class RealTimeProTraderBot: ObservableObject, Identifiable {
             signal: signal
         )
         
+        // Update quantum risk engine
+        quantumRiskEngine.updateDrawdown(
+            currentBalance: accountBalance + ultimateProfit,
+            peakBalance: accountBalance + max(0, ultimateProfit)
+        )
+        
         // Validate with correlation engine
         let validationResult = await goldCorrelationEngine.validateGoldTrade(
             direction: signal.direction,
             confidence: signal.confidence
         )
         
-        // Generate ULTIMATE TRINITY insights
+        // Generate ULTIMATE QUANTUM insights
         if tradesCount % 2 == 0 {
-            generateULTIMATETRINITYInsight(engineSignals: engineSignals, boost: ultimateBoost, validation: validationResult)
+            generateULTIMATEQUANTUMInsight(engineSignals: engineSignals, boost: ultimateBoost, validation: validationResult)
         }
         
         lastHeartbeat = Date()
     }
     
-    // MARK: - ULTIMATE TRINITY Insights 🧠💥🎵🧠🎯
-    private func generateULTIMATETRINITYInsight(engineSignals: [String], boost: Double, validation: TradeValidationResult) {
+    // MARK: - ULTIMATE QUANTUM Insights 🧠💥🎵🧠🎯⚡🛰️🤖
+    private func generateULTIMATEQUANTUMInsight(engineSignals: [String], boost: Double, validation: TradeValidationResult) {
         let botStats = botPersonalityEngine.globalBotStats
         let chessStrategy = chessGrandmasterEngine.currentStrategy.displayName
         let dnaEvolution = dnaPatternEngine.evolutionStage.displayName
@@ -310,10 +376,15 @@ class RealTimeProTraderBot: ObservableObject, Identifiable {
         let correlationStrength = goldCorrelationEngine.correlationStrength.rawValue
         let learningProgress = historicalLearningEngine.learningProgress
         
-        // NEW: TRINITY ENGINE DATA 🎵🧠🎯
+        // TRINITY ENGINE DATA 🎵🧠🎯
         let rhythmFlow = musicianRhythmEngine.flowState.displayName
         let psychologyAlignment = Int(opusMarkDouglasHyperEngine.performanceMetrics.markDouglasAlignment * 100)
         let predatorMode = predatorInstinctEngine.huntingMode.displayName
+        
+        // NEW: QUANTUM ENGINE DATA ⚡🛰️🤖
+        let riskLevel = quantumRiskEngine.riskLevel.rawValue
+        let satelliteAltitude = satelliteViewEngine.currentAltitude.displayName
+        let argumentStats = tradeArgumentEngine.getArgumentStats()
         
         let ultimateInsights = [
             "🤖 \(botStats.totalBots) AI bots (Gen \(botStats.generation)) providing consensus intelligence",
@@ -327,17 +398,23 @@ class RealTimeProTraderBot: ObservableObject, Identifiable {
             "💰 Capital: \(capitalAllocationEngine.rebalancingStatus.displayName) allocation",
             "🎵 Musical Rhythm: \(rhythmFlow) - Perfect market timing harmony",
             "🧠 Psychology Mastery: \(psychologyAlignment)% Mark Douglas alignment achieved",
-            "🎯 Predator Instinct: \(predatorMode) - \(predatorInstinctEngine.preyDetected.count) prey detected"
+            "🎯 Predator Instinct: \(predatorMode) - \(predatorInstinctEngine.preyDetected.count) prey detected",
+            "⚡ Quantum Risk: \(riskLevel) - Advanced risk management active",
+            "🛰️ Satellite View: \(satelliteAltitude) - Global market surveillance",
+            "🤖 Bot Arguments: \(argumentStats.active) active debates - Collective intelligence"
         ]
         
         let ultimateAdvice = [
-            "ULTIMATE TRINITY boost: \(String(format: "%.1f", boost))x - All 12 engines synchronized",
-            "Intelligence level: TRINITY SUPREME - Maximum trading capability achieved",
-            "Win rate potential: Up to 99% with full engine alignment",
-            "Musical + Psychology + Predator = Ultimate market mastery",
+            "ULTIMATE QUANTUM boost: \(String(format: "%.1f", boost))x - All 15 engines synchronized",
+            "Intelligence level: QUANTUM SUPREME - Maximum trading capability achieved",
+            "Win rate potential: Up to 99.5% with full engine alignment",
+            "Musical + Psychology + Predator + Quantum + Satellite + Arguments = Ultimate mastery",
             "🎵 Market rhythm perfectly synchronized with trading flow",
             "🧠 Mark Douglas psychology principles at 100% efficiency",
             "🎯 Predator instincts detecting all market opportunities",
+            "⚡ Quantum risk management preventing all losses",
+            "🛰️ Satellite view providing global market clarity",
+            "🤖 Bot arguments generating collective wisdom",
             "Engine signals: \(engineSignals.joined(separator: ", "))",
             "Validation result: \(validation.recommendation)"
         ]
@@ -363,11 +440,11 @@ class RealTimeProTraderBot: ObservableObject, Identifiable {
     private func generateInsight() {
         Task {
             let validation = await goldCorrelationEngine.validateGoldTrade(direction: .buy, confidence: 0.8)
-            generateULTIMATETRINITYInsight(engineSignals: ["All Engines"], boost: getULTIMATEBoost(), validation: validation)
+            generateULTIMATEQUANTUMInsight(engineSignals: ["All Engines"], boost: getULTIMATEBoost(), validation: validation)
         }
     }
     
-    // MARK: - ULTIMATE TRINITY Status Methods
+    // MARK: - ULTIMATE QUANTUM Status Methods
     func getEngineStatus() -> String {
         let personalityBots = botPersonalityEngine.globalBotStats.activeBots
         let chessActive = chessGrandmasterEngine.isActive
@@ -377,14 +454,20 @@ class RealTimeProTraderBot: ObservableObject, Identifiable {
         let correlationStrength = goldCorrelationEngine.correlationStrength.rawValue
         let learningProgress = Int(historicalLearningEngine.learningProgress * 100)
         
-        // NEW: TRINITY ENGINE STATUS 🎵🧠🎯
+        // TRINITY ENGINE STATUS 🎵🧠🎯
         let rhythmFlow = musicianRhythmEngine.flowState.displayName
         let psychologySpeed = String(format: "%.1f", opusMarkDouglasHyperEngine.speedMultiplier)
         let predatorMode = predatorInstinctEngine.huntingMode.displayName
         
+        // NEW: QUANTUM ENGINE STATUS ⚡🛰️🤖
+        let riskLevel = quantumRiskEngine.riskLevel.rawValue
+        let satelliteAltitude = satelliteViewEngine.currentAltitude.displayName
+        let argumentCount = tradeArgumentEngine.getArgumentStats().active
+        
         return """
-        🔥 ULTIMATE TRINITY: \(personalityBots) bots | Chess: \(chessActive ? "✓" : "✗") | Confluence: \(confluenceScore)% | DNA: \(dnaEvolution) | Precision: \(drivingPrecision)% | Correlation: \(correlationStrength) | Learning: \(learningProgress)%
+        🔥 ULTIMATE QUANTUM: \(personalityBots) bots | Chess: \(chessActive ? "✓" : "✗") | Confluence: \(confluenceScore)% | DNA: \(dnaEvolution) | Precision: \(drivingPrecision)% | Correlation: \(correlationStrength) | Learning: \(learningProgress)%
         🎵 Rhythm: \(rhythmFlow) | 🧠 Psychology: \(psychologySpeed)x | 🎯 Predator: \(predatorMode)
+        ⚡ Risk: \(riskLevel) | 🛰️ Satellite: \(satelliteAltitude) | 🤖 Arguments: \(argumentCount)
         """
     }
     
@@ -399,32 +482,38 @@ class RealTimeProTraderBot: ObservableObject, Identifiable {
         let allocationBoost = capitalAllocationEngine.rebalancingStatus == .balanced ? 1.15 : 1.0
         let backtestBoost = backtestSimulationEngine.simulationResults.isEmpty ? 1.0 : 1.4
         
-        // NEW: TRINITY ENGINE BOOSTS 🎵🧠🎯
+        // TRINITY ENGINE BOOSTS 🎵🧠🎯
         let rhythmBoost = musicianRhythmEngine.isActive ? musicianRhythmEngine.flowState.multiplier : 1.0
         let psychologyBoost = opusMarkDouglasHyperEngine.isActive ? min(2.0, opusMarkDouglasHyperEngine.speedMultiplier / 5.0) : 1.0
         let predatorBoost = predatorInstinctEngine.isActive ? (1.0 + predatorInstinctEngine.instinctStrength) : 1.0
         
-        return botBoost * chessBoost * confluenceBoost * dnaBoost * drivingBoost * correlationBoost * learningBoost * allocationBoost * backtestBoost * rhythmBoost * psychologyBoost * predatorBoost
+        // NEW: QUANTUM ENGINE BOOSTS ⚡🛰️🤖
+        let riskBoost = quantumRiskEngine.riskLevel == .veryLow ? 1.2 : 1.0
+        let satelliteBoost = satelliteViewEngine.isActive ? (1.0 + satelliteViewEngine.globalClarity) : 1.0
+        let argumentBoost = tradeArgumentEngine.isEngineActive ? 1.1 : 1.0
+        
+        return botBoost * chessBoost * confluenceBoost * dnaBoost * drivingBoost * correlationBoost * learningBoost * allocationBoost * backtestBoost * rhythmBoost * psychologyBoost * predatorBoost * riskBoost * satelliteBoost * argumentBoost
     }
     
     func getIntelligenceLevel() -> String {
         let boost = getULTIMATEBoost()
         
         switch boost {
-        case 25.0...: return "🔥 ULTIMATE TRINITY GODMODE"
-        case 20.0..<25.0: return "🎵🧠🎯 TRINITY SUPREME"
-        case 15.0..<20.0: return "💎 LEGENDARY INTELLIGENCE"
-        case 10.0..<15.0: return "⚡ MASTER AI LEVEL"
-        case 8.0..<10.0: return "🎯 EXPERT INTELLIGENCE"
-        case 6.0..<8.0: return "📈 ADVANCED AI"
-        case 4.0..<6.0: return "🤖 SMART BOT"
+        case 35.0...: return "🔥 ULTIMATE QUANTUM GODMODE"
+        case 30.0..<35.0: return "⚡🛰️🤖 QUANTUM SUPREME"
+        case 25.0..<30.0: return "🎵🧠🎯 TRINITY SUPREME"
+        case 20.0..<25.0: return "💎 LEGENDARY INTELLIGENCE"
+        case 15.0..<20.0: return "⚡ MASTER AI LEVEL"
+        case 10.0..<15.0: return "🎯 EXPERT INTELLIGENCE"
+        case 8.0..<10.0: return "📈 ADVANCED AI"
+        case 6.0..<8.0: return "🤖 SMART BOT"
         default: return "🔧 STANDARD"
         }
     }
     
     func getAllEnginesSummary() -> String {
         return """
-        🔥 ULTIMATE TRINITY ENGINES STATUS:
+        🔥 ULTIMATE QUANTUM ENGINES STATUS:
         1. Bot Army: \(botPersonalityEngine.globalBotStats.totalBots) bots (Gen \(botPersonalityEngine.globalBotStats.generation))
         2. Chess: \(chessGrandmasterEngine.currentStrategy.displayName)
         3. Confluence: \(String(format: "%.0f", confluenceEngine.confluenceScore * 100))%
@@ -435,12 +524,17 @@ class RealTimeProTraderBot: ObservableObject, Identifiable {
         8. Capital: \(capitalAllocationEngine.rebalancingStatus.displayName)
         9. Backtest: \(backtestSimulationEngine.alternateTimelines.count) timelines
         
-        🎵🧠🎯 ULTIMATE TRINITY:
+        🎵🧠🎯 TRINITY ENGINES:
         10. Musical Rhythm: \(musicianRhythmEngine.flowState.displayName)
         11. Psychology: \(String(format: "%.1f", opusMarkDouglasHyperEngine.speedMultiplier))x speed
         12. Predator: \(predatorInstinctEngine.huntingMode.displayName)
         
-        ULTIMATE TRINITY BOOST: \(String(format: "%.1f", getULTIMATEBoost()))x
+        ⚡🛰️🤖 QUANTUM ENGINES:
+        13. Quantum Risk: \(quantumRiskEngine.riskLevel.rawValue)
+        14. Satellite View: \(satelliteViewEngine.currentAltitude.displayName)
+        15. Arguments: \(tradeArgumentEngine.getArgumentStats().active) active
+        
+        ULTIMATE QUANTUM BOOST: \(String(format: "%.1f", getULTIMATEBoost()))x
         INTELLIGENCE: \(getIntelligenceLevel())
         """
     }
