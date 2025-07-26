@@ -941,39 +941,16 @@ struct HomeView: View {
     
     var body: some View {
         ZStack {
-            // Space background
-            RadialGradient(
-                gradient: Gradient(colors: [
-                    Color.black.opacity(0.9),
-                    Color.indigo.opacity(0.3),
-                    Color.black
-                ]),
-                center: .center,
-                startRadius: 50,
-                endRadius: 400
-            )
-            .ignoresSafeArea()
+            // UPDATED: Use AnimatedStarField for consistent moving stars
+            DesignSystem.AnimatedStarField()
+                .ignoresSafeArea()
             
             // REALISTIC METEORS - ADD THIS
             RealisticMeteorSystem()
                 .allowsHitTesting(false)
                 .zIndex(0)
             
-            // Stars background
-            ForEach(0..<50, id: \.self) { _ in
-                Circle()
-                    .fill(Color.white.opacity(Double.random(in: 0.3...1.0)))
-                    .frame(width: CGFloat.random(in: 1...3))
-                    .position(
-                        x: CGFloat.random(in: 0...UIScreen.main.bounds.width),
-                        y: CGFloat.random(in: 0...UIScreen.main.bounds.height)
-                    )
-                    .animation(
-                        Animation.easeInOut(duration: Double.random(in: 2...5))
-                            .repeatForever(autoreverses: true),
-                        value: rotationAngle
-                    )
-            }
+            // The AnimatedStarField handles all the moving stars now
             
             // FIXED HEADER - COMPLETELY STATIC WITH NO ANIMATIONS
             VStack {
