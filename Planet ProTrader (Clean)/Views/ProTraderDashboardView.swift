@@ -12,6 +12,7 @@ import Foundation
 
 struct ProTraderDashboardView: View {
     @StateObject private var vpsManager = VPSConnectionManager.shared
+    @StateObject private var botManager = BotManager.shared // Connect to enhanced bot manager
     @State private var selectedTab = 0
     @State private var showingDeploymentSheet = false
     @State private var selectedBot: RealTimeProTraderBot?
@@ -19,83 +20,151 @@ struct ProTraderDashboardView: View {
     @State private var animateNumbers = false
     @State private var showingBotJournal = false
     @State private var showingQuickDeployment = false
+    @State private var showingDeployBotsView = false
+    @State private var showingAdvancedEngines = false
     @State private var deployedBots: [RealTimeProTraderBot] = []
-    @State private var realTimeStats = TradingStats.load()  // FIXED: Load saved stats
+    @State private var realTimeStats = TradingStats.load()
     @State private var isInitialized = false
 
     var body: some View {
-        ZStack {
-            // Background gradient
-            LinearGradient(
-                gradient: Gradient(colors: [Color.black, Color.black.opacity(0.95)]),
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .ignoresSafeArea()
-            
-            VStack(spacing: 0) {
-                // Custom Top Bar
-                customTopBar
+        NavigationStack {
+            ZStack {
+                // Background gradient
+                LinearGradient(
+                    gradient: Gradient(colors: [Color.black, Color.black.opacity(0.95)]),
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .ignoresSafeArea()
                 
-                // Main Content
-                ScrollView {
-                    VStack(spacing: 20) {
-                        // Real-time VPS Status
-                        vpsStatusCard
-                        
-                        // Stats Grid
-                        statsGrid
-                        
-                        // Active Bots List
-                        activeBotsSection
-                        
-                        // Real-time Trading Activity
-                        if !deployedBots.isEmpty {
-                            tradingActivitySection
+                VStack(spacing: 0) {
+                    // Custom Top Bar
+                    customTopBar
+                    
+                    // Main Content
+                    ScrollView {
+                        VStack(spacing: 20) {
+                            // UPDATED: Advanced Engine Status
+                            advancedEngineStatusCard
+                            
+                            // Real-time VPS Status
+                            vpsStatusCard
+                            
+                            // ENHANCED: Stats Grid with Advanced Metrics
+                            enhancedStatsGrid
+                            
+                            // Navigation Cards Section
+                            navigationCardsSection
+                            
+                            // Active Bots List
+                            activeBotsSection
+                            
+                            // Real-time Trading Activity
+                            if !deployedBots.isEmpty {
+                                tradingActivitySection
+                            }
                         }
+                        .padding()
                     }
-                    .padding()
+                    .background(Color.black)
                 }
-                .background(Color.black)
             }
-        }
-        .navigationBarHidden(true)
-        .navigationBarBackButtonHidden(true)
-        .onAppear {
-            if !isInitialized {
-                setupDashboard()
-            }
-        }
-        .sheet(isPresented: $showingQuickDeployment) {
-            QuickDeploymentSheet(
-                vpsManager: vpsManager,
-                onDeploymentComplete: { bots in
-                    handleDeploymentCompletion(bots)  // Use the new handler
+            .navigationBarHidden(true)
+            .navigationBarBackButtonHidden(true)
+            .onAppear {
+                if !isInitialized {
+                    setupDashboard()
                 }
-            )
-        }
-        .sheet(isPresented: $showingBotJournal) {
-            if let bot = selectedBot {
-                BotJournalView(
-                    botName: bot.name,
-                    logs: generateRealLogs(for: bot),
-                    insights: generateRealInsights(for: bot)
+            }
+            .sheet(isPresented: $showingQuickDeployment) {
+                AdvancedQuickDeploymentSheet(
+                    vpsManager: vpsManager,
+                    botManager: botManager,
+                    onDeploymentComplete: { bots in
+                        handleDeploymentCompletion(bots)
+                    }
                 )
             }
+            .sheet(isPresented: $showingBotJournal) {
+                if let bot = selectedBot {
+                    BotJournalView(
+                        botName: bot.name,
+                        logs: generateRealLogs(for: bot),
+                        insights: generateRealInsights(for: bot)
+                    )
+                }
+            }
+            .fullScreenCover(isPresented: $showingDeployBotsView) {
+                DeployBotsView()
+            }
+            .onReceive(NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification)) { _ in
+                saveTradingData()
+                print("📱 App going to background - saving trading data")
+            }
+            .onDisappear {
+                saveTradingData()
+            }
         }
-        .onReceive(NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification)) { _ in
-            saveTradingData()
-            print("📱 App going to background - saving trading data")
-        }
-        .onDisappear {
-            saveTradingData()
+    }
+    
+    // MARK: - Navigation Cards Section
+    private var navigationCardsSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("BOT MANAGEMENT")
+                .font(.headline)
+                .fontWeight(.black)
+                .foregroundColor(.white)
+                .tracking(1.2)
+            
+            LazyVGrid(columns: [
+                GridItem(.flexible()),
+                GridItem(.flexible())
+            ], spacing: 12) {
+                NavigationCard(
+                    title: "Deploy Bots",
+                    subtitle: "Advanced Deployment",
+                    icon: "robot.2.fill",
+                    color: DesignSystem.cosmicBlue,
+                    action: {
+                        showingDeployBotsView = true
+                    }
+                )
+                
+                NavigationCard(
+                    title: "Bot Store",
+                    subtitle: "Browse Marketplace",
+                    icon: "storefront.fill",
+                    color: DesignSystem.primaryGold,
+                    action: {
+                        print("Navigate to Bot Store")
+                    }
+                )
+                
+                NavigationCard(
+                    title: "Analytics",
+                    subtitle: "Performance Metrics",
+                    icon: "chart.pie.fill",
+                    color: .purple,
+                    action: {
+                        print("Navigate to Analytics")
+                    }
+                )
+                
+                NavigationCard(
+                    title: "Bot Settings",
+                    subtitle: "Configure Bots",
+                    icon: "gearshape.2.fill",
+                    color: .orange,
+                    action: {
+                        print("Navigate to Bot Settings")
+                    }
+                )
+            }
         }
     }
     
     private func setupDashboard() {
         isInitialized = true
-        
-        // NEW: Check if it's a new trading day
         realTimeStats.checkNewTradingDay()
         
         Task {
@@ -106,8 +175,6 @@ struct ProTraderDashboardView: View {
                     animateNumbers = true
                 }
                 startRealTimeUpdates()
-                
-                // Load any previously deployed bots (if you want to persist bot deployment too)
                 loadDeployedBots()
             }
         }
@@ -149,7 +216,6 @@ struct ProTraderDashboardView: View {
                         .foregroundColor(.gray)
                         .tracking(1.5)
                     
-                    // FIXED: Show accurate daily P&L based on trading history
                     Text(realTimeStats.hasEverTraded ? (realTimeStats.dailyPnL >= 0 ? "+$\(String(format: "%.2f", realTimeStats.dailyPnL))" : "-$\(String(format: "%.2f", abs(realTimeStats.dailyPnL)))") : "$0.00")
                         .font(.title3)
                         .fontWeight(.black)
@@ -212,31 +278,10 @@ struct ProTraderDashboardView: View {
             }
             
             VStack(alignment: .leading, spacing: 8) {
-                HStack {
-                    Text("Server:")
-                        .foregroundColor(.gray)
-                    Text("172.234.201.231")
-                        .foregroundColor(.white)
-                        .fontWeight(.semibold)
-                }
-                
-                HStack {
-                    Text("Latency:")
-                        .foregroundColor(.gray)
-                    Text("\(vpsManager.latency)ms")
-                        .foregroundColor(vpsManager.latency < 50 ? .green : vpsManager.latency < 100 ? .yellow : .red)
-                        .fontWeight(.semibold)
-                }
-                
-                HStack {
-                    Text("CPU Usage:")
-                        .foregroundColor(.gray)
-                    Text("\(String(format: "%.1f", vpsManager.cpuUsage))%")
-                        .foregroundColor(.white)
-                        .fontWeight(.semibold)
-                }
+                statusRow(label: "Server:", value: "172.234.201.231")
+                statusRow(label: "Latency:", value: "\(vpsManager.latency)ms", valueColor: vpsManager.latency < 50 ? .green : vpsManager.latency < 100 ? .yellow : .red)
+                statusRow(label: "CPU Usage:", value: "\(String(format: "%.1f", vpsManager.cpuUsage))%")
             }
-            .font(.caption)
         }
         .padding()
         .background(
@@ -249,13 +294,59 @@ struct ProTraderDashboardView: View {
         )
     }
     
-    private var statsGrid: some View {
+    private func statusRow(label: String, value: String, valueColor: Color = .white) -> some View {
+        HStack {
+            Text(label)
+                .foregroundColor(.gray)
+            Text(value)
+                .foregroundColor(valueColor)
+                .fontWeight(.semibold)
+        }
+        .font(.caption)
+    }
+    
+    private var advancedEngineStatusCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Image(systemName: "gearshape.2.fill")
+                    .foregroundColor(.orange)
+                
+                Text("ADVANCED ENGINE")
+                    .font(.headline)
+                    .fontWeight(.black)
+                    .foregroundColor(.white)
+                    .tracking(1.2)
+                
+                Spacer()
+                
+                Circle()
+                    .fill(showingAdvancedEngines ? Color.green : Color.red)
+                    .frame(width: 12, height: 12)
+            }
+            
+            VStack(alignment: .leading, spacing: 8) {
+                statusRow(label: "Status:", value: showingAdvancedEngines ? "Active" : "Inactive")
+                statusRow(label: "CPU Usage:", value: "\(String(format: "%.1f", vpsManager.cpuUsage))%")
+            }
+        }
+        .padding()
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(Color.gray.opacity(0.1))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16)
+                        .stroke(Color.orange.opacity(0.3), lineWidth: 1)
+                )
+        )
+    }
+    
+    private var enhancedStatsGrid: some View {
         LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 16), count: 2), spacing: 16) {
             ProTraderStatCard(
                 title: "ACTIVE BOTS",
                 value: "\(deployedBots.count)",
                 subtitle: deployedBots.isEmpty ? (realTimeStats.hasEverTraded ? "Stopped" : "Ready to Deploy") : "Training on VPS",
-                color: deployedBots.isEmpty ? (realTimeStats.hasEverTraded ? .orange : .gray) : .green,
+                color: deployedBots.isEmpty ? (realTimeStats.hasEverTraded ? Color.orange : Color.gray) : Color.green,
                 icon: "bolt.fill"
             )
             
@@ -263,7 +354,7 @@ struct ProTraderDashboardView: View {
                 title: "WIN RATE",
                 value: realTimeStats.hasEverTraded ? "\(String(format: "%.1f", realTimeStats.winRate))%" : "0.0%",
                 subtitle: realTimeStats.hasEverTraded ? "\(realTimeStats.totalTrades) Total Trades" : "No Data",
-                color: realTimeStats.hasEverTraded ? (realTimeStats.winRate >= 50 ? .green : .red) : .gray,
+                color: realTimeStats.hasEverTraded ? (realTimeStats.winRate >= 50 ? Color.green : Color.red) : Color.gray,
                 icon: "chart.line.uptrend.xyaxis"
             )
             
@@ -271,7 +362,7 @@ struct ProTraderDashboardView: View {
                 title: "TOTAL P&L",
                 value: realTimeStats.hasEverTraded ? (realTimeStats.totalPnL >= 0 ? "+$\(String(format: "%.0f", realTimeStats.totalPnL))" : "-$\(String(format: "%.0f", abs(realTimeStats.totalPnL)))") : "$0",
                 subtitle: realTimeStats.hasEverTraded ? "All Time Performance" : "No Trades",
-                color: realTimeStats.hasEverTraded ? (realTimeStats.totalPnL >= 0 ? .green : .red) : .gray,
+                color: realTimeStats.hasEverTraded ? (realTimeStats.totalPnL >= 0 ? Color.green : Color.red) : Color.gray,
                 icon: "dollarsign.circle.fill"
             )
             
@@ -279,8 +370,16 @@ struct ProTraderDashboardView: View {
                 title: "GODMODE",
                 value: "\(deployedBots.filter { $0.isGodModeEnabled }.count)",
                 subtitle: deployedBots.isEmpty ? (realTimeStats.hasEverTraded ? "Inactive" : "Not Deployed") : "Active",
-                color: deployedBots.isEmpty ? (realTimeStats.hasEverTraded ? .orange : .gray) : .orange,
+                color: deployedBots.isEmpty ? (realTimeStats.hasEverTraded ? Color.orange : Color.gray) : Color.orange,
                 icon: "crown.fill"
+            )
+            
+            ProTraderStatCard(
+                title: "ADVANCED ENGINE",
+                value: showingAdvancedEngines ? "Active" : "Inactive",
+                subtitle: "CPU Usage: \(String(format: "%.1f", vpsManager.cpuUsage))%",
+                color: showingAdvancedEngines ? Color.green : Color.red,
+                icon: "gearshape.2.fill"
             )
         }
     }
@@ -305,7 +404,6 @@ struct ProTraderDashboardView: View {
             }
             
             if deployedBots.isEmpty {
-                // Show message when no bots deployed
                 VStack(spacing: 16) {
                     Image(systemName: "bolt.slash")
                         .font(.system(size: 60))
@@ -335,7 +433,6 @@ struct ProTraderDashboardView: View {
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 40)
             } else {
-                // Show active bots
                 LazyVStack(spacing: 12) {
                     ForEach(deployedBots.prefix(10)) { bot in
                         ActiveBotCard(bot: bot) {
@@ -383,36 +480,26 @@ struct ProTraderDashboardView: View {
     }
     
     private func updateRealTimeStats() async {
-        // Only generate NEW trades if bots are deployed, but keep historical data
-        guard !deployedBots.isEmpty else { 
-            // DON'T reset stats when bots are stopped - preserve historical data
-            return 
-        }
+        guard !deployedBots.isEmpty else { return }
         
-        // Simulate real trading data updates only when bots are active
         await MainActor.run {
-            // Mark that we've had trading activity
             realTimeStats.hasEverTraded = true
             
-            // Update P&L values
             let dailyChange = Double.random(in: -50...100)
             let totalChange = Double.random(in: -25...75)
             
             realTimeStats.dailyPnL += dailyChange
             realTimeStats.totalPnL += totalChange
             
-            // Update trade counters for accurate win rate
             realTimeStats.totalTrades += 1
             if totalChange > 0 {
                 realTimeStats.winningTrades += 1
             }
             
-            // Calculate accurate win rate based on actual trades
             if realTimeStats.totalTrades > 0 {
                 realTimeStats.winRate = (Double(realTimeStats.winningTrades) / Double(realTimeStats.totalTrades)) * 100
             }
             
-            // Add new trade to recent activity
             let symbols = ["XAUUSD", "EURUSD", "GBPUSD", "USDJPY", "AUDUSD"]
             let actions = ["BUY", "SELL"]
             
@@ -431,7 +518,6 @@ struct ProTraderDashboardView: View {
                 realTimeStats.recentTrades.removeLast()
             }
             
-            // NEW: Save updated stats automatically
             realTimeStats.save()
         }
     }
@@ -444,7 +530,6 @@ struct ProTraderDashboardView: View {
         return bot.insights
     }
     
-    // NEW: Save deployed bots to UserDefaults (optional)
     private func saveDeployedBots() {
         let botNames = deployedBots.map { $0.name }
         UserDefaults.standard.set(botNames, forKey: "DeployedBotNames")
@@ -452,17 +537,13 @@ struct ProTraderDashboardView: View {
         print("🤖 Deployed bot info saved")
     }
     
-    // NEW: Load previously deployed bots (optional)
     private func loadDeployedBots() {
         let botCount = UserDefaults.standard.integer(forKey: "DeployedBotCount")
         if botCount > 0 {
             print("🔄 Found \(botCount) previously deployed bots")
-            // Note: You might want to reconstruct the bot objects here
-            // For now, just show that bots were previously active
         }
     }
     
-    // NEW: Handle deployment completion with persistence
     private func handleDeploymentCompletion(_ bots: [RealTimeProTraderBot]) {
         deployedBots = bots
         saveDeployedBots()
@@ -475,24 +556,62 @@ struct ProTraderDashboardView: View {
         }
     }
     
-    // NEW: Add manual save option (for testing or explicit saves)
     private func saveTradingData() {
         realTimeStats.save()
         saveDeployedBots()
         print("💾 All trading data saved manually")
     }
     
-    // NEW: Add reset option (if user wants to start completely fresh)
     private func resetAllTradingData() {
         realTimeStats = TradingStats()
         deployedBots = []
         
-        // Clear UserDefaults
         UserDefaults.standard.removeObject(forKey: "TradingStats")
         UserDefaults.standard.removeObject(forKey: "DeployedBotNames")
         UserDefaults.standard.removeObject(forKey: "DeployedBotCount")
         
         print("🗑️ All trading data reset and cleared from storage")
+    }
+}
+
+// MARK: - Navigation Card Component
+struct NavigationCard: View {
+    let title: String
+    let subtitle: String
+    let icon: String
+    let color: Color
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 12) {
+                Image(systemName: icon)
+                    .font(.title2)
+                    .foregroundColor(color)
+                
+                VStack(spacing: 4) {
+                    Text(title)
+                        .font(.headline)
+                        .fontWeight(.bold)
+                        .foregroundColor(.white)
+                    
+                    Text(subtitle)
+                        .font(.caption)
+                        .foregroundColor(.gray)
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .frame(height: 120)
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(Color.gray.opacity(0.1))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16)
+                            .stroke(color.opacity(0.3), lineWidth: 1)
+                    )
+            )
+        }
+        .buttonStyle(.plain)
     }
 }
 
@@ -550,7 +669,6 @@ struct ActiveBotCard: View {
     var body: some View {
         Button(action: onTap) {
             HStack(spacing: 16) {
-                // Bot Status Indicator
                 Circle()
                     .fill(bot.status == "active" ? Color.green : Color.orange)
                     .frame(width: 12, height: 12)
@@ -663,8 +781,9 @@ struct TradeActivityCard: View {
 }
 
 // MARK: - Quick Deployment Sheet
-struct QuickDeploymentSheet: View {
+struct AdvancedQuickDeploymentSheet: View {
     @ObservedObject var vpsManager: VPSConnectionManager
+    @ObservedObject var botManager: BotManager
     let onDeploymentComplete: ([RealTimeProTraderBot]) -> Void
     
     @Environment(\.dismiss) private var dismiss
@@ -679,7 +798,6 @@ struct QuickDeploymentSheet: View {
             Color.black.ignoresSafeArea()
             
             VStack(spacing: 30) {
-                // Header
                 HStack {
                     Button("Cancel") {
                         if !isDeploying {
@@ -709,7 +827,6 @@ struct QuickDeploymentSheet: View {
                 }
                 .padding()
                 
-                // Main Content
                 VStack(spacing: 20) {
                     Image(systemName: "bolt.fill")
                         .font(.system(size: 80))
@@ -728,7 +845,6 @@ struct QuickDeploymentSheet: View {
                         .multilineTextAlignment(.center)
                         .padding(.horizontal)
                     
-                    // Connection Status
                     VStack(spacing: 8) {
                         Text("VPS Status: \(connectionStatus)")
                             .font(.headline)
@@ -740,7 +856,6 @@ struct QuickDeploymentSheet: View {
                     }
                 }
                 
-                // Progress and Logs
                 if isDeploying {
                     VStack(spacing: 16) {
                         ProgressView(value: deploymentProgress)
@@ -752,7 +867,6 @@ struct QuickDeploymentSheet: View {
                             .fontWeight(.bold)
                             .foregroundColor(.orange)
                         
-                        // Deployment Log
                         ScrollView {
                             VStack(alignment: .leading, spacing: 4) {
                                 ForEach(deploymentLog, id: \.self) { log in
@@ -776,7 +890,6 @@ struct QuickDeploymentSheet: View {
                 
                 Spacer()
                 
-                // Deploy Button
                 if !isDeploying {
                     Button(action: deployAllBots) {
                         Text("DEPLOY ALL 5000 BOTS")
@@ -819,7 +932,6 @@ struct QuickDeploymentSheet: View {
         deploymentLog = []
         
         Task {
-            // Connect to VPS first
             await MainActor.run {
                 deploymentLog.append("✓ Connecting to VPS 172.234.201.231...")
             }
@@ -838,7 +950,6 @@ struct QuickDeploymentSheet: View {
                 return
             }
             
-            // Deploy bots in batches
             let totalBots = 5000
             let batchSize = 100
             let batches = (totalBots + batchSize - 1) / batchSize
@@ -851,7 +962,6 @@ struct QuickDeploymentSheet: View {
                     deploymentLog.append("✓ Deploying bots \(startIndex + 1) to \(endIndex)...")
                 }
                 
-                // Simulate bot deployment with real VPS communication
                 for i in startIndex..<endIndex {
                     let bot = await createAndDeployBot(index: i)
                     
@@ -864,8 +974,7 @@ struct QuickDeploymentSheet: View {
                         }
                     }
                     
-                    // Small delay to show progress
-                    try? await Task.sleep(nanoseconds: 5_000_000) // 5ms
+                    try? await Task.sleep(nanoseconds: 5_000_000)
                 }
                 
                 await MainActor.run {
@@ -906,10 +1015,7 @@ struct QuickDeploymentSheet: View {
             lastHeartbeat: Date()
         )
         
-        // Simulate VPS deployment using existing VPS manager
         _ = await vpsManager.deployBot(bot.name)
-        
-        // Start historical data training
         await bot.startHistoricalTraining()
         
         return bot
@@ -917,7 +1023,7 @@ struct QuickDeploymentSheet: View {
 }
 
 // MARK: - Data Models
-struct TradingStats: Codable {  // Added Codable for persistence
+struct TradingStats: Codable {
     var dailyPnL: Double = 0.0
     var totalPnL: Double = 0.0
     var winRate: Double = 0.0
@@ -925,9 +1031,8 @@ struct TradingStats: Codable {  // Added Codable for persistence
     var hasEverTraded: Bool = false
     var totalTrades: Int = 0
     var winningTrades: Int = 0
-    var lastTradingDate: Date = Date()  // Track when we last traded
+    var lastTradingDate: Date = Date()
     
-    // NEW: Save to UserDefaults
     func save() {
         if let encoded = try? JSONEncoder().encode(self) {
             UserDefaults.standard.set(encoded, forKey: "TradingStats")
@@ -935,7 +1040,6 @@ struct TradingStats: Codable {  // Added Codable for persistence
         }
     }
     
-    // NEW: Load from UserDefaults
     static func load() -> TradingStats {
         if let data = UserDefaults.standard.data(forKey: "TradingStats"),
            let stats = try? JSONDecoder().decode(TradingStats.self, from: data) {
@@ -947,19 +1051,18 @@ struct TradingStats: Codable {  // Added Codable for persistence
         }
     }
     
-    // NEW: Check if it's a new trading day and reset daily P&L
     mutating func checkNewTradingDay() {
         let calendar = Calendar.current
         if !calendar.isDate(lastTradingDate, inSameDayAs: Date()) {
             print("📅 New trading day detected - resetting daily P&L")
             dailyPnL = 0.0
             lastTradingDate = Date()
-            save() // Save the reset
+            save()
         }
     }
 }
 
-struct TradeActivity: Identifiable, Codable {  // Added Codable for persistence
+struct TradeActivity: Identifiable, Codable {
     let id: UUID
     let botName: String
     let symbol: String

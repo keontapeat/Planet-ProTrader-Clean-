@@ -711,13 +711,6 @@ struct LogEntry {
     }
 }
 
-// MARK: - Array Extension
-extension Array {
-    subscript(safe index: Index) -> Element? {
-        return indices.contains(index) ? self[index] : nil
-    }
-}
-
 // MARK: - Task Extension
 extension Task where Success == Never, Failure == Never {
     static func sleep(seconds: Double) async {
@@ -725,8 +718,7 @@ extension Task where Success == Never, Failure == Never {
     }
 }
 
-struct MetaApiConnectionDiagnosticsView_Previews: PreviewProvider {
-    static var previews: some View {
-        MetaApiConnectionDiagnosticsView()
-    }
+#Preview {
+    MetaApiConnectionDiagnosticsView()
+        .preferredColorScheme(.dark)
 }

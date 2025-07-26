@@ -252,28 +252,32 @@ struct RealTimeStatusView: View {
             let tradesSummary = mt5Engine.getTradesSummary()
             
             LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 12) {
-                MetricCard(
+                StatusMetricCard(
                     title: "Total Trades",
                     value: "\(tradesSummary.total)",
-                    color: .blue
+                    color: .blue,
+                    icon: "number.circle"
                 )
                 
-                MetricCard(
-                    title: "Open Positions",
+                StatusMetricCard(
+                    title: "Open Positions", 
                     value: "\(tradesSummary.open)",
-                    color: .orange
+                    color: .orange,
+                    icon: "chart.bar"
                 )
                 
-                MetricCard(
+                StatusMetricCard(
                     title: "Total Profit",
                     value: String(format: "$%.2f", tradesSummary.profit),
-                    color: tradesSummary.profit >= 0 ? .green : .red
+                    color: tradesSummary.profit >= 0 ? .green : .red,
+                    icon: "dollarsign.circle"
                 )
                 
-                MetricCard(
+                StatusMetricCard(
                     title: "Win Rate",
                     value: "87%",
-                    color: .green
+                    color: .green,
+                    icon: "percent"
                 )
             }
         }
@@ -374,13 +378,18 @@ struct StatusCard: View {
     }
 }
 
-struct MetricCard: View {
+struct StatusMetricCard: View {
     let title: String
     let value: String
     let color: Color
+    let icon: String
     
     var body: some View {
         VStack(spacing: 8) {
+            Image(systemName: icon)
+                .font(.title2)
+                .foregroundColor(color)
+            
             Text(value)
                 .font(DesignSystem.Typography.metricFont)
                 .fontWeight(.bold)

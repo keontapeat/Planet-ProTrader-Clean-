@@ -442,8 +442,8 @@ struct CountryInfo: Codable {
     }
 }
 
-// MARK: - Yahoo Finance Models
-struct YahooFinanceResponse: Codable {
+// MARK: - Alternative Yahoo Finance Models (to avoid conflict)
+struct FreeAPIYahooResponse: Codable {
     let chart: Chart
     
     struct Chart: Codable {
@@ -605,11 +605,165 @@ struct UnifiedNewsItem: Identifiable {
     }
 }
 
-#Preview {
-    VStack {
-        Text("Free API Models")
-            .font(.title)
-        Text("Comprehensive data structures for 10 APIs")
-            .font(.caption)
+// MARK: - API Service Enum
+enum APIService: String, CaseIterable {
+    case finnhub = "Finnhub"
+    case alphaVantage = "Alpha Vantage"
+    case coinGecko = "CoinGecko"
+    case newsAPI = "NewsAPI"
+    case tradingEconomics = "Trading Economics"
+    case fixer = "Fixer.io"
+    case twelveData = "Twelve Data"
+    case polygon = "Polygon.io"
+    case restCountries = "REST Countries"
+    case yahooFinance = "Yahoo Finance"
+    
+    var displayName: String {
+        return rawValue
     }
+    
+    var baseURL: String {
+        switch self {
+        case .finnhub: return "https://finnhub.io/api/v1"
+        case .alphaVantage: return "https://www.alphavantage.co/query"
+        case .coinGecko: return "https://api.coingecko.com/api/v3"
+        case .newsAPI: return "https://newsapi.org/v2"
+        case .tradingEconomics: return "https://api.tradingeconomics.com"
+        case .fixer: return "https://api.fixer.io/v1"
+        case .twelveData: return "https://api.twelvedata.com"
+        case .polygon: return "https://api.polygon.io"
+        case .restCountries: return "https://restcountries.com/v3.1"
+        case .yahooFinance: return "https://query1.finance.yahoo.com"
+        }
+    }
+    
+    var requiresAPIKey: Bool {
+        switch self {
+        case .coinGecko, .restCountries, .yahooFinance:
+            return false
+        default:
+            return true
+        }
+    }
+    
+    var endpoint: String {
+        switch self {
+        case .finnhub: return FreeAPIConfiguration.Endpoints.finnhub
+        case .alphaVantage: return FreeAPIConfiguration.Endpoints.alphaVantage
+        case .tradingEconomics: return FreeAPIConfiguration.Endpoints.tradingEconomics
+        case .coinGecko: return FreeAPIConfiguration.Endpoints.coinGecko
+        case .fixer: return FreeAPIConfiguration.Endpoints.fixer
+        case .newsAPI: return FreeAPIConfiguration.Endpoints.newsAPI
+        case .twelveData: return FreeAPIConfiguration.Endpoints.twelveData
+        case .polygon: return FreeAPIConfiguration.Endpoints.polygon
+        case .restCountries: return FreeAPIConfiguration.Endpoints.restCountries
+        case .yahooFinance: return FreeAPIConfiguration.Endpoints.yahooFinance
+        }
+    }
+    
+    var rateLimit: (calls: Int, period: TimeInterval) {
+        switch self {
+        case .finnhub: return FreeAPIConfiguration.RateLimits.finnhub
+        case .alphaVantage: return FreeAPIConfiguration.RateLimits.alphaVantage
+        case .tradingEconomics: return FreeAPIConfiguration.RateLimits.tradingEconomics
+        case .coinGecko: return FreeAPIConfiguration.RateLimits.coinGecko
+        case .fixer: return FreeAPIConfiguration.RateLimits.fixer
+        case .newsAPI: return FreeAPIConfiguration.RateLimits.newsAPI
+        case .twelveData: return FreeAPIConfiguration.RateLimits.twelveData
+        case .polygon: return FreeAPIConfiguration.RateLimits.polygon
+        case .restCountries: return FreeAPIConfiguration.RateLimits.restCountries
+        case .yahooFinance: return FreeAPIConfiguration.RateLimits.yahooFinance
+        }
+    }
+    
+    var icon: String {
+        switch self {
+        case .finnhub: return "chart.line.uptrend.xyaxis"
+        case .alphaVantage: return "waveform.path.ecg"
+        case .coinGecko: return "bitcoinsign.circle"
+        case .newsAPI: return "newspaper"
+        case .tradingEconomics: return "building.columns"
+        case .fixer: return "dollarsign.circle"
+        case .twelveData: return "clock"
+        case .polygon: return "hexagon"
+        case .restCountries: return "globe"
+        case .yahooFinance: return "y.circle"
+        }
+    }
+    
+    var color: Color {
+        switch self {
+        case .finnhub: return .blue
+        case .alphaVantage: return .green
+        case .coinGecko: return .orange
+        case .newsAPI: return .red
+        case .tradingEconomics: return .purple
+        case .fixer: return .mint
+        case .twelveData: return .cyan
+        case .polygon: return .indigo
+        case .restCountries: return .brown
+        case .yahooFinance: return .pink
+        }
+    }
+}
+
+#Preview {
+    ScrollView {
+        VStack(spacing: 20) {
+            Text("📊 Free API Models")
+                .font(.largeTitle)
+                .fontWeight(.bold)
+                .foregroundStyle(
+                    LinearGradient(
+                        colors: [.blue, .purple],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
+            
+            Text("Comprehensive data structures for 10 free APIs")
+                .font(.title3)
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+            
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 16) {
+                ForEach(APIService.allCases, id: \.self) { service in
+                    VStack(spacing: 8) {
+                        Image(systemName: service.icon)
+                            .font(.title2)
+                            .foregroundColor(service.color)
+                        
+                        Text(service.displayName)
+                            .font(.caption)
+                            .fontWeight(.medium)
+                            .multilineTextAlignment(.center)
+                    }
+                    .frame(height: 80)
+                    .frame(maxWidth: .infinity)
+                    .background(service.color.opacity(0.1))
+                    .cornerRadius(12)
+                }
+            }
+            
+            VStack(spacing: 12) {
+                Text("✅ Unified Data Models")
+                    .font(.headline)
+                    .foregroundColor(.green)
+                
+                Text("• Real-time quotes and price history")
+                Text("• News and market sentiment analysis") 
+                Text("• Economic calendar and events")
+                Text("• Multi-currency exchange rates")
+                Text("• Cryptocurrency data integration")
+                Text("• Country and regional information")
+            }
+            .font(.subheadline)
+            .foregroundColor(.secondary)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding()
+            .background(Color.gray.opacity(0.1))
+            .cornerRadius(12)
+        }
+    }
+    .padding()
 }

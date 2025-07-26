@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import SwiftUI
 
 // MARK: - Free API Configuration Hub
 struct FreeAPIConfiguration {
@@ -139,21 +140,10 @@ struct FreeAPIConfiguration {
     }
 }
 
-// MARK: - API Service Types
-enum APIService: String, CaseIterable {
-    case finnhub = "Finnhub"
-    case alphaVantage = "Alpha Vantage"
-    case tradingEconomics = "Trading Economics"
-    case coinGecko = "CoinGecko"
-    case fixer = "Fixer.io"
-    case newsAPI = "NewsAPI"
-    case twelveData = "Twelve Data"
-    case polygon = "Polygon.io"
-    case restCountries = "REST Countries"
-    case yahooFinance = "Yahoo Finance"
-    
-    var requiresAPIKey: Bool {
-        switch self {
+// MARK: - API Service Helper Functions
+struct APIServiceHelper {
+    static func requiresAPIKey(_ service: APIService) -> Bool {
+        switch service {
         case .coinGecko, .restCountries, .yahooFinance:
             return false
         default:
@@ -161,8 +151,8 @@ enum APIService: String, CaseIterable {
         }
     }
     
-    var endpoint: String {
-        switch self {
+    static func getEndpoint(for service: APIService) -> String {
+        switch service {
         case .finnhub: return FreeAPIConfiguration.Endpoints.finnhub
         case .alphaVantage: return FreeAPIConfiguration.Endpoints.alphaVantage
         case .tradingEconomics: return FreeAPIConfiguration.Endpoints.tradingEconomics
@@ -176,8 +166,8 @@ enum APIService: String, CaseIterable {
         }
     }
     
-    var rateLimit: (calls: Int, period: TimeInterval) {
-        switch self {
+    static func getRateLimit(for service: APIService) -> (calls: Int, period: TimeInterval) {
+        switch service {
         case .finnhub: return FreeAPIConfiguration.RateLimits.finnhub
         case .alphaVantage: return FreeAPIConfiguration.RateLimits.alphaVantage
         case .tradingEconomics: return FreeAPIConfiguration.RateLimits.tradingEconomics
@@ -190,9 +180,23 @@ enum APIService: String, CaseIterable {
         case .yahooFinance: return FreeAPIConfiguration.RateLimits.yahooFinance
         }
     }
+    
+    static func getAPIKey(for service: APIService) -> String {
+        switch service {
+        case .finnhub: return FreeAPIConfiguration.APIKeys.finnhub
+        case .alphaVantage: return FreeAPIConfiguration.APIKeys.alphaVantage
+        case .tradingEconomics: return FreeAPIConfiguration.APIKeys.tradingEconomics
+        case .fixer: return FreeAPIConfiguration.APIKeys.fixer
+        case .newsAPI: return FreeAPIConfiguration.APIKeys.newsAPI
+        case .twelveData: return FreeAPIConfiguration.APIKeys.twelveData
+        case .polygon: return FreeAPIConfiguration.APIKeys.polygon
+        case .coinGecko, .restCountries, .yahooFinance: return ""
+        }
+    }
 }
 
 // MARK: - API Status Tracking
+@MainActor
 class APIStatus: ObservableObject {
     @Published var serviceStatus: [APIService: ServiceStatus] = [:]
     @Published var lastUpdated = Date()
@@ -223,6 +227,16 @@ class APIStatus: ObservableObject {
             case .unauthorized: return "Unauthorized"
             }
         }
+        
+        var icon: String {
+            switch self {
+            case .operational: return "checkmark.circle.fill"
+            case .degraded: return "exclamationmark.triangle.fill"
+            case .offline: return "xmark.circle.fill"
+            case .rateLimited: return "clock.circle.fill"
+            case .unauthorized: return "lock.circle.fill"
+            }
+        }
     }
     
     init() {
@@ -233,15 +247,291 @@ class APIStatus: ObservableObject {
     }
     
     func updateStatus(_ service: APIService, status: ServiceStatus) {
-        DispatchQueue.main.async {
-            self.serviceStatus[service] = status
-            self.lastUpdated = Date()
-        }
+        serviceStatus[service] = status
+        lastUpdated = Date()
     }
     
     func getStatus(_ service: APIService) -> ServiceStatus {
         return serviceStatus[service] ?? .offline
     }
+    
+    func getOperationalServices() -> [APIService] {
+        return APIService.allCases.filter { getStatus($0) == .operational }
+    }
+    
+    func getOfflineServices() -> [APIService] {
+        return APIService.allCases.filter { getStatus($0) == .offline }
+    }
+    
+    func getOverallHealth() -> Double {
+        let operationalCount = getOperationalServices().count
+        let totalCount = APIService.allCases.count
+        return Double(operationalCount) / Double(totalCount)
+    }
+    
+    func getHealthColor() -> Color {
+        let health = getOverallHealth()
+        if health >= 0.8 { return .green }
+        else if health >= 0.6 { return .yellow }
+        else if health >= 0.4 { return .orange }
+        else { return .red }
+    }
+    
+    func getHealthDescription() -> String {
+        let health = getOverallHealth()
+        if health >= 0.8 { return "Excellent" }
+        else if health >= 0.6 { return "Good" }
+        else if health >= 0.4 { return "Fair" }
+        else { return "Poor" }
+    }
 }
 
-import SwiftUI
+// MARK: - Rate Limiting Manager
+@MainActor
+class RateLimitManager: ObservableObject {
+    private var requestCounts: [APIService: [(Date, Int)]] = [:]
+    private let cleanupInterval: TimeInterval = 300 // 5 minutes
+    
+    @Published var rateLimitStatus: [APIService: Bool] = [:]
+    
+    init() {
+        // Initialize rate limit status
+        for service in APIService.allCases {
+            rateLimitStatus[service] = false
+        }
+        
+        // Start cleanup timer
+        startCleanupTimer()
+    }
+    
+    private func startCleanupTimer() {
+        Timer.scheduledTimer(withTimeInterval: cleanupInterval, repeats: true) { _ in
+            Task { @MainActor in
+                self.cleanupOldRequests()
+            }
+        }
+    }
+    
+    private func cleanupOldRequests() {
+        let now = Date()
+        
+        for service in APIService.allCases {
+            let rateLimit = APIServiceHelper.getRateLimit(for: service)
+            let cutoffTime = now.addingTimeInterval(-rateLimit.period)
+            
+            requestCounts[service] = requestCounts[service]?.filter { $0.0 > cutoffTime } ?? []
+        }
+    }
+    
+    func canMakeRequest(to service: APIService) -> Bool {
+        let rateLimit = APIServiceHelper.getRateLimit(for: service)
+        let now = Date()
+        let cutoffTime = now.addingTimeInterval(-rateLimit.period)
+        
+        let recentRequests = requestCounts[service]?.filter { $0.0 > cutoffTime } ?? []
+        let totalRequests = recentRequests.reduce(0) { $0 + $1.1 }
+        
+        let canMake = totalRequests < rateLimit.calls
+        rateLimitStatus[service] = !canMake
+        
+        return canMake
+    }
+    
+    func recordRequest(to service: APIService, count: Int = 1) {
+        let now = Date()
+        
+        if requestCounts[service] == nil {
+            requestCounts[service] = []
+        }
+        
+        requestCounts[service]?.append((now, count))
+    }
+    
+    func getRemainingRequests(for service: APIService) -> Int {
+        let rateLimit = APIServiceHelper.getRateLimit(for: service)
+        let now = Date()
+        let cutoffTime = now.addingTimeInterval(-rateLimit.period)
+        
+        let recentRequests = requestCounts[service]?.filter { $0.0 > cutoffTime } ?? []
+        let totalRequests = recentRequests.reduce(0) { $0 + $1.1 }
+        
+        return max(0, rateLimit.calls - totalRequests)
+    }
+    
+    func getTimeUntilReset(for service: APIService) -> TimeInterval {
+        let rateLimit = APIServiceHelper.getRateLimit(for: service)
+        
+        guard let oldestRequest = requestCounts[service]?.first?.0 else {
+            return 0
+        }
+        
+        let resetTime = oldestRequest.addingTimeInterval(rateLimit.period)
+        return max(0, resetTime.timeIntervalSinceNow)
+    }
+}
+
+// MARK: - API Configuration Manager
+@MainActor
+class APIConfigurationManager: ObservableObject {
+    static let shared = APIConfigurationManager()
+    
+    @Published var enabledServices: Set<APIService> = Set(APIService.allCases)
+    @Published var customEndpoints: [APIService: String] = [:]
+    @Published var customAPIKeys: [APIService: String] = [:]
+    
+    private init() {
+        loadConfiguration()
+    }
+    
+    private func loadConfiguration() {
+        // Load from UserDefaults or configuration file
+        if let savedServices = UserDefaults.standard.array(forKey: "EnabledAPIServices") as? [String] {
+            enabledServices = Set(savedServices.compactMap { APIService(rawValue: $0) })
+        }
+        
+        if let savedEndpoints = UserDefaults.standard.dictionary(forKey: "CustomEndpoints") as? [String: String] {
+            customEndpoints = Dictionary(uniqueKeysWithValues: 
+                savedEndpoints.compactMap { key, value in
+                    guard let service = APIService(rawValue: key) else { return nil }
+                    return (service, value)
+                }
+            )
+        }
+        
+        if let savedKeys = UserDefaults.standard.dictionary(forKey: "CustomAPIKeys") as? [String: String] {
+            customAPIKeys = Dictionary(uniqueKeysWithValues:
+                savedKeys.compactMap { key, value in
+                    guard let service = APIService(rawValue: key) else { return nil }
+                    return (service, value)
+                }
+            )
+        }
+    }
+    
+    func saveConfiguration() {
+        UserDefaults.standard.set(enabledServices.map { $0.rawValue }, forKey: "EnabledAPIServices")
+        
+        let endpointDict = Dictionary(uniqueKeysWithValues: customEndpoints.map { ($0.key.rawValue, $0.value) })
+        UserDefaults.standard.set(endpointDict, forKey: "CustomEndpoints")
+        
+        let keyDict = Dictionary(uniqueKeysWithValues: customAPIKeys.map { ($0.key.rawValue, $0.value) })
+        UserDefaults.standard.set(keyDict, forKey: "CustomAPIKeys")
+    }
+    
+    func isServiceEnabled(_ service: APIService) -> Bool {
+        return enabledServices.contains(service)
+    }
+    
+    func enableService(_ service: APIService) {
+        enabledServices.insert(service)
+        saveConfiguration()
+    }
+    
+    func disableService(_ service: APIService) {
+        enabledServices.remove(service)
+        saveConfiguration()
+    }
+    
+    func setCustomEndpoint(_ endpoint: String, for service: APIService) {
+        customEndpoints[service] = endpoint
+        saveConfiguration()
+    }
+    
+    func setCustomAPIKey(_ key: String, for service: APIService) {
+        customAPIKeys[service] = key
+        saveConfiguration()
+    }
+    
+    func getEffectiveEndpoint(for service: APIService) -> String {
+        return customEndpoints[service] ?? APIServiceHelper.getEndpoint(for: service)
+    }
+    
+    func getEffectiveAPIKey(for service: APIService) -> String {
+        return customAPIKeys[service] ?? APIServiceHelper.getAPIKey(for: service)
+    }
+}
+
+#Preview {
+    ScrollView {
+        VStack(spacing: 20) {
+            Text("🔧 Free API Configuration")
+                .font(.largeTitle)
+                .fontWeight(.bold)
+                .foregroundStyle(
+                    LinearGradient(
+                        colors: [.blue, .purple],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
+            
+            Text("Comprehensive API management for enhanced trading data")
+                .font(.title3)
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+            
+            VStack(spacing: 16) {
+                HStack {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("API Services")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        Text("10")
+                            .font(.title2)
+                            .fontWeight(.bold)
+                            .foregroundColor(.blue)
+                    }
+                    
+                    Spacer()
+                    
+                    VStack(alignment: .center, spacing: 4) {
+                        Text("Free Tier")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        Text("7/10")
+                            .font(.title2)
+                            .fontWeight(.bold)
+                            .foregroundColor(.green)
+                    }
+                    
+                    Spacer()
+                    
+                    VStack(alignment: .trailing, spacing: 4) {
+                        Text("Rate Limits")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        Text("Managed")
+                            .font(.title2)
+                            .fontWeight(.bold)
+                            .foregroundColor(.orange)
+                    }
+                }
+                .padding()
+                .background(Color.gray.opacity(0.1))
+                .cornerRadius(12)
+                
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("🎯 Key Features")
+                        .font(.headline)
+                        .foregroundColor(.primary)
+                    
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("• Centralized API key management")
+                        Text("• Automatic rate limiting protection")
+                        Text("• Real-time service status monitoring")
+                        Text("• Custom endpoint configuration")
+                        Text("• Comprehensive symbol libraries")
+                        Text("• Intelligent caching system")
+                    }
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding()
+                .background(Color.blue.opacity(0.1))
+                .cornerRadius(12)
+            }
+        }
+    }
+    .padding()
+}
