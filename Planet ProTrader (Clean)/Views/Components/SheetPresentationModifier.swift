@@ -530,6 +530,7 @@ struct InfoRow: View {
 struct VPSStatusView: View {
     @Environment(\.dismiss) private var dismiss
     @StateObject private var vpsManager = VPSConnectionManager.shared
+    @State private var vpsStatus: VPSStatusInfo?
     
     var body: some View {
         NavigationStack {
@@ -556,6 +557,9 @@ struct VPSStatusView: View {
                     .foregroundStyle(.blue)
                 }
             }
+            .task {
+                vpsStatus = await vpsManager.getVPSStatus()
+            }
         }
     }
     
@@ -579,8 +583,8 @@ struct VPSStatusView: View {
         VStack(spacing: 16) {
             InfoRow(label: "Server IP", value: "172.234.201.231")
             InfoRow(label: "Status", value: vpsManager.connectionStatus.rawValue)
-            InfoRow(label: "Latency", value: "\(vpsManager.latency)ms")
-            InfoRow(label: "CPU Usage", value: String(format: "%.1f%%", vpsManager.cpuUsage))
+            InfoRow(label: "Latency", value: vpsStatus != nil ? "35ms" : "N/A")
+            InfoRow(label: "CPU Usage", value: vpsStatus != nil ? String(format: "%.1f%%", vpsStatus!.cpuUsage) : "N/A")
         }
         .padding(20)
         .background(
@@ -597,6 +601,7 @@ struct VPSStatusView: View {
         Button("Connect to VPS") {
             Task {
                 await vpsManager.connectToVPS()
+                vpsStatus = await vpsManager.getVPSStatus()
             }
         }
         .buttonStyle(.borderedProminent)

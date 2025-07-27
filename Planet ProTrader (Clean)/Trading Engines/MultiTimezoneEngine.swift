@@ -362,70 +362,7 @@ struct RegionalPerformance {
     }
 }
 
-#Preview {
-    NavigationStack {
-        ScrollView {
-            VStack(spacing: 24) {
-                // Header
-                VStack(spacing: 12) {
-                    Image(systemName: "globe.americas.fill")
-                        .font(.system(size: 60))
-                        .foregroundColor(.blue)
-                    
-                    Text("Multi-Timezone Engine")
-                        .font(.largeTitle)
-                        .fontWeight(.bold)
-                    
-                    Text("Global Trading Coordination")
-                        .font(.title2)
-                        .foregroundColor(.secondary)
-                }
-                
-                // Global Metrics
-                LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 3), spacing: 16) {
-                    MetricCard(title: "Global Accuracy", value: "94.2%", color: .green, icon: "target")
-                    MetricCard(title: "Active Accounts", value: "847", color: .blue, icon: "person.3.fill")
-                    MetricCard(title: "Regions", value: "6", color: .purple, icon: "globe")
-                    MetricCard(title: "Avg Latency", value: "28ms", color: .orange, icon: "timer")
-                    MetricCard(title: "System Health", value: "96.5%", color: .green, icon: "heart.fill")
-                    MetricCard(title: "Sync Status", value: "Online", color: .green, icon: "checkmark.circle.fill")
-                }
-                
-                // Regional Performance
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("Regional Performance")
-                        .font(.headline)
-                        .fontWeight(.semibold)
-                    
-                    LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 12) {
-                        ForEach(["US", "EU", "Asia", "UK", "Canada", "Australia"], id: \.self) { region in
-                            RegionCard(name: region, accuracy: Double.random(in: 0.85...0.95))
-                        }
-                    }
-                }
-                
-                // System Status
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("System Status")
-                        .font(.headline)
-                        .fontWeight(.semibold)
-                    
-                    VStack(spacing: 8) {
-                        StatusRow(title: "Global Coordination", status: "Active", color: .green)
-                        StatusRow(title: "Cross-Region Sync", status: "Synchronized", color: .green)
-                        StatusRow(title: "Load Balancing", status: "Optimized", color: .blue)
-                        StatusRow(title: "Failover Ready", status: "Standby", color: .orange)
-                    }
-                }
-            }
-            .padding()
-        }
-        .navigationTitle("Multi-Timezone Engine")
-        .navigationBarTitleDisplayMode(.inline)
-    }
-}
-
-struct MetricCard: View {
+struct MultiTimezoneMetricCard: View {
     let title: String
     let value: String
     let color: Color
@@ -504,5 +441,68 @@ struct StatusRow: View {
                 .foregroundColor(color)
         }
         .padding(.vertical, 4)
+    }
+}
+
+#Preview {
+    NavigationStack {
+        ScrollView {
+            VStack(spacing: 24) {
+                // Header
+                VStack(spacing: 12) {
+                    Image(systemName: "globe.americas.fill")
+                        .font(.system(size: 60))
+                        .foregroundColor(.blue)
+                    
+                    Text("Multi-Timezone Engine")
+                        .font(.largeTitle)
+                        .fontWeight(.bold)
+                    
+                    Text("Global Trading Coordination")
+                        .font(.title2)
+                        .foregroundColor(.secondary)
+                }
+                
+                // Global Metrics
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 3), spacing: 16) {
+                    MultiTimezoneMetricCard(title: "Global Accuracy", value: "94.2%", color: .green, icon: "target")
+                    MultiTimezoneMetricCard(title: "Active Accounts", value: "847", color: .blue, icon: "person.3.fill")
+                    MultiTimezoneMetricCard(title: "Regions", value: "6", color: .purple, icon: "globe")
+                    MultiTimezoneMetricCard(title: "Avg Latency", value: "28ms", color: .orange, icon: "timer")
+                    MultiTimezoneMetricCard(title: "System Health", value: "96.5%", color: .green, icon: "heart.fill")
+                    MultiTimezoneMetricCard(title: "Sync Status", value: "Online", color: .green, icon: "checkmark.circle.fill")
+                }
+                
+                // Regional Performance
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Regional Performance")
+                        .font(.headline)
+                        .fontWeight(.semibold)
+                    
+                    LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 12) {
+                        ForEach(["US", "EU", "Asia", "UK", "Canada", "Australia"], id: \.self) { region in
+                            RegionCard(name: region, accuracy: Double.random(in: 0.85...0.95))
+                        }
+                    }
+                }
+                
+                // System Status
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("System Status")
+                        .font(.headline)
+                        .fontWeight(.semibold)
+                    
+                    VStack(spacing: 8) {
+                        StatusRow(title: "Global Coordination", status: "Active", color: .green)
+                        StatusRow(title: "Cross-Region Sync", status: "Synchronized", color: .green)
+                        StatusRow(title: "Load Balancing", status: "Optimized", color: .blue)
+                        StatusRow(title: "Failover Ready", status: "Standby", color: .orange)
+                    }
+                }
+            }
+            .padding()
+        }
+        .navigationTitle("Multi-Timezone Engine")
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
