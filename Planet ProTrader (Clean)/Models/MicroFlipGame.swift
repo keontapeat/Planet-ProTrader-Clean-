@@ -20,7 +20,7 @@ struct MicroFlipGame: Identifiable, Codable {
     var status: GameStatus
     let difficulty: Difficulty
     var currentBalance: Double
-    var trades: [FlipTrade] = []
+    var trades: [GameFlipTrade] = []
     var result: GameResult?
     let createdDate: Date
     var completedDate: Date?
@@ -197,9 +197,9 @@ struct MicroFlipGame: Identifiable, Codable {
     }
 }
 
-// MARK: - FlipTrade Model
+// MARK: - GameFlipTrade Model
 
-struct FlipTrade: Identifiable, Codable {
+struct GameFlipTrade: Identifiable, Codable {
     let id = UUID()
     let amount: Double
     let direction: TradeDirection
@@ -273,4 +273,43 @@ extension MicroFlipGame {
             difficulty: .rookie
         )
     ]
+}
+
+#Preview {
+    VStack(spacing: 20) {
+        Text("🎮 Micro Flip Game")
+            .font(DesignSystem.Typography.largeTitle)
+            .goldText()
+        
+        VStack(spacing: 12) {
+            HStack {
+                Text("Game Type:")
+                Spacer()
+                Text(MicroFlipGame.GameType.quickFlip.displayName)
+                    .fontWeight(.semibold)
+            }
+            
+            HStack {
+                Text("Difficulty:")
+                Spacer()
+                Text(MicroFlipGame.Difficulty.pro.displayName)
+                    .fontWeight(.semibold)
+                    .foregroundColor(MicroFlipGame.Difficulty.pro.color)
+            }
+            
+            HStack {
+                Text("Status:")
+                Spacer()
+                Text(MicroFlipGame.GameStatus.active.displayName)
+                    .fontWeight(.semibold)
+                    .foregroundColor(MicroFlipGame.GameStatus.active.color)
+            }
+        }
+        .standardCard()
+        
+        Text("⚡ Quick flip games • 🎯 Precision trading • 🏆 Challenge modes")
+            .font(.caption)
+            .foregroundColor(.secondary)
+    }
+    .padding()
 }

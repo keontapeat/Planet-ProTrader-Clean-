@@ -679,7 +679,7 @@ struct RealisticMeteorView: View {
                                     size: CGFloat.random(in: meteor.size * 0.15...meteor.size * 0.4),
                                     position: CGPoint(
                                         x: cos(Double(i) * 1.047 + rotation * 0.005) * meteor.size * 0.3,
-                                        y: sin<Double>(Double(i) * 1.047 + rotation * 0.005) * meteor.size * 0.3
+                                        y: sin(Double(i) * 1.047 + rotation * 0.005) * meteor.size * 0.3
                                     )
                                 )
                             }
@@ -725,7 +725,7 @@ struct RealisticMeteorView: View {
                         .frame(width: meteor.size * 0.25, height: meteor.size * 0.25)
                         .offset(
                             x: cos(Double(i) * 1.57 + rotation * 0.02) * meteor.size * 0.35,
-                            y: sin<Double>(Double(i) * 1.57 + rotation * 0.02) * meteor.size * 0.35
+                            y: sin(Double(i) * 1.57 + rotation * 0.02) * meteor.size * 0.35
                         )
                         .blur(radius: 1.5)
                         .blendMode(.screen)
@@ -935,6 +935,7 @@ struct SparkView: View {
 struct HomeView: View {
     @StateObject private var solarManager = SolarSystemManager()
     @State private var showingPlanetDashboard = false
+    @State private var showingGoldexControl = false
     @State private var rotationAngle: Double = 0
     @State private var planetAnimations: [UUID: Bool] = [:]
     @Namespace private var planetTransition
@@ -1053,6 +1054,9 @@ struct HomeView: View {
         }
         .fullScreenCover(isPresented: $showingPlanetDashboard) {
             selectedPlanetDashboard
+        }
+        .sheet(isPresented: $showingGoldexControl) {
+            GoldexFlipModeControlView()
         }
     }
     

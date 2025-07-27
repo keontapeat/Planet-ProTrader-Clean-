@@ -17,12 +17,38 @@ class TradingViewModel: ObservableObject {
     @Published var winningTrades = 0
     @Published var losingTrades = 0
     @Published var totalProfit: Double = 0
+    @Published var flipBot: TradingBot?
+    @Published var isFlipModeActive = false
     
     // Mock data for playbook
     @Published var recentTrades: [PlaybookTrade] = []
     
     init() {
         loadMockData()
+    }
+    
+    // MARK: - Flip Challenge Methods
+    func setFlipBot(_ bot: TradingBot) {
+        flipBot = bot
+        print("🤖 Selected flip bot: \(bot.name)")
+    }
+    
+    func startFlipMode() {
+        isFlipModeActive = true
+        print("🚀 Flip mode activated with bot: \(flipBot?.name ?? "No bot")")
+        
+        // Start the flip challenge logic here
+        if let bot = flipBot {
+            print("💰 Starting flip challenge with \(bot.name)")
+            print("🎯 Win Rate: \(bot.displayWinRate)")
+            print("⚡ Risk Level: \(bot.riskLevel.rawValue)")
+        }
+    }
+    
+    func stopFlipMode() {
+        isFlipModeActive = false
+        flipBot = nil
+        print("🛑 Flip mode deactivated")
     }
     
     var winRate: Double {

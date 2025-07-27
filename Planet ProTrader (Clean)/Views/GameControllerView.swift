@@ -16,7 +16,7 @@ struct GameControllerView: View {
     @State private var timeRemaining: TimeInterval
     @State private var showingExitAlert = false
     @State private var animateControls = false
-    @State private var lastTradeResult: FlipTrade?
+    @State private var lastTradeResult: GameFlipTrade?
     @State private var showTradeResult = false
     
     // Timer for countdown
@@ -316,7 +316,7 @@ struct GameControllerView: View {
             } else {
                 VStack(spacing: 8) {
                     ForEach(currentGame.trades.prefix(5).reversed()) { trade in
-                        TradeRow(trade: trade)
+                        GameTradeRow(trade: trade)
                     }
                 }
             }
@@ -361,7 +361,7 @@ struct GameControllerView: View {
     
     // MARK: - Trade Result Overlay
     
-    private func tradeResultOverlay(trade: FlipTrade) -> some View {
+    private func tradeResultOverlay(trade: GameFlipTrade) -> some View {
         VStack(spacing: 16) {
             Text(trade.direction.emoji)
                 .font(.system(size: 64))
@@ -411,14 +411,14 @@ struct GameControllerView: View {
         return String(format: "%02d:%02d", minutes, seconds)
     }
     
-    private func makeTrade(direction: FlipTrade.TradeDirection) {
+    private func makeTrade(direction: GameFlipTrade.TradeDirection) {
         let tradeAmount = 10.0 // Default trade amount
         let multiplier = 1.8 // Default multiplier
         
         // Simulate trade outcome (in real app, this would be based on actual market data)
-        let outcome: FlipTrade.TradeOutcome = Bool.random() ? .win : .loss
+        let outcome: GameFlipTrade.TradeOutcome = Bool.random() ? .win : .loss
         
-        let trade = FlipTrade(
+        let trade = GameFlipTrade(
             amount: tradeAmount,
             direction: direction,
             outcome: outcome,
@@ -453,19 +453,18 @@ struct GameControllerView: View {
     private func endGame(reason: GameEndReason) {
         stopTimer()
         
-        var updatedGame = currentGame
-        updatedGame.completedDate = Date()
+        currentGame.completedDate = Date()
         
         switch reason {
         case .targetReached:
-            updatedGame.status = .completed
-            updatedGame.result = .win(amount: updatedGame.profitLoss)
+            currentGame.status = .completed
+            currentGame.result = .win(amount: currentGame.profitLoss)
         case .balanceZero, .timeout:
-            updatedGame.status = .failed
-            updatedGame.result = .loss(amount: updatedGame.profitLoss)
+            currentGame.status = .failed
+            currentGame.result = .loss(amount: currentGame.profitLoss)
         }
         
-        onGameUpdate(updatedGame)
+        onGameUpdate(currentGame)
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
             dismiss()
@@ -473,9 +472,8 @@ struct GameControllerView: View {
     }
     
     private func exitGame() {
-        var updatedGame = currentGame
-        updatedGame.status = .paused
-        onGameUpdate(updatedGame)
+        currentGame.status = .paused
+        onGameUpdate(currentGame)
         dismiss()
     }
     
@@ -488,8 +486,8 @@ struct GameControllerView: View {
 
 // MARK: - Supporting Views
 
-struct TradeRow: View {
-    let trade: FlipTrade
+struct GameTradeRow: View {
+    let trade: GameFlipTrade
     
     var body: some View {
         HStack {

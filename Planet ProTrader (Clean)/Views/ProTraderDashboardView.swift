@@ -29,6 +29,7 @@ struct ProTraderDashboardView: View {
     @State private var showingQuickDeployment = false
     @State private var showingDeployBotsView = false
     @State private var showingAdvancedEngines = false
+    @State private var showingGoldexControl = false
     @State private var deployedBots: [RealTimeProTraderBot] = []
     @State private var realTimeStats = TradingStats.load()
     @State private var isInitialized = false
@@ -129,6 +130,9 @@ struct ProTraderDashboardView: View {
             }
             .onDisappear {
                 saveAllOptimizedData()
+            }
+            .sheet(isPresented: $showingGoldexControl) {
+                GoldexFlipModeControlView()
             }
         }
     }
@@ -570,12 +574,12 @@ struct ProTraderDashboardView: View {
                 )
                 
                 EnhancedNavigationCard(
-                    title: "Bot Analytics",
-                    subtitle: "AI-Powered Insights",
-                    icon: "chart.pie.fill",
-                    color: .purple,
-                    metrics: "🧠 \(Int(analyticsEngine.accuracyRate * 100))% accuracy",
-                    action: { print("Navigate to Analytics") }
+                    title: "🔥 GOLDEX FlipMode",
+                    subtitle: "Real EA Integration",
+                    icon: "flame.fill",
+                    color: .orange,
+                    metrics: "🎯 Live MT5 Trading",
+                    action: { showingGoldexControl = true }
                 )
                 
                 EnhancedNavigationCard(

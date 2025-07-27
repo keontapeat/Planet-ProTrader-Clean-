@@ -167,6 +167,8 @@ struct ProfessionalMoreTabView: View {
     @State private var showingPlaybook = false
     @State private var showingDiscordSimulation = false
     @State private var showingMarketNews = false
+    @State private var showingGoldexFlipMode = false
+    @State private var showingFlipSetup = false
     @State private var animateCards = false
     
     var body: some View {
@@ -213,6 +215,14 @@ struct ProfessionalMoreTabView: View {
         .sheet(isPresented: $showingMarketNews) {
             MarketNewsView()
         }
+        .sheet(isPresented: $showingGoldexFlipMode) {
+            NavigationStack {
+                GoldexFlipModeControlView()
+            }
+        }
+        .sheet(isPresented: $showingFlipSetup) {
+            FlipSetupView()
+        }
     }
     
     private var headerSection: some View {
@@ -250,6 +260,13 @@ struct ProfessionalMoreTabView: View {
                 )
                 
                 MoreFeatureCard(
+                    title: "GOLDEX FlipMode",
+                    icon: "target",
+                    color: .orange,
+                    action: { showingGoldexFlipMode = true }
+                )
+                
+                MoreFeatureCard(
                     title: "VPS Setup",
                     icon: "server.rack",
                     color: .purple,
@@ -282,6 +299,13 @@ struct ProfessionalMoreTabView: View {
                     icon: "magnifyingglass.circle",
                     color: .indigo,
                     action: { showComingSoon("Market Scanner") }
+                )
+                
+                MoreFeatureCard(
+                    title: "Flip Challenges",
+                    icon: "gamecontroller.fill",
+                    color: .pink,
+                    action: { showingFlipSetup = true }
                 )
             }
         }
