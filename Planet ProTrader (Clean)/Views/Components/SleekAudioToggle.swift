@@ -145,10 +145,10 @@ struct SleekAudioToggle: View {
                 .fill(.ultraThinMaterial)
                 .overlay(
                     RoundedRectangle(cornerRadius: 16)
-                        .stroke(.white.opacity(0.2), lineWidth: 1)
+                        .stroke(Color.white.opacity(0.2), lineWidth: 1)
                 )
         )
-        .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
+        .shadow(color: Color.black.opacity(0.3), radius: 8, x: 0, y: 4)
     }
 }
 
@@ -159,7 +159,7 @@ struct CompactAudioToggle: View {
     var body: some View {
         Button(action: {
             audioManager.toggleMusic()
-            // FIXED: Wrap async call in Task
+            // FIXED: Wrap async call in Task with explicit priority
             Task {
                 await audioManager.playButtonTap()
             }
@@ -222,21 +222,243 @@ struct AudioStatusBar: View {
     }
 }
 
+// MARK: - Enhanced Audio Toggle with Advanced Controls
+struct AdvancedAudioToggle: View {
+    @StateObject private var audioManager = AudioManager.shared
+    @State private var showingAdvancedControls = false
+    
+    var body: some View {
+        VStack(spacing: 16) {
+            // Main Toggle Section
+            HStack(spacing: 16) {
+                // Large Play/Pause Button
+                Button(action: {
+                    Task {
+                        if audioManager.isPlaying {
+                            audioManager.pauseMusic()
+                        } else {
+                            await audioManager.playInterstellarTheme()
+                        }
+                        await audioManager.playButtonTap()
+                    }
+                }) {
+                    ZStack {
+                        Circle()
+                            .fill(LinearGradient(
+                                colors: [DesignSystem.cosmicBlue, DesignSystem.stellarPurple],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ))
+                            .frame(width: 60, height: 60)
+                        
+                        Image(systemName: audioManager.isPlaying ? "pause.fill" : "play.fill")
+                            .font(.system(size: 24, weight: .bold))
+                            .foregroundColor(.white)
+                    }
+                }
+                .buttonStyle(.plain)
+                .disabled(!audioManager.isMusicEnabled)
+                
+                // Status Info
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(audioManager.isMusicEnabled ? "Music Enabled" : "Music Disabled")
+                        .font(DesignSystem.Typography.headline)
+                        .foregroundColor(audioManager.isMusicEnabled ? .green : .gray)
+                    
+                    Text(audioManager.audioFileStatus)
+                        .font(DesignSystem.Typography.caption)
+                        .foregroundColor(.secondary)
+                        .lineLimit(2)
+                    
+                    if audioManager.isPlaying {
+                        Text("♪ Playing cosmic ambience")
+                            .font(DesignSystem.Typography.caption)
+                            .foregroundColor(.blue)
+                    }
+                }
+                
+                Spacer()
+                
+                // Settings Button
+                Button(action: {
+                    withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
+                        showingAdvancedControls.toggle()
+                    }
+                    Task {
+                        await audioManager.playButtonTap()
+                    }
+                }) {
+                    Image(systemName: "gearshape.fill")
+                        .font(.system(size: 20, weight: .semibold))
+                        .foregroundColor(.orange)
+                        .frame(width: 40, height: 40)
+                        .background(.ultraThinMaterial, in: Circle())
+                }
+                .buttonStyle(.plain)
+            }
+            
+            // Advanced Controls (expandable)
+            if showingAdvancedControls {
+                VStack(spacing: 12) {
+                    // Music Toggle
+                    HStack {
+                        Text("Background Music")
+                            .font(DesignSystem.Typography.body)
+                            .foregroundColor(.white)
+                        
+                        Spacer()
+                        
+                        Toggle("", isOn: $audioManager.isMusicEnabled)
+                            .tint(.green)
+                    }
+                    
+                    // Volume Control
+                    if audioManager.isMusicEnabled {
+                        VStack(spacing: 8) {
+                            HStack {
+                                Text("Volume")
+                                    .font(DesignSystem.Typography.body)
+                                    .foregroundColor(.white)
+                                
+                                Spacer()
+                                
+                                Text("\(Int(audioManager.musicVolume * 100))%")
+                                    .font(DesignSystem.Typography.body)
+                                    .fontWeight(.bold)
+                                    .foregroundColor(.green)
+                            }
+                            
+                            Slider(value: $audioManager.musicVolume, in: 0...1) {
+                                Text("Volume")
+                            } minimumValueLabel: {
+                                Image(systemName: "speaker.fill")
+                                    .foregroundColor(.gray)
+                            } maximumValueLabel: {
+                                Image(systemName: "speaker.3.fill")
+                                    .foregroundColor(.green)
+                            }
+                            .tint(.green)
+                        }
+                    }
+                    
+                    // Sound Effects Toggle
+                    HStack {
+                        Text("Sound Effects")
+                            .font(DesignSystem.Typography.body)
+                            .foregroundColor(.white)
+                        
+                        Spacer()
+                        
+                        Toggle("", isOn: $audioManager.isSFXEnabled)
+                            .tint(.blue)
+                    }
+                    
+                    // Test Button
+                    Button(action: {
+                        Task {
+                            await audioManager.forceTestAudio()
+                        }
+                    }) {
+                        HStack {
+                            Image(systemName: "waveform.and.mic")
+                                .font(.system(size: 16, weight: .semibold))
+                            
+                            Text("Test Audio System")
+                                .font(DesignSystem.Typography.body)
+                                .fontWeight(.semibold)
+                        }
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                        .background(
+                            LinearGradient(
+                                colors: [DesignSystem.cosmicBlue, DesignSystem.stellarPurple],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            ),
+                            in: RoundedRectangle(cornerRadius: 10)
+                        )
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding()
+                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+                .transition(.asymmetric(
+                    insertion: .scale.combined(with: .opacity),
+                    removal: .scale.combined(with: .opacity)
+                ))
+            }
+        }
+        .solarCard()
+    }
+}
+
 // MARK: - Previews
 #Preview("Sleek Audio Toggle") {
     ZStack {
-        Color.black.ignoresSafeArea()
+        DesignSystem.AnimatedStarField()
+            .ignoresSafeArea()
         
         VStack(spacing: 20) {
-            Text("Audio Controls")
-                .font(.title.bold())
+            Text("🎵 Audio Controls")
+                .font(DesignSystem.Typography.largeTitle)
+                .goldText()
+            
+            Text("Professional Audio Management")
+                .font(DesignSystem.Typography.headline)
                 .foregroundColor(.white)
+                .opacity(0.8)
             
             SleekAudioToggle()
             
-            CompactAudioToggle()
+            HStack(spacing: 20) {
+                CompactAudioToggle()
+                
+                AudioStatusBar()
+                    .frame(maxWidth: 200)
+            }
             
-            AudioStatusBar()
+            // Demo Controls Info
+            VStack(alignment: .leading, spacing: 8) {
+                Text("🎛️ Audio Features")
+                    .font(DesignSystem.Typography.headline)
+                    .goldText()
+                
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("• Full music playback control")
+                    Text("• Volume adjustment slider")
+                    Text("• Visual playing indicators")
+                    Text("• Haptic feedback support")
+                    Text("• Compact mode for toolbars")
+                    Text("• Professional audio status")
+                }
+                .font(DesignSystem.Typography.body)
+                .foregroundColor(.white)
+                .opacity(0.9)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .solarCard()
+        }
+        .padding()
+    }
+}
+
+#Preview("Advanced Audio Toggle") {
+    ZStack {
+        DesignSystem.AnimatedStarField()
+            .ignoresSafeArea()
+        
+        VStack(spacing: 20) {
+            Text("🎛️ Advanced Audio Controls")
+                .font(DesignSystem.Typography.largeTitle)
+                .goldText()
+            
+            AdvancedAudioToggle()
+            
+            Text("Complete audio management interface")
+                .font(DesignSystem.Typography.caption)
+                .foregroundColor(.white)
+                .opacity(0.7)
         }
         .padding()
     }
@@ -244,9 +466,44 @@ struct AudioStatusBar: View {
 
 #Preview("Compact Toggle") {
     ZStack {
-        Color.black.ignoresSafeArea()
+        DesignSystem.spaceGradient
+            .ignoresSafeArea()
         
-        CompactAudioToggle()
-            .padding()
+        VStack(spacing: 16) {
+            Text("Compact Audio Toggle")
+                .font(DesignSystem.Typography.title2)
+                .goldText()
+            
+            CompactAudioToggle()
+                .solarCard()
+            
+            Text("Perfect for navigation bars and toolbars")
+                .font(DesignSystem.Typography.caption)
+                .foregroundColor(.white)
+                .opacity(0.7)
+        }
+        .padding()
+    }
+}
+
+#Preview("Audio Status Bar") {
+    ZStack {
+        DesignSystem.spaceGradient
+            .ignoresSafeArea()
+        
+        VStack(spacing: 16) {
+            Text("Audio Status Monitor")
+                .font(DesignSystem.Typography.title2)
+                .goldText()
+            
+            AudioStatusBar()
+                .solarCard()
+            
+            Text("Debug and monitoring interface")
+                .font(DesignSystem.Typography.caption)
+                .foregroundColor(.white)
+                .opacity(0.7)
+        }
+        .padding()
     }
 }

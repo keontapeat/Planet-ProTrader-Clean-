@@ -75,6 +75,22 @@ struct ContentView: View {
             }
             .tint(DesignSystem.cosmicBlue)
             .preferredColorScheme(.dark)
+            .onAppear {
+                // Configure translucent tab bar appearance
+                let tabBarAppearance = UITabBarAppearance()
+                tabBarAppearance.configureWithTransparentBackground()
+                tabBarAppearance.backgroundColor = UIColor.clear
+                
+                // Style the tab bar items
+                tabBarAppearance.stackedLayoutAppearance.normal.iconColor = UIColor.systemGray
+                tabBarAppearance.stackedLayoutAppearance.normal.titleTextAttributes = [.foregroundColor: UIColor.systemGray]
+                tabBarAppearance.stackedLayoutAppearance.selected.iconColor = UIColor(DesignSystem.cosmicBlue)
+                tabBarAppearance.stackedLayoutAppearance.selected.titleTextAttributes = [.foregroundColor: UIColor(DesignSystem.cosmicBlue)]
+                
+                // Apply the appearance
+                UITabBar.appearance().standardAppearance = tabBarAppearance
+                UITabBar.appearance().scrollEdgeAppearance = tabBarAppearance
+            }
             .onChange(of: selectedTab) { oldValue, newValue in
                 // FIXED: Safe audio call with error handling
                 Task {

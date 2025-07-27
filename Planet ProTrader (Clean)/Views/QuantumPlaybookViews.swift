@@ -1291,7 +1291,7 @@ struct AIInsightCard: View {
                                 .font(.system(size: 14, weight: .bold))
                                 .foregroundStyle(.primary)
                                 .lineLimit(2)
-                            
+							
                             Text(category.rawValue)
                                 .font(.caption2)
                                 .foregroundStyle(category.color)
@@ -1955,5 +1955,21 @@ struct QuantumPsychologyDetailView: View {
 }
 
 #Preview {
-    PlaybookView()
+    NavigationStack {
+        ZStack {
+            DesignSystem.spaceGradient
+                .ignoresSafeArea()
+            
+            VStack {
+                Text("🧠 Quantum Playbook Views")
+                    .font(.largeTitle)
+                    .fontWeight(.bold)
+                    .foregroundStyle(DesignSystem.primaryGold)
+                
+                Text("Supporting views for the Quantum Playbook system")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
 }

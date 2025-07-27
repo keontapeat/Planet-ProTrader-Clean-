@@ -343,7 +343,6 @@ class RealTimeProTraderBot: ObservableObject, Identifiable {
         }
         
         // Execute ULTIMATE LEGENDARY trade with ALL 18 ENGINE INTELLIGENCE! 💥🎵🧠🎯⚡🛰️🤖🧭📊📚
-        let entryPrice = Double.random(in: 2300...2400)
         let trade = TradeLog(
             date: Date(),
             symbol: symbols.randomElement() ?? currentPair,

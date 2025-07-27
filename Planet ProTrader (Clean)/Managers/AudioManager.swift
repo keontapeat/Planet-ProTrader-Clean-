@@ -19,11 +19,11 @@ class AudioManager: NSObject, ObservableObject {
     @Published var isMusicEnabled: Bool = true {
         didSet {
             UserDefaults.standard.set(isMusicEnabled, forKey: "audio_music_enabled")
-            Task {
-                if isMusicEnabled && currentTrack == nil {
-                    await playInterstellarTheme()
-                } else if !isMusicEnabled {
-                    stopMusic()
+            Task.detached(priority: .background) { @MainActor in
+                if self.isMusicEnabled && self.currentTrack == nil {
+                    await self.playInterstellarTheme()
+                } else if !self.isMusicEnabled {
+                    self.stopMusic()
                 }
             }
         }
@@ -179,7 +179,9 @@ class AudioManager: NSObject, ObservableObject {
             if let optionsValue = userInfo[AVAudioSessionInterruptionOptionKey] as? UInt {
                 let options = AVAudioSession.InterruptionOptions(rawValue: optionsValue)
                 if options.contains(.shouldResume) && isMusicEnabled {
-                    Task { await resumeMusic() }
+                    Task.detached(priority: .background) { @MainActor in 
+                        await self.resumeMusic() 
+                    }
                     print("🔊 Audio interruption ended - resuming music")
                 }
             }
@@ -510,13 +512,13 @@ class AudioManager: NSObject, ObservableObject {
     func recheckAudioFiles() {
         audioFileStatus = "🔍 Checking audio files..."
         
-        Task {
+        Task.detached(priority: .background) { @MainActor in
             try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 second
             
-            if findAudioFileFixed(named: "interstellar_theme") != nil {
-                audioFileStatus = "✅ Audio files found"
+            if self.findAudioFileFixed(named: "interstellar_theme") != nil {
+                self.audioFileStatus = "✅ Audio files found"
             } else {
-                audioFileStatus = "⚠️ Add interstellar_theme.mp3 to project"
+                self.audioFileStatus = "⚠️ Add interstellar_theme.mp3 to project"
             }
         }
     }
@@ -574,7 +576,7 @@ class AudioManager: NSObject, ObservableObject {
 // MARK: - AVAudioPlayerDelegate
 extension AudioManager: AVAudioPlayerDelegate {
     nonisolated func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
-        Task { @MainActor in
+        Task.detached(priority: .background) { @MainActor in
             if player == AudioManager.shared.backgroundPlayer && flag {
                 print("🏁 Track finished playing")
                 AudioManager.shared.cleanupPlayer()
@@ -583,7 +585,7 @@ extension AudioManager: AVAudioPlayerDelegate {
     }
     
     nonisolated func audioPlayerDecodeErrorDidOccur(_ player: AVAudioPlayer, error: Error?) {
-        Task { @MainActor in
+        Task.detached(priority: .background) { @MainActor in
             print("❌ Audio decode error: \(error?.localizedDescription ?? "Unknown error")")
             AudioManager.shared.audioFileStatus = "❌ Decode error"
             AudioManager.shared.cleanupPlayer()
@@ -612,7 +614,7 @@ struct AudioControlView: View {
                 Spacer()
                 
                 Button("Test") {
-                    Task {
+                    Task.detached(priority: .background) { @MainActor in
                         await audioManager.forceTestAudio()
                     }
                 }
@@ -631,7 +633,9 @@ struct AudioControlView: View {
                 // Music Toggle
                 Button(action: {
                     audioManager.toggleMusic()
-                    Task { await audioManager.playButtonTap() }
+                    Task.detached(priority: .background) { @MainActor in 
+                        await audioManager.playButtonTap() 
+                    }
                 }) {
                     HStack(spacing: 6) {
                         Image(systemName: audioManager.isMusicEnabled ? "music.note" : "music.note.slash")
@@ -657,7 +661,7 @@ struct AudioControlView: View {
                 
                 // Play/Pause Button
                 Button(action: {
-                    Task {
+                    Task.detached(priority: .background) { @MainActor in
                         if audioManager.isPlaying {
                             audioManager.pauseMusic()
                         } else {
@@ -690,7 +694,9 @@ struct AudioControlView: View {
                 // Volume Up Quick Button
                 Button(action: {
                     audioManager.musicVolume = min(1.0, audioManager.musicVolume + 0.2)
-                    Task { await audioManager.playButtonTap() }
+                    Task.detached(priority: .background) { @MainActor in 
+                        await audioManager.playButtonTap() 
+                    }
                 }) {
                     Image(systemName: "speaker.plus.fill")
                         .font(.system(size: 16, weight: .semibold))
@@ -736,14 +742,41 @@ struct AudioControlView: View {
 
 #Preview {
     ZStack {
-        Color.black.ignoresSafeArea()
+        DesignSystem.spaceGradient
+            .ignoresSafeArea()
         
         VStack(spacing: 24) {
-            Text("FIXED Audio Controls")
-                .font(.title2.bold())
+            Text("🎵 FIXED Audio Controls")
+                .font(DesignSystem.Typography.largeTitle)
+                .goldText()
+            
+            Text("Professional Audio Management System")
+                .font(DesignSystem.Typography.headline)
                 .foregroundColor(.white)
+                .opacity(0.8)
             
             AudioControlView()
+                .solarCard()
+            
+            VStack(alignment: .leading, spacing: 8) {
+                Text("🎛️ Audio Features")
+                    .font(DesignSystem.Typography.headline)
+                    .goldText()
+                
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("• Background music with interruption handling")
+                    Text("• System and custom sound effects")
+                    Text("• Volume controls and fade effects")
+                    Text("• Audio session management")
+                    Text("• Multiple audio format support")
+                    Text("• Professional audio testing")
+                }
+                .font(DesignSystem.Typography.body)
+                .foregroundColor(.white)
+                .opacity(0.9)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .solarCard()
         }
         .padding()
     }

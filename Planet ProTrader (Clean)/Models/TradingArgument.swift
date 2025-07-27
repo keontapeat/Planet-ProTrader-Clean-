@@ -10,7 +10,7 @@ import Foundation
 import SwiftUI
 
 // MARK: - Trading Argument Model
-struct TradingArgument: Identifiable {
+struct TradingArgument: Identifiable, Codable, Hashable {
     let id: UUID
     let channelId: UUID
     let topic: String
@@ -50,7 +50,7 @@ struct TradingArgument: Identifiable {
     }
     
     // MARK: - Argument Types
-    enum ArgumentType: String, CaseIterable {
+    enum ArgumentType: String, CaseIterable, Codable {
         case tradeSetup = "Trade Setup"
         case prediction = "Market Prediction"
         case personalAttack = "Personal Attack"
@@ -88,7 +88,7 @@ struct TradingArgument: Identifiable {
     }
     
     // MARK: - Argument Resolution
-    enum ArgumentResolution: String, CaseIterable {
+    enum ArgumentResolution: String, CaseIterable, Codable {
         case agreement = "Agreement Reached"
         case timeout = "Timeout"
         case moderatorStop = "Moderator Intervention"
@@ -185,49 +185,8 @@ struct TradingArgument: Identifiable {
             return "Active (\(formattedDuration))"
         }
     }
-}
-
-// MARK: - Extensions
-extension TradingArgument: Codable {
-    enum CodingKeys: String, CodingKey {
-        case id, channelId, topic, participants, messages
-        case startTime, endTime, winner, argumentType, intensity, resolution
-    }
     
-    init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        
-        id = try container.decode(UUID.self, forKey: .id)
-        channelId = try container.decode(UUID.self, forKey: .channelId)
-        topic = try container.decode(String.self, forKey: .topic)
-        participants = try container.decode([String].self, forKey: .participants)
-        messages = try container.decode([UUID].self, forKey: .messages)
-        startTime = try container.decode(Date.self, forKey: .startTime)
-        endTime = try container.decodeIfPresent(Date.self, forKey: .endTime)
-        winner = try container.decodeIfPresent(String.self, forKey: .winner)
-        argumentType = try container.decode(ArgumentType.self, forKey: .argumentType)
-        intensity = try container.decode(Double.self, forKey: .intensity)
-        resolution = try container.decodeIfPresent(ArgumentResolution.self, forKey: .resolution)
-    }
-    
-    func encode(to encoder: Encoder) throws {
-        var container = encoder.container(keyedBy: CodingKeys.self)
-        
-        try container.encode(id, forKey: .id)
-        try container.encode(channelId, forKey: .channelId)
-        try container.encode(topic, forKey: .topic)
-        try container.encode(participants, forKey: .participants)
-        try container.encode(messages, forKey: .messages)
-        try container.encode(startTime, forKey: .startTime)
-        try container.encodeIfPresent(endTime, forKey: .endTime)
-        try container.encodeIfPresent(winner, forKey: .winner)
-        try container.encode(argumentType, forKey: .argumentType)
-        try container.encode(intensity, forKey: .intensity)
-        try container.encodeIfPresent(resolution, forKey: .resolution)
-    }
-}
-
-extension TradingArgument: Hashable {
+    // MARK: - Hashable Conformance
     func hash(into hasher: inout Hasher) {
         hasher.combine(id)
     }
@@ -273,83 +232,169 @@ extension Array where Element == TradingArgument {
     }
 }
 
+// MARK: - Sample Data for Testing
+extension TradingArgument {
+    static let sampleArguments: [TradingArgument] = [
+        TradingArgument(
+            channelId: UUID(),
+            topic: "EURUSD Bullish Breakout vs Bearish Reversal",
+            participants: ["AlphaBot", "BetaTrader", "GammaScalper"],
+            argumentType: .tradeSetup,
+            intensity: 0.8
+        ),
+        TradingArgument(
+            channelId: UUID(),
+            topic: "Fed Rate Decision Impact",
+            participants: ["MacroMaster", "NewsNinja"],
+            argumentType: .fundamental,
+            intensity: 0.6,
+            resolution: .marketMoved
+        ),
+        TradingArgument(
+            channelId: UUID(),
+            topic: "Your Risk Management is Trash!",
+            participants: ["RiskRanger", "YoloKing"],
+            argumentType: .personalAttack,
+            intensity: 0.95,
+            resolution: .moderatorStop
+        ),
+        TradingArgument(
+            channelId: UUID(),
+            topic: "RSI Divergence Analysis",
+            participants: ["TechWizard", "ChartMaster", "IndicatorPro"],
+            argumentType: .technical,
+            intensity: 0.4
+        ),
+        TradingArgument(
+            channelId: UUID(),
+            topic: "Best Scalping Strategy Debate",
+            participants: ["ScalpBot", "SwingKing"],
+            argumentType: .strategy,
+            intensity: 0.7,
+            resolution: .tradeProved
+        )
+    ]
+}
+
 #Preview {
-    VStack(spacing: 20) {
-        Image(systemName: "flame.fill")
-            .font(.system(size: 60))
-            .foregroundColor(.red)
+    ZStack {
+        DesignSystem.spaceGradient
+            .ignoresSafeArea()
         
-        Text("Trading Argument System")
-            .font(.largeTitle)
-            .fontWeight(.bold)
-            .multilineTextAlignment(.center)
-        
-        Text("Bot Warfare & Debate Simulation")
-            .font(.title3)
-            .foregroundColor(.secondary)
-            .multilineTextAlignment(.center)
-        
-        VStack(spacing: 12) {
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Argument Types")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                    Text("8")
-                        .font(.title2)
-                        .fontWeight(.bold)
-                        .foregroundColor(.blue)
-                }
-                
-                Spacer()
-                
-                VStack(alignment: .center, spacing: 4) {
-                    Text("Intensity Levels")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                    Text("5")
-                        .font(.title2)
-                        .fontWeight(.bold)
-                        .foregroundColor(.red)
-                }
-                
-                Spacer()
-                
-                VStack(alignment: .trailing, spacing: 4) {
-                    Text("Resolutions")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                    Text("6")
-                        .font(.title2)
-                        .fontWeight(.bold)
-                        .foregroundColor(.green)
-                }
-            }
-            .padding()
-            .background(Color.gray.opacity(0.1))
-            .cornerRadius(12)
+        VStack(spacing: 20) {
+            Image(systemName: "flame.fill")
+                .font(.system(size: 60))
+                .goldText()
             
-            VStack(alignment: .leading, spacing: 8) {
-                Text("🔥 Argument Features")
-                    .font(.headline)
-                    .foregroundColor(.primary)
-                
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("• Real-time bot argument simulation")
-                    Text("• 8 different argument types")
-                    Text("• Intensity escalation system")
-                    Text("• Multiple resolution methods")
-                    Text("• Winner determination logic")
-                    Text("• Historical argument tracking")
+            Text("🔥 Trading Argument System")
+                .font(DesignSystem.Typography.largeTitle)
+                .goldText()
+                .multilineTextAlignment(.center)
+            
+            Text("Bot Warfare & Debate Simulation")
+                .font(DesignSystem.Typography.headline)
+                .foregroundColor(.white)
+                .opacity(0.8)
+                .multilineTextAlignment(.center)
+            
+            VStack(spacing: 12) {
+                HStack {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Argument Types")
+                            .font(DesignSystem.Typography.caption)
+                            .foregroundColor(.white)
+                            .opacity(0.7)
+                        Text("8")
+                            .font(DesignSystem.Typography.title2)
+                            .fontWeight(.bold)
+                            .foregroundColor(.blue)
+                    }
+                    
+                    Spacer()
+                    
+                    VStack(alignment: .center, spacing: 4) {
+                        Text("Intensity Levels")
+                            .font(DesignSystem.Typography.caption)
+                            .foregroundColor(.white)
+                            .opacity(0.7)
+                        Text("5")
+                            .font(DesignSystem.Typography.title2)
+                            .fontWeight(.bold)
+                            .foregroundColor(.red)
+                    }
+                    
+                    Spacer()
+                    
+                    VStack(alignment: .trailing, spacing: 4) {
+                        Text("Resolutions")
+                            .font(DesignSystem.Typography.caption)
+                            .foregroundColor(.white)
+                            .opacity(0.7)
+                        Text("6")
+                            .font(DesignSystem.Typography.title2)
+                            .fontWeight(.bold)
+                            .foregroundColor(.green)
+                    }
                 }
-                .font(.subheadline)
-                .foregroundColor(.secondary)
+                .solarCard()
+                
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("⚔️ Argument Features")
+                        .font(DesignSystem.Typography.headline)
+                        .goldText()
+                    
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("• Real-time bot argument simulation")
+                        Text("• 8 different argument types")
+                        Text("• Intensity escalation system")
+                        Text("• Multiple resolution methods")
+                        Text("• Winner determination logic")
+                        Text("• Historical argument tracking")
+                    }
+                    .font(DesignSystem.Typography.body)
+                    .foregroundColor(.white)
+                    .opacity(0.9)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .solarCard()
+                
+                // Sample Arguments Display
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("🔥 Sample Arguments")
+                        .font(DesignSystem.Typography.headline)
+                        .goldText()
+                    
+                    ForEach(TradingArgument.sampleArguments.prefix(3), id: \.id) { argument in
+                        HStack {
+                            Image(systemName: argument.argumentType.icon)
+                                .foregroundColor(argument.argumentType.color)
+                                .frame(width: 20)
+                            
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(argument.topic)
+                                    .font(DesignSystem.Typography.caption)
+                                    .fontWeight(.semibold)
+                                    .foregroundColor(.white)
+                                    .lineLimit(1)
+                                
+                                Text(argument.intensityLevel)
+                                    .font(.caption2)
+                                    .foregroundColor(argument.intensityColor)
+                            }
+                            
+                            Spacer()
+                            
+                            Text("\(argument.participantCount)")
+                                .font(.caption2.bold())
+                                .foregroundColor(.secondary)
+                        }
+                        .padding(.vertical, 4)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .solarCard()
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding()
-            .background(Color.red.opacity(0.1))
-            .cornerRadius(12)
         }
+        .padding()
     }
-    .padding()
 }

@@ -258,7 +258,9 @@ struct AudioDebugView: View {
     
     private func testMusicPlayback() async {
         addDebugResult("🎵 Testing music playback...")
-        await audioManager.playInterstellarTheme()
+        Task { @MainActor in 
+            await audioManager.playInterstellarTheme()
+        }
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
             if audioManager.isPlaying {
@@ -321,7 +323,9 @@ struct AudioDebugView: View {
         // Test 5: Playback Test
         currentTestStep = "Testing playback..."
         addDebugResult("▶️ Testing actual playback...")
-        await testMusicPlayback()
+        Task { @MainActor in
+            await testMusicPlayback()
+        }
         await Task.sleep(1_000_000_000) // 1 sec
         
         currentTestStep = "Test completed!"

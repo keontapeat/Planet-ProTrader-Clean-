@@ -59,7 +59,7 @@ struct VPSSetupView: View {
                     Button("Done") {
                         dismiss()
                         // FIXED: Wrap async call in Task
-                        Task {
+                        Task.detached { @MainActor in
                             await audioManager.playButtonTap()
                         }
                     }
@@ -144,7 +144,7 @@ struct VPSSetupView: View {
                     Button(action: {
                         selectedProvider = provider
                         // FIXED: Wrap async call in Task
-                        Task {
+                        Task.detached { @MainActor in
                             await audioManager.playButtonTap()
                         }
                     }) {
@@ -331,7 +331,7 @@ struct VPSSetupView: View {
     private func connectToVPS() {
         isConnecting = true
         // FIXED: Wrap async call in Task
-        Task {
+        Task.detached { @MainActor in
             await audioManager.playDeploy()
         }
         
@@ -340,7 +340,7 @@ struct VPSSetupView: View {
             isConnecting = false
             connectionStatus = "Connected"
             // FIXED: Wrap async call in Task
-            Task {
+            Task.detached { @MainActor in
                 await audioManager.playSuccess()
             }
             
@@ -350,7 +350,7 @@ struct VPSSetupView: View {
     
     private func testConnection() {
         // FIXED: Wrap async call in Task
-        Task {
+        Task.detached { @MainActor in
             await audioManager.playButtonTap()
         }
         GlobalToastManager.shared.show("🔍 Testing connection to \(selectedProvider)...", type: .info)
@@ -362,7 +362,7 @@ struct VPSSetupView: View {
     
     private func viewLogs() {
         // FIXED: Wrap async call in Task
-        Task {
+        Task.detached { @MainActor in
             await audioManager.playButtonTap()
         }
         GlobalToastManager.shared.show("📋 VPS logs - Coming soon!", type: .info)

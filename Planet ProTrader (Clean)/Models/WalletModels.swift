@@ -111,41 +111,6 @@ struct WalletTransaction: Identifiable, Codable {
     }
 }
 
-// MARK: - Premium Card Component
-
-struct UltraPremiumCard<Content: View>: View {
-    let content: Content
-    
-    init(@ViewBuilder content: () -> Content) {
-        self.content = content()
-    }
-    
-    var body: some View {
-        content
-            .padding(20)
-            .background(
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(.ultraThinMaterial)
-                    .shadow(color: .black.opacity(0.1), radius: 10, x: 0, y: 5)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 16)
-                    .stroke(
-                        LinearGradient(
-                            colors: [
-                                DesignSystem.primaryGold.opacity(0.3),
-                                .clear,
-                                DesignSystem.primaryGold.opacity(0.3)
-                            ],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        ),
-                        lineWidth: 1
-                    )
-            )
-    }
-}
-
 // MARK: - Wallet Sheet Views (Placeholder)
 
 struct WalletTransferView: View {
@@ -250,15 +215,11 @@ struct WithdrawalView: View {
             .font(DesignSystem.Typography.largeTitle)
             .goldText()
         
-        UltraPremiumCard {
-            VStack {
-                Text("Sample Transaction")
-                Text("$247.50")
-                    .font(.title2)
-                    .fontWeight(.bold)
-                    .foregroundColor(.green)
-            }
-        }
+        Text("Sample Transaction")
+        Text("$247.50")
+            .font(.title2)
+            .fontWeight(.bold)
+            .foregroundColor(.green)
         
         Text("Sample transactions: \(WalletTransaction.sampleTransactions.count)")
     }
