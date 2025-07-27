@@ -7,12 +7,138 @@
 
 import SwiftUI
 
+// MARK: - TradingTypes Namespace
+enum TradingTypes {
+    enum NewsImpact: String, CaseIterable, Codable {
+        case low = "Low"
+        case medium = "Medium"
+        case high = "High"
+        case critical = "Critical"
+        
+        var color: Color {
+            switch self {
+            case .low: return .green
+            case .medium: return .orange
+            case .high: return .red
+            case .critical: return .purple
+            }
+        }
+        
+        var emoji: String {
+            switch self {
+            case .low: return "info.circle.fill"
+            case .medium: return "exclamationmark.circle.fill"
+            case .high: return "exclamationmark.triangle.fill"
+            case .critical: return "exclamationmark.octagon.fill"
+            }
+        }
+        
+        var priority: Int {
+            switch self {
+            case .low: return 1
+            case .medium: return 2
+            case .high: return 3
+            case .critical: return 4
+            }
+        }
+        
+        var description: String {
+            switch self {
+            case .low: return "Minor market impact expected"
+            case .medium: return "Moderate market movement anticipated"
+            case .high: return "Significant market volatility likely"
+            case .critical: return "Major market disruption possible"
+            }
+        }
+    }
+}
+
+// MARK: - Market News Types
+enum MarketNewsCategory: String, CaseIterable {
+    case all = "all"
+    case centralBank = "central_bank"
+    case economic = "economic"
+    case stocks = "stocks"
+    case commodities = "commodities"
+    case crypto = "crypto"
+    case geopolitical = "geopolitical"
+    
+    var displayName: String {
+        switch self {
+        case .all: return "All"
+        case .centralBank: return "Central Banks"
+        case .economic: return "Economic"
+        case .stocks: return "Stocks"
+        case .commodities: return "Commodities"
+        case .crypto: return "Crypto"
+        case .geopolitical: return "Geopolitical"
+        }
+    }
+    
+    var iconName: String {
+        switch self {
+        case .all: return "globe.americas.fill"
+        case .centralBank: return "building.columns.fill"
+        case .economic: return "chart.line.uptrend.xyaxis"
+        case .stocks: return "chart.bar.fill"
+        case .commodities: return "leaf.fill"
+        case .crypto: return "bitcoinsign.circle.fill"
+        case .geopolitical: return "globe.europe.africa.fill"
+        }
+    }
+}
+
+enum NewsSentiment: String, CaseIterable {
+    case bullish = "bullish"
+    case neutral = "neutral"
+    case bearish = "bearish"
+    
+    var displayName: String {
+        switch self {
+        case .bullish: return "Bullish"
+        case .neutral: return "Neutral"
+        case .bearish: return "Bearish"
+        }
+    }
+    
+    var icon: String {
+        switch self {
+        case .bullish: return "arrow.up.circle.fill"
+        case .neutral: return "minus.circle.fill"
+        case .bearish: return "arrow.down.circle.fill"
+        }
+    }
+    
+    var color: Color {
+        switch self {
+        case .bullish: return .green
+        case .neutral: return .gray
+        case .bearish: return .red
+        }
+    }
+}
+
+enum NewsTimeFilterConsolidated: String, CaseIterable {
+    case all = "all"
+    case lastHour = "last_hour"
+    case today = "today"
+    case thisWeek = "this_week"
+}
+
+struct NewsFilters {
+    var impacts: Set<TradingTypes.NewsImpact> = Set(TradingTypes.NewsImpact.allCases)
+    var sentiments: Set<NewsSentiment> = Set(NewsSentiment.allCases)
+    var currencies: Set<String> = []
+    var sources: Set<String> = []
+    var timeFilter: NewsTimeFilterConsolidated = .all
+}
+
 struct MarketNewsView: View {
     @Environment(\.dismiss) private var dismiss
     @StateObject private var newsManager = MarketNewsManager.shared
-    @State private var selectedCategory: NewsCategory = .all
+    @State private var selectedCategory: MarketNewsCategory = .all
     @State private var showingFilters = false
-    @State private var selectedArticle: NewsArticle?
+    @State private var selectedArticle: MarketNewsArticle?
     
     var body: some View {
         NavigationView {
@@ -168,7 +294,7 @@ struct MarketNewsView: View {
     private var categoriesSection: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 12) {
-                ForEach(NewsCategory.allCases, id: \.self) { category in
+                ForEach(MarketNewsCategory.allCases, id: \.self) { category in
                     categoryButton(category: category)
                 }
             }
@@ -178,7 +304,7 @@ struct MarketNewsView: View {
         .background(Color(.systemGray6).opacity(0.3))
     }
     
-    private func categoryButton(category: NewsCategory) -> some View {
+    private func categoryButton(category: MarketNewsCategory) -> some View {
         Button(action: {
             withAnimation(.easeInOut(duration: 0.2)) {
                 selectedCategory = category
@@ -226,11 +352,11 @@ struct MarketNewsView: View {
     
     // MARK: - News Cards
     
-    private var filteredNews: [NewsArticle] {
+    private var filteredNews: [MarketNewsArticle] {
         newsManager.getFilteredNews(category: selectedCategory)
     }
     
-    private func newsCard(article: NewsArticle) -> some View {
+    private func newsCard(article: MarketNewsArticle) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             // Header with impact and time
             HStack {
@@ -399,7 +525,7 @@ struct MarketNewsView: View {
 class MarketNewsManager: ObservableObject {
     static let shared = MarketNewsManager()
     
-    @Published var news: [NewsArticle] = []
+    @Published var news: [MarketNewsArticle] = []
     @Published var isLoading: Bool = false
     @Published var isLive: Bool = true
     
@@ -448,7 +574,7 @@ class MarketNewsManager: ObservableObject {
         activeFilters.timeFilter = timeFilter
     }
     
-    func getFilteredNews(category: NewsCategory) -> [NewsArticle] {
+    func getFilteredNews(category: MarketNewsCategory) -> [MarketNewsArticle] {
         var filteredNews = news
         
         // Filter by category
@@ -489,11 +615,11 @@ class MarketNewsManager: ObservableObject {
         return filteredNews.sorted { $0.timestamp > $1.timestamp }
     }
     
-    func getNewsCount(for category: NewsCategory) -> Int {
+    func getNewsCount(for category: MarketNewsCategory) -> Int {
         return news.filter { $0.category == category }.count
     }
     
-    private func passesTimeFilter(article: NewsArticle, filter: NewsTimeFilterConsolidated) -> Bool {
+    private func passesTimeFilter(article: MarketNewsArticle, filter: NewsTimeFilterConsolidated) -> Bool {
         let now = Date()
         let articleTime = article.timestamp
         
@@ -512,7 +638,7 @@ class MarketNewsManager: ObservableObject {
     
     private func loadSampleNews() {
         news = [
-            NewsArticle(
+            MarketNewsArticle(
                 title: "Federal Reserve Signals Pause in Interest Rate Hikes",
                 summary: "Fed Chairman Powell indicates potential pause in rate increases, citing economic uncertainty and inflation concerns.",
                 source: "Reuters",
@@ -522,7 +648,7 @@ class MarketNewsManager: ObservableObject {
                 affectedCurrencies: ["USD", "EUR", "GBP"],
                 timestamp: Date().addingTimeInterval(-300)
             ),
-            NewsArticle(
+            MarketNewsArticle(
                 title: "Gold Prices Surge to New Monthly Highs",
                 summary: "Precious metals rally as investors seek safe haven amid market volatility and geopolitical tensions.",
                 source: "MarketWatch",
@@ -532,7 +658,7 @@ class MarketNewsManager: ObservableObject {
                 affectedCurrencies: ["XAU", "USD"],
                 timestamp: Date().addingTimeInterval(-900)
             ),
-            NewsArticle(
+            MarketNewsArticle(
                 title: "European Central Bank Maintains Hawkish Stance",
                 summary: "ECB officials continue to emphasize commitment to fighting inflation despite economic growth concerns.",
                 source: "Bloomberg",
@@ -542,7 +668,7 @@ class MarketNewsManager: ObservableObject {
                 affectedCurrencies: ["EUR", "USD"],
                 timestamp: Date().addingTimeInterval(-1200)
             ),
-            NewsArticle(
+            MarketNewsArticle(
                 title: "Chinese Manufacturing Data Shows Improvement",
                 summary: "Latest PMI data indicates recovering manufacturing activity in China, boosting risk sentiment globally.",
                 source: "Financial Times",
@@ -552,7 +678,7 @@ class MarketNewsManager: ObservableObject {
                 affectedCurrencies: ["CNY", "AUD", "NZD"],
                 timestamp: Date().addingTimeInterval(-1800)
             ),
-            NewsArticle(
+            MarketNewsArticle(
                 title: "Technology Stocks Rally on AI Optimism",
                 summary: "Major technology stocks surge, improving market sentiment and supporting risk-sensitive currencies.",
                 source: "CNBC",
@@ -567,12 +693,12 @@ class MarketNewsManager: ObservableObject {
 }
 
 // MARK: - Data Models
-struct NewsArticle: Identifiable, Hashable {
+struct MarketNewsArticle: Identifiable, Hashable {
     let id = UUID()
     let title: String
     let summary: String?
     let source: String
-    let category: NewsCategory
+    let category: MarketNewsCategory
     let impact: TradingTypes.NewsImpact
     let sentiment: NewsSentiment
     let affectedCurrencies: [String]
@@ -595,7 +721,7 @@ struct NewsArticle: Identifiable, Hashable {
         hasher.combine(id)
     }
     
-    static func == (lhs: NewsArticle, rhs: NewsArticle) -> Bool {
+    static func == (lhs: MarketNewsArticle, rhs: MarketNewsArticle) -> Bool {
         lhs.id == rhs.id
     }
 }
@@ -612,7 +738,7 @@ struct NewsArticleModel: Identifiable {
     let category: String
     let tags: [String]
     
-    init(from article: NewsArticle) {
+    init(from article: MarketNewsArticle) {
         self.title = article.title
         self.summary = article.summary ?? ""
         self.content = article.summary ?? "Full article content would be displayed here. This is a sample news article that demonstrates the structure and layout of the news detail view."
@@ -626,7 +752,7 @@ struct NewsArticleModel: Identifiable {
     // Sample news for compatibility
     static let sampleNews: [NewsArticleModel] = [
         NewsArticleModel(
-            from: NewsArticle(
+            from: MarketNewsArticle(
                 title: "Sample News Article",
                 summary: "This is a sample article",
                 source: "Sample Source",
@@ -638,97 +764,6 @@ struct NewsArticleModel: Identifiable {
             )
         )
     ]
-}
-
-enum NewsCategory: String, CaseIterable {
-    case all = "all"
-    case centralBank = "central_bank"
-    case economic = "economic"
-    case stocks = "stocks"
-    case commodities = "commodities"
-    case crypto = "crypto"
-    case geopolitical = "geopolitical"
-    
-    var displayName: String {
-        switch self {
-        case .all: return "All"
-        case .centralBank: return "Central Banks"
-        case .economic: return "Economic"
-        case .stocks: return "Stocks"
-        case .commodities: return "Commodities"
-        case .crypto: return "Crypto"
-        case .geopolitical: return "Geopolitical"
-        }
-    }
-    
-    var iconName: String {
-        switch self {
-        case .all: return "globe.americas.fill"
-        case .centralBank: return "building.columns.fill"
-        case .economic: return "chart.line.uptrend.xyaxis"
-        case .stocks: return "chart.bar.fill"
-        case .commodities: return "leaf.fill"
-        case .crypto: return "bitcoinsign.circle.fill"
-        case .geopolitical: return "globe.europe.africa.fill"
-        }
-    }
-}
-
-enum NewsSentiment: String, CaseIterable {
-    case bullish = "bullish"
-    case neutral = "neutral"
-    case bearish = "bearish"
-    
-    var displayName: String {
-        switch self {
-        case .bullish: return "Bullish"
-        case .neutral: return "Neutral"
-        case .bearish: return "Bearish"
-        }
-    }
-    
-    var icon: String {
-        switch self {
-        case .bullish: return "arrow.up.circle.fill"
-        case .neutral: return "minus.circle.fill"
-        case .bearish: return "arrow.down.circle.fill"
-        }
-    }
-    
-    var color: Color {
-        switch self {
-        case .bullish: return .green
-        case .neutral: return .gray
-        case .bearish: return .red
-        }
-    }
-}
-
-enum NewsTimeFilterConsolidated: String, CaseIterable {
-    case all = "all"
-    case lastHour = "last_hour"
-    case today = "today"
-    case thisWeek = "this_week"
-}
-
-struct NewsFilters {
-    var impacts: Set<TradingTypes.NewsImpact> = Set(TradingTypes.NewsImpact.allCases)
-    var sentiments: Set<NewsSentiment> = Set(NewsSentiment.allCases)
-    var currencies: Set<String> = []
-    var sources: Set<String> = []
-    var timeFilter: NewsTimeFilterConsolidated = .all
-}
-
-// MARK: - TradingTypes.NewsImpact Extensions
-extension TradingTypes.NewsImpact {
-    var emoji: String {
-        switch self {
-        case .low: return "info.circle.fill"
-        case .medium: return "exclamationmark.circle.fill"  
-        case .high: return "exclamationmark.triangle.fill"
-        case .critical: return "exclamationmark.octagon.fill"
-        }
-    }
 }
 
 // MARK: - Shimmer Effect
@@ -773,18 +808,45 @@ struct NewsFiltersView: View {
     
     var body: some View {
         NavigationView {
-            Text("News Filters Coming Soon!")
-                .font(.title2)
-                .foregroundColor(.secondary)
-                .navigationTitle("Filters")
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .navigationBarTrailing) {
-                        Button("Done") {
-                            dismiss()
-                        }
-                    }
+            VStack(spacing: 24) {
+                Text("🔧 News Filters")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                    .foregroundStyle(DesignSystem.goldGradient)
+                
+                Text("Filter news by impact, sentiment, and more")
+                    .font(.body)
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+                
+                Spacer()
+                
+                VStack(spacing: 16) {
+                    Text("Advanced filtering options coming soon!")
+                        .font(.headline)
+                        .foregroundColor(.primary)
+                    
+                    Text("Filter by impact level, sentiment, currencies, sources, and time range")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
                 }
+                .padding(20)
+                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+                
+                Spacer()
+            }
+            .padding()
+            .navigationTitle("Filters")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                    .foregroundColor(DesignSystem.primaryGold)
+                }
+            }
         }
     }
 }

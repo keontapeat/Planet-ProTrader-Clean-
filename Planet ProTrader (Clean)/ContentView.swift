@@ -1,3 +1,4 @@
+//
 //  ContentView.swift
 //  Planet ProTrader - Solar System Edition
 //
@@ -22,14 +23,14 @@ struct ContentView: View {
     
     var body: some View {
         ZStack {
-            // UPDATED: Animated Space Background with moving stars
+            // ENHANCED: Use animated starfield for better visual experience
             DesignSystem.AnimatedStarField()
                 .ignoresSafeArea()
             
             TabView(selection: $selectedTab) {
                 // Home Tab
-                NavigationView {
-                    SafeHomeView()
+                NavigationStack {
+                    HomeView()
                 }
                 .tabItem {
                     Image(systemName: "house.fill")
@@ -37,17 +38,19 @@ struct ContentView: View {
                 }
                 .tag(0)
                 
-                // AI Bots Tab - FIXED: Remove NavigationView wrapper
-                SafeProTraderDashboardView()
-                    .tabItem {
-                        Image(systemName: "location.slash")
-                        Text("AI Bots")
-                    }
-                    .tag(1)
+                // AI Bots Tab
+                NavigationStack {
+                    ProTraderDashboardView()
+                }
+                .tabItem {
+                    Image(systemName: "location.slash")
+                    Text("AI Bots")
+                }
+                .tag(1)
                 
                 // Trading Terminal
-                NavigationView {
-                    SafeTradingTerminal()
+                NavigationStack {
+                    TradingTerminal()
                 }
                 .tabItem {
                     Image(systemName: "terminal.fill")
@@ -56,8 +59,8 @@ struct ContentView: View {
                 .tag(2)
                 
                 // Bot Store
-                NavigationView {
-                    SafeBotStoreView()
+                NavigationStack {
+                    BotStoreView()
                 }
                 .tabItem {
                     Image(systemName: "storefront.fill")
@@ -66,63 +69,38 @@ struct ContentView: View {
                 .tag(3)
                 
                 // More Tab
-                ProfessionalMoreTabView()
-                    .tabItem {
-                        Image(systemName: "ellipsis.circle.fill")
-                        Text("More")
-                    }
-                    .tag(4)
+                NavigationStack {
+                    ProfessionalMoreTabView()
+                }
+                .tabItem {
+                    Image(systemName: "ellipsis.circle.fill")
+                    Text("More")
+                }
+                .tag(4)
             }
-            .tint(DesignSystem.cosmicBlue)
+            .tint(DesignSystem.primaryGold)
             .preferredColorScheme(.dark)
             .onAppear {
-                // Configure translucent tab bar appearance
-                let tabBarAppearance = UITabBarAppearance()
-                tabBarAppearance.configureWithTransparentBackground()
-                tabBarAppearance.backgroundColor = UIColor.clear
-                
-                // Style the tab bar items
-                tabBarAppearance.stackedLayoutAppearance.normal.iconColor = UIColor.systemGray
-                tabBarAppearance.stackedLayoutAppearance.normal.titleTextAttributes = [.foregroundColor: UIColor.systemGray]
-                tabBarAppearance.stackedLayoutAppearance.selected.iconColor = UIColor(DesignSystem.cosmicBlue)
-                tabBarAppearance.stackedLayoutAppearance.selected.titleTextAttributes = [.foregroundColor: UIColor(DesignSystem.cosmicBlue)]
-                
-                // Apply the appearance
-                UITabBar.appearance().standardAppearance = tabBarAppearance
-                UITabBar.appearance().scrollEdgeAppearance = tabBarAppearance
+                setupTabBarAppearance()
+                if !isInitialized {
+                    initializeSystem()
+                    isInitialized = true
+                }
             }
             .onChange(of: selectedTab) { oldValue, newValue in
-                // FIXED: Safe audio call with error handling
-                Task {
-                    await safeAudioFeedback()
-                }
+                provideFeedback()
             }
         }
         .overlay(alignment: .topTrailing) {
-            // FIXED: Safe audio control
             if showingAudioControls {
-                Button(action: {
-                    showingAudioControls = false
-                }) {
-                    SafeAudioToggle()
-                }
-                .padding(.top, 60)
-                .padding(.trailing, 20)
-                .transition(.opacity)
+                SafeAudioToggle()
+                    .padding(.top, 60)
+                    .padding(.trailing, 20)
+                    .transition(.opacity)
             }
         }
         .onTapGesture(count: 2) {
-            // Double tap to show audio controls
             showingAudioControls.toggle()
-        }
-        .onAppear {
-            if !isInitialized {
-                // FIXED: Safe initialization
-                Task {
-                    await initializeSystemSafely()
-                }
-                isInitialized = true
-            }
         }
         .environmentObject(tradingManager)
         .environmentObject(botManager)
@@ -131,16 +109,38 @@ struct ContentView: View {
         .environmentObject(audioManager)
     }
     
-    // MARK: - Safe Initialization
-    @MainActor
-    private func initializeSystemSafely() async {
+    // MARK: - Helper Methods
+    
+    private func setupTabBarAppearance() {
+        let tabBarAppearance = UITabBarAppearance()
+        tabBarAppearance.configureWithTransparentBackground()
+        tabBarAppearance.backgroundColor = UIColor.clear
+        
+        tabBarAppearance.stackedLayoutAppearance.normal.iconColor = UIColor.systemGray
+        tabBarAppearance.stackedLayoutAppearance.normal.titleTextAttributes = [.foregroundColor: UIColor.systemGray]
+        tabBarAppearance.stackedLayoutAppearance.selected.iconColor = UIColor(DesignSystem.primaryGold)
+        tabBarAppearance.stackedLayoutAppearance.selected.titleTextAttributes = [.foregroundColor: UIColor(DesignSystem.primaryGold)]
+        
+        UITabBar.appearance().standardAppearance = tabBarAppearance
+        UITabBar.appearance().scrollEdgeAppearance = tabBarAppearance
+    }
+    
+    private func initializeSystem() {
         print("🚀 Planet ProTrader initializing...")
         
-        // Give UI time to render first
-        try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 second
-        
-        // FIXED: Add launch sound effect back!
         Task {
+            try? await Task.sleep(nanoseconds: 100_000_000)
+            
+            await MainActor.run {
+                // Initialize managers safely
+                _ = audioManager
+                _ = tradingManager
+                _ = botManager
+                
+                print("✅ System ready!")
+            }
+            
+            // RESTORED: Launch sound effects
             await audioManager.playNotification() // Launch notification sound
             
             // Small delay then play theme music if enabled
@@ -150,80 +150,78 @@ struct ContentView: View {
                 await audioManager.playInterstellarTheme()
             }
         }
-        
-        print("✅ System ready!")
     }
     
-    // FIXED: Safe audio feedback
-    private func safeAudioFeedback() async {
-        do {
+    private func provideFeedback() {
+        Task {
             await audioManager.playButtonTap()
-        } catch {
-            print("⚠️ Audio feedback failed: \(error)")
         }
     }
 }
 
-// MARK: - Professional More Tab (CRASH-PROOF)
+// MARK: - Professional More Tab
 struct ProfessionalMoreTabView: View {
     @State private var showingProfile = false
     @State private var showingSettings = false
     @State private var showingVPSSetup = false
     @State private var showingPlaybook = false
+    @State private var showingDiscordSimulation = false
+    @State private var showingMarketNews = false
     @State private var animateCards = false
     
     var body: some View {
-        NavigationStack {
-            ZStack {
-                // UPDATED: Use animated starfield background
-                DesignSystem.AnimatedStarField()
-                    .ignoresSafeArea()
-                
-                ScrollView {
-                    LazyVStack(spacing: 20) {
-                        // Header
-                        headerSection
-                        
-                        // Professional Tools
-                        professionalToolsSection
-                        
-                        // Account Settings
-                        accountSection
-                        
-                        // Support
-                        supportSection
-                        
-                        // Footer
-                        footerSection
-                    }
-                    .padding()
+        ZStack {
+            // RESTORED: Dynamic animated starfield background
+            DesignSystem.AnimatedStarField()
+                .ignoresSafeArea()
+            
+            ScrollView {
+                LazyVStack(spacing: 20) {
+                    headerSection
+                    professionalToolsSection
+                    accountSection
+                    supportSection
+                    footerSection
                 }
-            }
-            .navigationTitle("")
-            .navigationBarTitleDisplayMode(.large)
-            .onAppear {
-                withAnimation(.easeInOut(duration: 0.5)) {
-                    animateCards = true
-                }
+                .padding()
             }
         }
-        .sheet(isPresented: $showingProfile) { SafeProfileView() }
-        .sheet(isPresented: $showingSettings) { SafeSettingsView() }
-        .sheet(isPresented: $showingVPSSetup) { SafeVPSSetupView() }
+        .navigationTitle("")
+        .navigationBarHidden(true)
+        .onAppear {
+            withAnimation(.easeInOut(duration: 0.5)) {
+                animateCards = true
+            }
+        }
+        .sheet(isPresented: $showingProfile) { 
+            SafeProfileView() 
+        }
+        .sheet(isPresented: $showingSettings) { 
+            SafeSettingsView() 
+        }
+        .sheet(isPresented: $showingVPSSetup) { 
+            SafeVPSSetupView() 
+        }
         .sheet(isPresented: $showingPlaybook) { 
             NavigationStack {
                 PlaybookView()
             }
         }
+        .fullScreenCover(isPresented: $showingDiscordSimulation) {
+            DiscordSimulationView()
+        }
+        .sheet(isPresented: $showingMarketNews) {
+            MarketNewsView()
+        }
     }
     
     private var headerSection: some View {
         VStack(spacing: 16) {
-            Text("")
+            Text("Professional Tools")
                 .font(.title2.bold())
                 .foregroundStyle(
                     LinearGradient(
-                        colors: [DesignSystem.solarOrange, .yellow, DesignSystem.cosmicBlue],
+                        colors: [DesignSystem.primaryGold, .yellow, DesignSystem.primaryGold],
                         startPoint: .leading,
                         endPoint: .trailing
                     )
@@ -259,17 +257,17 @@ struct ProfessionalMoreTabView: View {
                 )
                 
                 MoreFeatureCard(
-                    title: "Analytics",
-                    icon: "chart.pie.fill",
-                    color: .cyan,
-                    action: { showComingSoon("Analytics") }
+                    title: "Discord Bots",
+                    icon: "bubble.left.and.bubble.right.fill",
+                    color: .blue,
+                    action: { showingDiscordSimulation = true }
                 )
                 
                 MoreFeatureCard(
-                    title: "Risk Manager",
-                    icon: "shield.checkered",
-                    color: .orange,
-                    action: { showComingSoon("Risk Manager") }
+                    title: "Market News",
+                    icon: "newspaper.fill",
+                    color: .cyan,
+                    action: { showingMarketNews = true }
                 )
                 
                 MoreFeatureCard(
@@ -298,7 +296,7 @@ struct ProfessionalMoreTabView: View {
                 .foregroundColor(.white)
             
             VStack(spacing: 8) {
-                MoreListItem(title: "Profile Settings", icon: "person.crop.circle", color: DesignSystem.cosmicBlue, action: { showingProfile = true })
+                MoreListItem(title: "Profile Settings", icon: "person.crop.circle", color: DesignSystem.primaryGold, action: { showingProfile = true })
                 MoreListItem(title: "App Settings", icon: "gearshape.fill", color: .gray, action: { showingSettings = true })
                 MoreListItem(title: "Security", icon: "lock.shield.fill", color: .green, action: { showComingSoon("Security") })
                 MoreListItem(title: "Notifications", icon: "bell.circle.fill", color: .orange, action: { showComingSoon("Notifications") })
@@ -351,7 +349,7 @@ struct ProfessionalMoreTabView: View {
     }
 }
 
-// MARK: - Safe Feature Cards
+// MARK: - Feature Cards
 struct MoreFeatureCard: View {
     let title: String
     let icon: String
@@ -413,76 +411,39 @@ struct MoreListItem: View {
     }
 }
 
-// MARK: - Safe Views (Crash-proof fallbacks)
-struct SafeHomeView: View {
-    var body: some View {
-        Group {
-            if let homeView = loadViewSafely("HomeView") as? HomeView {
-                homeView
-            } else {
-                SafeFallbackView(title: "Home", icon: "house.fill")
-            }
-        }
-    }
-}
-
-struct SafeProTraderDashboardView: View {
-    var body: some View {
-        Group {
-            if let dashboardView = loadViewSafely("ProTraderDashboardView") as? ProTraderDashboardView {
-                dashboardView
-            } else {
-                SafeFallbackView(title: "AI Bots", icon: "bolt.fill")
-            }
-        }
-    }
-}
-
-struct SafeTradingTerminal: View {
-    var body: some View {
-        Group {
-            if let terminalView = loadViewSafely("TradingTerminal") as? TradingTerminal {
-                terminalView
-            } else {
-                SafeFallbackView(title: "Trading Terminal", icon: "terminal.fill")
-            }
-        }
-    }
-}
-
-struct SafeBotStoreView: View {
-    var body: some View {
-        Group {
-            if let storeView = loadViewSafely("BotStoreView") as? BotStoreView {
-                storeView
-            } else {
-                SafeFallbackView(title: "Bot Store", icon: "storefront.fill")
-            }
-        }
-    }
-}
-
+// MARK: - Safe Views
 struct SafeProfileView: View {
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {
         NavigationStack {
-            VStack(spacing: 20) {
-                Text("👤")
-                    .font(.title.bold())
+            ZStack {
+                // RESTORED: Dynamic animated starfield background
+                DesignSystem.AnimatedStarField()
+                    .ignoresSafeArea()
                 
-                Text("Profile management coming soon!")
-                    .foregroundColor(.secondary)
-                
-                Spacer()
+                VStack(spacing: 20) {
+                    Image(systemName: "person.crop.circle.fill")
+                        .font(.system(size: 60))
+                        .foregroundColor(DesignSystem.primaryGold)
+                    
+                    Text("Profile Settings")
+                        .font(.title.bold())
+                        .foregroundColor(.white)
+                    
+                    Text("Profile management coming soon!")
+                        .foregroundColor(.secondary)
+                    
+                    Spacer()
+                }
+                .padding()
             }
-            .padding()
-            .background(DesignSystem.AnimatedStarField().ignoresSafeArea())
             .navigationTitle("Profile")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") { dismiss() }
+                        .foregroundColor(DesignSystem.primaryGold)
                 }
             }
         }
@@ -494,22 +455,33 @@ struct SafeSettingsView: View {
     
     var body: some View {
         NavigationStack {
-            VStack(spacing: 20) {
-                Text("⚙️")
-                    .font(.title.bold())
+            ZStack {
+                // RESTORED: Dynamic animated starfield background
+                DesignSystem.AnimatedStarField()
+                    .ignoresSafeArea()
                 
-                Text("Settings panel coming soon!")
-                    .foregroundColor(.secondary)
-                
-                Spacer()
+                VStack(spacing: 20) {
+                    Image(systemName: "gearshape.fill")
+                        .font(.system(size: 60))
+                        .foregroundColor(DesignSystem.primaryGold)
+                    
+                    Text("App Settings")
+                        .font(.title.bold())
+                        .foregroundColor(.white)
+                    
+                    Text("Settings panel coming soon!")
+                        .foregroundColor(.secondary)
+                    
+                    Spacer()
+                }
+                .padding()
             }
-            .padding()
-            .background(DesignSystem.AnimatedStarField().ignoresSafeArea())
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") { dismiss() }
+                        .foregroundColor(DesignSystem.primaryGold)
                 }
             }
         }
@@ -521,22 +493,33 @@ struct SafeVPSSetupView: View {
     
     var body: some View {
         NavigationStack {
-            VStack(spacing: 20) {
-                Text("🖥️")
-                    .font(.title.bold())
+            ZStack {
+                // RESTORED: Dynamic animated starfield background
+                DesignSystem.AnimatedStarField()
+                    .ignoresSafeArea()
                 
-                Text("VPS setup coming soon!")
-                    .foregroundColor(.secondary)
-                
-                Spacer()
+                VStack(spacing: 20) {
+                    Image(systemName: "server.rack")
+                        .font(.system(size: 60))
+                        .foregroundColor(DesignSystem.primaryGold)
+                    
+                    Text("VPS Setup")
+                        .font(.title.bold())
+                        .foregroundColor(.white)
+                    
+                    Text("VPS configuration coming soon!")
+                        .foregroundColor(.secondary)
+                    
+                    Spacer()
+                }
+                .padding()
             }
-            .padding()
-            .background(DesignSystem.AnimatedStarField().ignoresSafeArea())
             .navigationTitle("VPS Setup")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") { dismiss() }
+                        .foregroundColor(DesignSystem.primaryGold)
                 }
             }
         }
@@ -573,52 +556,6 @@ struct SafeAudioToggle: View {
             )
         }
         .buttonStyle(.plain)
-    }
-}
-
-struct SafeFallbackView: View {
-    let title: String
-    let icon: String
-    
-    var body: some View {
-        VStack(spacing: 20) {
-            Image(systemName: icon)
-                .font(.system(size: 60))
-                .foregroundColor(DesignSystem.cosmicBlue)
-            
-            Text(title)
-                .font(.title.bold())
-                .foregroundColor(.white)
-            
-            Text("This feature is loading...")
-                .font(.subheadline)
-                .foregroundColor(.secondary)
-            
-            Button("Refresh") {
-                // Trigger a refresh
-            }
-            .buttonStyle(.primary)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(DesignSystem.AnimatedStarField().ignoresSafeArea())
-    }
-}
-
-// MARK: - Safe View Loading Helper
-private func loadViewSafely(_ viewName: String) -> Any? {
-    // This would normally use reflection or dynamic loading
-    // For now, we return the actual views directly
-    switch viewName {
-    case "HomeView":
-        return HomeView()
-    case "ProTraderDashboardView":
-        return ProTraderDashboardView()
-    case "TradingTerminal":
-        return TradingTerminal()
-    case "BotStoreView":
-        return BotStoreView()
-    default:
-        return nil
     }
 }
 

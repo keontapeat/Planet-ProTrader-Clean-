@@ -431,7 +431,7 @@ struct NewsDetailView: View {
         }
     }
     
-    private func tradingOpportunityCard(opportunity: TradingOpportunity) -> some View {
+    private func tradingOpportunityCard(opportunity: NewsTradingOpportunity) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 HStack(spacing: 6) {
@@ -541,7 +541,7 @@ class NewsMarketAnalyzer: ObservableObject {
     @Published var urgencyLevel: String = "Medium"
     @Published var implications: [String] = []
     @Published var relatedArticles: [NewsArticleModel] = []
-    @Published var tradingOpportunities: [TradingOpportunity] = []
+    @Published var tradingOpportunities: [NewsTradingOpportunity] = []
     
     func analyzeArticle(_ article: NewsArticleModel) async {
         // Simulate AI analysis
@@ -578,12 +578,12 @@ class NewsMarketAnalyzer: ObservableObject {
         return Array(NewsArticleModel.sampleNews.filter { $0.id != article.id }.prefix(3))
     }
     
-    private func generateTradingOpportunities(for article: NewsArticleModel) -> [TradingOpportunity] {
+    private func generateTradingOpportunities(for article: NewsArticleModel) -> [NewsTradingOpportunity] {
         let tags = article.tags
-        var opportunities: [TradingOpportunity] = []
+        var opportunities: [NewsTradingOpportunity] = []
         
         if tags.contains("USD") || tags.contains("Fed") {
-            opportunities.append(TradingOpportunity(
+            opportunities.append(NewsTradingOpportunity(
                 pair: "EUR/USD",
                 direction: .buy,
                 confidence: 0.75,
@@ -613,17 +613,17 @@ class NewsMarketAnalyzer: ObservableObject {
 
 // MARK: - Trading Opportunity Model
 
-struct TradingOpportunity: Identifiable {
+struct NewsTradingOpportunity: Identifiable {
     let id = UUID()
     let pair: String
-    let direction: TradeDirection
+    let direction: NewsTradeDirection
     let confidence: Double
     let reasoning: String
     let riskLevel: String
     let timeframe: String
 }
 
-enum TradeDirection: String, CaseIterable {
+enum NewsTradeDirection: String, CaseIterable {
     case buy = "BUY"
     case sell = "SELL"
     
@@ -696,14 +696,16 @@ struct MarketImpactAnalysisView: View {
 }
 
 #Preview {
-    NewsDetailView(article: NewsArticleModel(
+    let sampleArticle = MarketNewsArticle(
         title: "Fed Chair Powell Signals Potential Rate Pause Ahead",
         summary: "Federal Reserve Chairman Jerome Powell hints at a potential pause in interest rate hikes, citing inflation concerns and economic uncertainty.",
-        content: "In a highly anticipated speech, Federal Reserve Chairman Jerome Powell provided insights into the central bank's future monetary policy direction...",
-        impact: .high,
-        publishedAt: Date().addingTimeInterval(-300),
         source: "Reuters",
-        category: "Central Banking",
-        tags: ["Fed", "Interest Rates", "USD"]
-    ))
+        category: .centralBank,
+        impact: .high,
+        sentiment: .bearish,
+        affectedCurrencies: ["Fed", "Interest Rates", "USD"],
+        timestamp: Date().addingTimeInterval(-300)
+    )
+    
+    NewsDetailView(article: NewsArticleModel(from: sampleArticle))
 }

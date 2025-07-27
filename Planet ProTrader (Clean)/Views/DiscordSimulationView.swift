@@ -9,7 +9,7 @@ import SwiftUI
 
 struct DiscordSimulationView: View {
     @StateObject private var chatEngine = BotChatEngine()
-    @StateObject private var argumentEngine = TradeArgumentEngine()
+    @StateObject private var argumentEngine = SimpleDiscordArgumentEngine()
     @State private var selectedChannelId: UUID?
     @State private var isAnimating = false
     @State private var showingBotProfiles = false
@@ -132,7 +132,7 @@ struct DiscordSimulationView: View {
         .overlay(
             Rectangle()
                 .frame(width: 1)
-                .foregroundColor(.separator),
+                .foregroundColor(Color(.separator)),
             alignment: .trailing
         )
     }
@@ -260,7 +260,7 @@ struct DiscordSimulationView: View {
             .background(.ultraThinMaterial)
             
             if let currentArgument = argumentEngine.activeArguments.first(where: { $0.channelId == selectedChannelId }) {
-                ActiveArgumentView(argument: currentArgument, personas: chatEngine.botPersonas)
+                SimpleActiveArgumentView(argument: currentArgument, personas: chatEngine.botPersonas)
             }
         }
     }
@@ -544,8 +544,8 @@ struct TradeSetupView: View {
     }
 }
 
-struct ActiveArgumentView: View {
-    let argument: TradingArgument
+struct SimpleActiveArgumentView: View {
+    let argument: SimpleArgument
     let personas: [BotPersona]
     
     var body: some View {
@@ -565,7 +565,7 @@ struct ActiveArgumentView: View {
                 
                 Spacer()
                 
-                Text(argument.argumentType.displayName)
+                Text(getSimpleArgumentTypeDisplayName(argument.argumentType))
                     .font(.system(size: 10))
                     .foregroundColor(.secondary)
             }
@@ -598,6 +598,21 @@ struct ActiveArgumentView: View {
                 .foregroundColor(.red.opacity(0.3)),
             alignment: .top
         )
+    }
+    
+    private func getSimpleArgumentTypeDisplayName(_ argumentType: SimpleArgumentType) -> String {
+        switch argumentType {
+        case .technical:
+            return "Technical Analysis"
+        case .fundamental:
+            return "Fundamental Analysis"
+        case .strategy:
+            return "Strategy Debate"
+        case .risk:
+            return "Risk Management"
+        case .general:
+            return "General Discussion"
+        }
     }
 }
 
@@ -1006,6 +1021,68 @@ class BotChatEngine: ObservableObject {
             MessageReaction(emoji: emoji, count: Int.random(in: 1...8))
         }
     }
+}
+
+// MARK: - Simple Argument Engine for Discord Simulation
+
+@MainActor
+class SimpleDiscordArgumentEngine: ObservableObject {
+    @Published var activeArguments: [SimpleArgument] = []
+    
+    func hasActiveArgument(in channelId: UUID) -> Bool {
+        return activeArguments.contains { $0.channelId == channelId }
+    }
+    
+    func isMessageInArgument(_ messageId: UUID) -> Bool {
+        return Bool.random() // Simplified for demo
+    }
+    
+    func startArgumentGeneration() {
+        Timer.scheduledTimer(withTimeInterval: Double.random(in: 30...120), repeats: true) { _ in
+            Task { @MainActor in
+                self.generateRandomArgument()
+            }
+        }
+    }
+    
+    func stopArgumentGeneration() {
+        // Stop generation
+    }
+    
+    private func generateRandomArgument() {
+        let channelId = UUID()
+        let argument = SimpleArgument(
+            channelId: channelId,
+            participants: ["bot_1", "bot_2", "bot_3"],
+            topic: ["Technical Analysis", "Market Direction", "Risk Management", "Trading Strategy"].randomElement()!,
+            intensityLevel: ["Low", "Medium", "High", "Extreme"].randomElement()!,
+            argumentType: .technical
+        )
+        
+        activeArguments.append(argument)
+        
+        // Remove after some time
+        DispatchQueue.main.asyncAfter(deadline: .now() + Double.random(in: 60...300)) {
+            self.activeArguments.removeAll { $0.id == argument.id }
+        }
+    }
+}
+
+struct SimpleArgument: Identifiable {
+    let id = UUID()
+    let channelId: UUID
+    let participants: [String]
+    let topic: String
+    let intensityLevel: String
+    let argumentType: SimpleArgumentType
+}
+
+enum SimpleArgumentType {
+    case technical
+    case fundamental
+    case strategy
+    case risk
+    case general
 }
 
 // MARK: - Extensions
