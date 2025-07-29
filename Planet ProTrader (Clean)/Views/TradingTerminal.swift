@@ -551,43 +551,44 @@ struct TradingTerminal: View {
                     }
                     .buttonStyle(ContentViewScaleButtonStyle())
                     
-                    // Enhanced Volume Control with Haptic Feedback
-                    VStack(spacing: 0) {
-                        // Minus button
+                    // FIXED: Horizontal Volume Control with Better Padding
+                    HStack(spacing: 8) {
+                        // Minus button on LEFT
                         Button(action: {
                             decreaseVolume()
                         }) {
                             Image(systemName: "minus.circle.fill")
                                 .font(.system(size: 18, weight: .medium))
                                 .foregroundColor(.white.opacity(0.8))
-                                .frame(height: 16)
+                                .frame(width: 24, height: 24)
                         }
                         .buttonStyle(ContentViewScaleButtonStyle())
                         
-                        // Volume display with animation
+                        // Volume display in CENTER with padding
                         VStack(spacing: 1) {
                             Text(String(format: "%.2f", tradeVolume))
-                                .font(.system(size: 24, weight: .bold, design: .rounded))
+                                .font(.system(size: 20, weight: .bold, design: .rounded))
                                 .foregroundColor(.white)
                                 .animation(.spring(response: 0.3, dampingFraction: 0.8), value: tradeVolume)
                             Text("lots")
-                                .font(.system(size: 12, weight: .medium))
+                                .font(.system(size: 10, weight: .medium))
                                 .foregroundColor(.gray)
                         }
-                        .frame(height: 38)
+                        .frame(minWidth: 60)
+                        .padding(.horizontal, 8)
                         
-                        // Plus button
+                        // Plus button on RIGHT
                         Button(action: {
                             increaseVolume()
                         }) {
                             Image(systemName: "plus.circle.fill")
                                 .font(.system(size: 18, weight: .medium))
                                 .foregroundColor(.white.opacity(0.8))
-                                .frame(height: 16)
+                                .frame(width: 24, height: 24)
                         }
                         .buttonStyle(ContentViewScaleButtonStyle())
                     }
-                    .frame(width: 100)
+                    .frame(width: 120)
                     .frame(height: 70)
                     .background(
                         LinearGradient(
