@@ -1,4 +1,3 @@
-//
 //  TradingTerminal.swift
 //  Planet ProTrader - Professional Trading Terminal
 //
@@ -32,6 +31,13 @@ struct TradingTerminal: View {
     @State private var currentChartType: ChartType = .candles
     @State private var showPriceAlerts = false
     @State private var tradeVolume: Double = 0.01
+    
+    // MARK: - Trading Panel Tab States
+    @State private var selectedTradingTab: TradingTab = .simple
+    @State private var stopLoss: Double = 0.0
+    @State private var takeProfit: Double = 0.0
+    @State private var riskAmount: Double = 100.0
+    @State private var orderType: OrderType = .market
     
     // FIXED: Use proper environment objects
     @EnvironmentObject var tradingManager: TradingManager
@@ -519,122 +525,47 @@ struct TradingTerminal: View {
                 }
                 .padding(.horizontal, 4)
                 
-                // Enhanced One-Click Trading Interface
+                // Trading Panel Tabs
                 HStack(spacing: 0) {
-                    // SELL Button with Live Price
-                    Button(action: {
-                        executeOneClickSell()
-                    }) {
-                        VStack(spacing: 4) {
-                            Text(String(format: "%.2f", tradingManager.currentGoldPrice - 0.3))
-                                .font(.system(size: 16, weight: .bold, design: .rounded))
-                                .foregroundColor(.white)
-                                .animation(.easeInOut(duration: 0.2), value: tradingManager.currentGoldPrice)
-                            Text("SELL")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundColor(.gray)
+                    TradingTabButton(
+                        title: "Simple",
+                        icon: "bolt.fill",
+                        isSelected: selectedTradingTab == .simple
+                    ) {
+                        withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                            selectedTradingTab = .simple
                         }
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 70)
-                        .background(
-                            LinearGradient(
-                                colors: [Color(red: 0.25, green: 0.2, blue: 0.2), Color(red: 0.2, green: 0.2, blue: 0.2)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                        .overlay(
-                            Rectangle()
-                                .stroke(.red.opacity(0.3), lineWidth: 1)
-                                .blur(radius: 0.5)
-                        )
+                        hapticManager.lightImpact()
+                        Task {
+                            await audioManager.playButtonTap()
+                        }
                     }
-                    .buttonStyle(ContentViewScaleButtonStyle())
                     
-                    // FIXED: Horizontal Volume Control with Better Padding
-                    HStack(spacing: 8) {
-                        // Minus button on LEFT
-                        Button(action: {
-                            decreaseVolume()
-                        }) {
-                            Image(systemName: "minus.circle.fill")
-                                .font(.system(size: 18, weight: .medium))
-                                .foregroundColor(.white.opacity(0.8))
-                                .frame(width: 24, height: 24)
+                    TradingTabButton(
+                        title: "Advanced",
+                        icon: "slider.horizontal.3",
+                        isSelected: selectedTradingTab == .advanced
+                    ) {
+                        withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                            selectedTradingTab = .advanced
                         }
-                        .buttonStyle(ContentViewScaleButtonStyle())
-                        
-                        // Volume display in CENTER with padding
-                        VStack(spacing: 1) {
-                            Text(String(format: "%.2f", tradeVolume))
-                                .font(.system(size: 20, weight: .bold, design: .rounded))
-                                .foregroundColor(.white)
-                                .animation(.spring(response: 0.3, dampingFraction: 0.8), value: tradeVolume)
-                            Text("lots")
-                                .font(.system(size: 10, weight: .medium))
-                                .foregroundColor(.gray)
+                        hapticManager.lightImpact()
+                        Task {
+                            await audioManager.playButtonTap()
                         }
-                        .frame(minWidth: 60)
-                        .padding(.horizontal, 8)
-                        
-                        // Plus button on RIGHT
-                        Button(action: {
-                            increaseVolume()
-                        }) {
-                            Image(systemName: "plus.circle.fill")
-                                .font(.system(size: 18, weight: .medium))
-                                .foregroundColor(.white.opacity(0.8))
-                                .frame(width: 24, height: 24)
-                        }
-                        .buttonStyle(ContentViewScaleButtonStyle())
                     }
-                    .frame(width: 120)
-                    .frame(height: 70)
-                    .background(
-                        LinearGradient(
-                            colors: [Color(red: 0.1, green: 0.1, blue: 0.15), Color.black],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 8)
-                            .stroke(.white.opacity(0.2), lineWidth: 1)
-                    )
-                    
-                    // BUY Button with Live Price
-                    Button(action: {
-                        executeOneClickBuy()
-                    }) {
-                        VStack(spacing: 4) {
-                            Text(String(format: "%.2f", tradingManager.currentGoldPrice))
-                                .font(.system(size: 16, weight: .bold, design: .rounded))
-                                .foregroundColor(.white)
-                                .animation(.easeInOut(duration: 0.2), value: tradingManager.currentGoldPrice)
-                            Text("BUY")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundColor(.gray)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 70)
-                        .background(
-                            LinearGradient(
-                                colors: [Color(red: 0.2, green: 0.25, blue: 0.2), Color(red: 0.2, green: 0.2, blue: 0.2)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                        .overlay(
-                            Rectangle()
-                                .stroke(.green.opacity(0.3), lineWidth: 1)
-                                .blur(radius: 0.5)
-                        )
-                    }
-                    .buttonStyle(ContentViewScaleButtonStyle())
                 }
-                .background(Color.black)
-                .clipShape(RoundedRectangle(cornerRadius: 8))
-                .shadow(color: .black.opacity(0.3), radius: 5, x: 0, y: 2)
+                .background(.black.opacity(0.3), in: RoundedRectangle(cornerRadius: 8))
+                .padding(.horizontal, 4)
+                
+                // Trading Interface Content
+                Group {
+                    if selectedTradingTab == .simple {
+                        simpleTradeInterface
+                    } else {
+                        advancedTradeInterface
+                    }
+                }
                 
                 // Enhanced Bottom Tabs with Badge Animations
                 HStack(spacing: 0) {
@@ -923,6 +854,44 @@ struct TradingTerminal: View {
         }
     }
     
+    private func executeAdvancedBuy() {
+        let slText = stopLoss > 0 ? " SL:\(String(format: "%.2f", stopLoss))" : ""
+        let tpText = takeProfit > 0 ? " TP:\(String(format: "%.2f", takeProfit))" : ""
+        let message = "Advanced BUY: \(selectedSymbol) @ \(String(format: "%.2f", tradeVolume)) lots\(slText)\(tpText)"
+        
+        toastManager.show(message, type: .success)
+        hapticManager.lightImpact()
+        
+        tradingManager.executeBuyOrder(symbol: selectedSymbol, volume: tradeVolume)
+        
+        Task {
+            await audioManager.playNotification()
+        }
+    }
+    
+    private func executeAdvancedSell() {
+        let slText = stopLoss > 0 ? " SL:\(String(format: "%.2f", stopLoss))" : ""
+        let tpText = takeProfit > 0 ? " TP:\(String(format: "%.2f", takeProfit))" : ""
+        let message = "Advanced SELL: \(selectedSymbol) @ \(String(format: "%.2f", tradeVolume)) lots\(slText)\(tpText)"
+        
+        toastManager.show(message, type: .warning)
+        hapticManager.lightImpact()
+        
+        tradingManager.executeSellOrder(symbol: selectedSymbol, volume: tradeVolume)
+        
+        Task {
+            await audioManager.playNotification()
+        }
+    }
+    
+    private func calculateRiskReward() -> Double {
+        guard stopLoss > 0 && takeProfit > 0 else { return 0.0 }
+        let currentPrice = tradingManager.currentGoldPrice
+        let riskDistance = abs(currentPrice - stopLoss)
+        let rewardDistance = abs(takeProfit - currentPrice)
+        return riskDistance > 0 ? rewardDistance / riskDistance : 0.0
+    }
+    
     private func increaseVolume() {
         tradeVolume = min(1.0, tradeVolume + 0.01)
         hapticManager.lightImpact()
@@ -939,6 +908,322 @@ struct TradingTerminal: View {
                 await audioManager.playButtonTap()
             }
         }
+    }
+    
+    private var simpleTradeInterface: some View {
+        HStack(spacing: 0) {
+            // SELL Button with Live Price
+            Button(action: {
+                executeOneClickSell()
+            }) {
+                VStack(spacing: 4) {
+                    Text(String(format: "%.2f", tradingManager.currentGoldPrice - 0.3))
+                        .font(.system(size: 16, weight: .bold, design: .rounded))
+                        .foregroundColor(.white)
+                        .animation(.easeInOut(duration: 0.2), value: tradingManager.currentGoldPrice)
+                    Text("SELL")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundColor(.gray)
+                }
+                .frame(maxWidth: .infinity)
+                .frame(height: 70)
+                .background(
+                    LinearGradient(
+                        colors: [Color(red: 0.25, green: 0.2, blue: 0.2), Color(red: 0.2, green: 0.2, blue: 0.2)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .overlay(
+                    Rectangle()
+                        .stroke(.red.opacity(0.3), lineWidth: 1)
+                        .blur(radius: 0.5)
+                )
+            }
+            .buttonStyle(ContentViewScaleButtonStyle())
+            
+            // FIXED: Horizontal Volume Control with Better Padding
+            HStack(spacing: 8) {
+                // Minus button on LEFT
+                Button(action: {
+                    decreaseVolume()
+                }) {
+                    Image(systemName: "minus.circle.fill")
+                        .font(.system(size: 18, weight: .medium))
+                        .foregroundColor(.white.opacity(0.8))
+                        .frame(width: 24, height: 24)
+                }
+                .buttonStyle(ContentViewScaleButtonStyle())
+                
+                // Volume display in CENTER with padding
+                VStack(spacing: 1) {
+                    Text(String(format: "%.2f", tradeVolume))
+                        .font(.system(size: 20, weight: .bold, design: .rounded))
+                        .foregroundColor(.white)
+                        .animation(.spring(response: 0.3, dampingFraction: 0.8), value: tradeVolume)
+                    Text("lots")
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundColor(.gray)
+                }
+                .frame(minWidth: 60)
+                .padding(.horizontal, 8)
+                
+                // Plus button on RIGHT
+                Button(action: {
+                    increaseVolume()
+                }) {
+                    Image(systemName: "plus.circle.fill")
+                        .font(.system(size: 18, weight: .medium))
+                        .foregroundColor(.white.opacity(0.8))
+                        .frame(width: 24, height: 24)
+                }
+                .buttonStyle(ContentViewScaleButtonStyle())
+            }
+            .frame(width: 120)
+            .frame(height: 70)
+            .background(
+                LinearGradient(
+                    colors: [Color(red: 0.1, green: 0.1, blue: 0.15), Color.black],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(.white.opacity(0.2), lineWidth: 1)
+            )
+            
+            // BUY Button with Live Price
+            Button(action: {
+                executeOneClickBuy()
+            }) {
+                VStack(spacing: 4) {
+                    Text(String(format: "%.2f", tradingManager.currentGoldPrice))
+                        .font(.system(size: 16, weight: .bold, design: .rounded))
+                        .foregroundColor(.white)
+                        .animation(.easeInOut(duration: 0.2), value: tradingManager.currentGoldPrice)
+                    Text("BUY")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundColor(.gray)
+                }
+                .frame(maxWidth: .infinity)
+                .frame(height: 70)
+                .background(
+                    LinearGradient(
+                        colors: [Color(red: 0.2, green: 0.25, blue: 0.2), Color(red: 0.2, green: 0.2, blue: 0.2)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .overlay(
+                    Rectangle()
+                        .stroke(.green.opacity(0.3), lineWidth: 1)
+                        .blur(radius: 0.5)
+                )
+            }
+            .buttonStyle(ContentViewScaleButtonStyle())
+        }
+        .background(Color.black)
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .shadow(color: .black.opacity(0.3), radius: 5, x: 0, y: 2)
+    }
+    
+    private var advancedTradeInterface: some View {
+        VStack(spacing: 12) {
+            // Order Type & Volume Row
+            HStack(spacing: 12) {
+                // Order Type Picker
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Order Type")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundColor(.gray)
+                    
+                    Menu {
+                        ForEach(OrderType.allCases, id: \.self) { type in
+                            Button(type.displayName) {
+                                orderType = type
+                                hapticManager.lightImpact()
+                            }
+                        }
+                    } label: {
+                        HStack {
+                            Text(orderType.displayName)
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundColor(.white)
+                            Image(systemName: "chevron.down")
+                                .font(.system(size: 10))
+                                .foregroundColor(.gray)
+                        }
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
+                        .background(.black.opacity(0.8), in: RoundedRectangle(cornerRadius: 6))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 6)
+                                .stroke(.white.opacity(0.2), lineWidth: 1)
+                        )
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                
+                // Volume Control
+                VStack(alignment: .trailing, spacing: 4) {
+                    Text("Volume")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundColor(.gray)
+                    
+                    HStack(spacing: 8) {
+                        Button(action: { decreaseVolume() }) {
+                            Image(systemName: "minus.circle.fill")
+                                .font(.system(size: 16))
+                                .foregroundColor(.white.opacity(0.8))
+                        }
+                        
+                        Text(String(format: "%.2f", tradeVolume))
+                            .font(.system(size: 16, weight: .bold, design: .rounded))
+                            .foregroundColor(.white)
+                            .frame(minWidth: 50)
+                        
+                        Button(action: { increaseVolume() }) {
+                            Image(systemName: "plus.circle.fill")
+                                .font(.system(size: 16))
+                                .foregroundColor(.white.opacity(0.8))
+                        }
+                    }
+                }
+            }
+            
+            // SL/TP Sliders Row
+            HStack(spacing: 12) {
+                // Stop Loss
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack {
+                        Text("Stop Loss")
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundColor(.red)
+                        Spacer()
+                        Text(stopLoss > 0 ? String(format: "%.2f", stopLoss) : "None")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundColor(.red)
+                    }
+                    
+                    Slider(value: $stopLoss, in: 0...100, step: 0.1)
+                        .tint(.red)
+                        .frame(height: 20)
+                }
+                .frame(maxWidth: .infinity)
+                
+                // Take Profit
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack {
+                        Text("Take Profit")
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundColor(.green)
+                        Spacer()
+                        Text(takeProfit > 0 ? String(format: "%.2f", takeProfit) : "None")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundColor(.green)
+                    }
+                    
+                    Slider(value: $takeProfit, in: 0...200, step: 0.1)
+                        .tint(.green)
+                        .frame(height: 20)
+                }
+                .frame(maxWidth: .infinity)
+            }
+            
+            // Risk Calculator Row
+            HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Risk Amount")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundColor(.gray)
+                    
+                    HStack {
+                        Text("$")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundColor(.white)
+                        Text(String(format: "%.0f", riskAmount))
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundColor(.white)
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(.black.opacity(0.8), in: RoundedRectangle(cornerRadius: 6))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 6)
+                            .stroke(.white.opacity(0.2), lineWidth: 1)
+                    )
+                }
+                
+                VStack(alignment: .trailing, spacing: 4) {
+                    Text("R:R Ratio")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundColor(.gray)
+                    
+                    Text("1:\(String(format: "%.1f", calculateRiskReward()))")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundColor(calculateRiskReward() >= 2.0 ? .green : .orange)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(.black.opacity(0.8), in: RoundedRectangle(cornerRadius: 6))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 6)
+                                .stroke((calculateRiskReward() >= 2.0 ? Color.green : Color.orange).opacity(0.3), lineWidth: 1)
+                        )
+                }
+            }
+            
+            // Advanced Buy/Sell Buttons
+            HStack(spacing: 8) {
+                Button(action: {
+                    executeAdvancedSell()
+                }) {
+                    VStack(spacing: 4) {
+                        Text("SELL")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundColor(.white)
+                        Text(String(format: "%.2f", tradingManager.currentGoldPrice - 0.3))
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundColor(.red)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 50)
+                    .background(.red.opacity(0.2), in: RoundedRectangle(cornerRadius: 8))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(.red.opacity(0.4), lineWidth: 1)
+                    )
+                }
+                .buttonStyle(ContentViewScaleButtonStyle())
+                
+                Button(action: {
+                    executeAdvancedBuy()
+                }) {
+                    VStack(spacing: 4) {
+                        Text("BUY")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundColor(.white)
+                        Text(String(format: "%.2f", tradingManager.currentGoldPrice))
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundColor(.green)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 50)
+                    .background(.green.opacity(0.2), in: RoundedRectangle(cornerRadius: 8))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(.green.opacity(0.4), lineWidth: 1)
+                    )
+                }
+                .buttonStyle(ContentViewScaleButtonStyle())
+            }
+        }
+        .padding(12)
+        .background(.black.opacity(0.6), in: RoundedRectangle(cornerRadius: 12))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(.white.opacity(0.1), lineWidth: 1)
+        )
     }
 }
 
@@ -1041,6 +1326,20 @@ enum ChartType: String, CaseIterable {
         case .area: return "chart.line.flattrend.xyaxis.fill"
         }
     }
+}
+
+enum TradingTab: String, CaseIterable {
+    case simple = "Simple"
+    case advanced = "Advanced"
+}
+
+enum OrderType: String, CaseIterable {
+    case market = "Market"
+    case limit = "Limit"
+    case stop = "Stop"
+    case stopLimit = "Stop Limit"
+    
+    var displayName: String { rawValue }
 }
 
 // MARK: - TradingView WebView
@@ -1201,7 +1500,7 @@ struct TradingViewWebView: UIViewRepresentable {
         </html>
         """
     }
-    
+
     class Coordinator: NSObject, WKNavigationDelegate {
         let parent: TradingViewWebView
         
@@ -1295,6 +1594,34 @@ struct TradeLockerTabButton: View {
     }
 }
 
+struct TradingTabButton: View {
+    let title: String
+    let icon: String
+    let isSelected: Bool
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 6) {
+                Image(systemName: icon)
+                    .font(.system(size: 12, weight: .medium))
+                Text(title)
+                    .font(.system(size: 13, weight: .semibold))
+            }
+            .foregroundColor(isSelected ? .black : .white)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 10)
+            .background(
+                isSelected ? 
+                LinearGradient(colors: [.white, .white.opacity(0.9)], startPoint: .topLeading, endPoint: .bottomTrailing) :
+                LinearGradient(colors: [.clear], startPoint: .leading, endPoint: .trailing),
+                in: RoundedRectangle(cornerRadius: 6)
+            )
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+}
+
 struct TradeLockerTimeframeButton: View {
     let timeframe: ChartTimeframe
     let isSelected: Bool
@@ -1331,11 +1658,16 @@ struct ContentViewScaleButtonStyle: ButtonStyle {
     }
 }
 
-#Preview {
-    TradingTerminal()
-        .environmentObject(TradingManager.shared)
-        .environmentObject(BotManager.shared)
-        .environmentObject(HapticManager.shared)
-        .environmentObject(AudioManager.shared)
-        .preferredColorScheme(.dark)
+// MARK: - Preview
+#if DEBUG
+struct TradingTerminal_Previews: PreviewProvider {
+    static var previews: some View {
+        TradingTerminal()
+            .environmentObject(TradingManager.shared)
+            .environmentObject(BotManager.shared)
+            .environmentObject(HapticManager.shared)
+            .environmentObject(AudioManager.shared)
+            .preferredColorScheme(.dark)
+    }
 }
+#endif
