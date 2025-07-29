@@ -1,7 +1,9 @@
 //
 //  BotStoreView.swift
-//  Planet ProTrader (Clean)
+//  Planet ProTrader - Interactive Bot Hiring Marketplace
 //
+//  GROCERY SHOPPING FOR MONEY-MAKING BOTS 🛒💰
+//  Bots actively compete to be hired to trade your money!
 //  Created by AI Assistant on 1/25/25.
 //
 
@@ -10,748 +12,861 @@ import Foundation
 
 struct BotStoreView: View {
     @StateObject private var storeService = BotStoreService.shared
+    @StateObject private var cartManager = BotCartManager.shared
+    
     @State private var selectedBot: MarketplaceBotModel?
     @State private var showingBotDetail = false
-    @State private var showingFilters = false
+    @State private var showingCart = false
+    @State private var showingBotChat = false
+    @State private var showingCustomization = false
     @State private var animateCards = false
     @State private var selectedCard: UUID?
+    @State private var shoppingMode: ShoppingMode = .browse
+    @State private var currentAisle: BotAisle = .featured
+    @State private var showingSpecialOffers = false
+    @State private var cartShakeAnimation = false
     
-    let columns = [
-        GridItem(.flexible(), spacing: 12),
-        GridItem(.flexible(), spacing: 12)
-    ]
+    enum ShoppingMode {
+        case browse, shopping, negotiating, customizing
+        
+        var title: String {
+            switch self {
+            case .browse: return "🛒 Bot Grocery Store"
+            case .shopping: return "💰 Hiring Bots"
+            case .negotiating: return "🤝 Negotiating Deals"
+            case .customizing: return "🎨 Customizing Bots"
+            }
+        }
+    }
+    
+    enum BotAisle: String, CaseIterable {
+        case featured = "⭐ Featured Traders"
+        case newArrivals = "🆕 New Arrivals"
+        case hotDeals = "🔥 Hot Deals"
+        case premium = "💎 Premium Bots"
+        case specialists = "🎯 Specialists"
+        case budget = "💵 Budget Friendly"
+        case experimental = "🧪 Experimental"
+        case topRated = "🏆 Top Rated"
+        
+        var emoji: String {
+            String(rawValue.prefix(2))
+        }
+        
+        var description: String {
+            switch self {
+            case .featured: return "Hand-picked money makers"
+            case .newArrivals: return "Fresh off the assembly line"
+            case .hotDeals: return "Limited time offers"
+            case .premium: return "Elite traders only"
+            case .specialists: return "Niche market experts"
+            case .budget: return "Great value picks"
+            case .experimental: return "Cutting-edge AI"
+            case .topRated: return "Community favorites"
+            }
+        }
+    }
     
     var body: some View {
         NavigationStack {
-            VStack(spacing: 0) {
-                // Search and filters header
-                searchAndFiltersHeader
+            ZStack {
+                // Animated starfield background
+                DesignSystem.AnimatedStarField()
+                    .ignoresSafeArea()
                 
-                // Category selector
-                categorySelector
-                
-                // Store content
-                ScrollView {
-                    if storeService.isLoading {
-                        loadingView
-                    } else if let errorMessage = storeService.errorMessage {
-                        errorView(errorMessage)
-                    } else {
-                        mainContentView
+                VStack(spacing: 0) {
+                    // Shopping header with cart
+                    shoppingHeader
+                    
+                    // Aisle selector (like grocery store aisles)
+                    aisleSelector
+                    
+                    // Special announcements banner
+                    if storeService.hasSpecialOffers {
+                        specialOffersbanner
+                    }
+                    
+                    // Main shopping area
+                    ScrollView {
+                        VStack(spacing: 20) {
+                            // Shopping cart summary (if items in cart)
+                            if !cartManager.cartItems.isEmpty {
+                                cartSummaryCard
+                            }
+                            
+                            // Bots actively pitching themselves
+                            activePitchesSection
+                            
+                            // Main bot marketplace
+                            botMarketplaceSection
+                            
+                            // Bot testimonials
+                            botTestimonialsSection
+                        }
+                        .padding()
                     }
                 }
-                .refreshable {
-                    await storeService.refreshData()
-                }
             }
-            .navigationTitle("🛒 Bot Store")
-            .navigationBarTitleDisplayMode(.large)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Filters") {
-                        showingFilters = true
-                    }
-                    .foregroundColor(DesignSystem.cosmicBlue)
-                }
-            }
+            .navigationBarHidden(true)
             .onAppear {
-                startAnimations()
+                setupShoppingExperience()
             }
-        }
-        .sheet(isPresented: $showingBotDetail) {
-            if let bot = selectedBot {
-                MarketplaceBotDetailView(bot: bot)
-            }
-        }
-        .sheet(isPresented: $showingFilters) {
-            BotStoreFiltersView()
-        }
-    }
-    
-    // MARK: - Main Content Views
-    
-    private var mainContentView: some View {
-        VStack(spacing: 20) {
-            // Featured section (if showing all or featured)
-            if storeService.selectedCategory == .all || storeService.selectedCategory == .featured {
-                featuredBotsSection
-            }
-            
-            // Main bot grid
-            botGridSection
-        }
-        .padding()
-    }
-    
-    private var loadingView: some View {
-        VStack(spacing: 16) {
-            ProgressView()
-                .scaleEffect(1.5)
-            
-            Text("Loading bots...")
-                .font(.subheadline)
-                .foregroundColor(.secondary)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(.top, 100)
-    }
-    
-    private func errorView(_ message: String) -> some View {
-        VStack(spacing: 16) {
-            Image(systemName: "exclamationmark.triangle")
-                .font(.system(size: 48))
-                .foregroundColor(.orange)
-            
-            Text("Error")
-                .font(.headline)
-                .foregroundColor(.primary)
-            
-            Text(message)
-                .font(.subheadline)
-                .foregroundColor(.secondary)
-                .multilineTextAlignment(.center)
-            
-            Button("Try Again") {
-                Task {
-                    await storeService.refreshData()
+            .sheet(isPresented: $showingBotDetail) {
+                if let bot = selectedBot {
+                    BotHiringDetailView(bot: bot)
                 }
             }
-            .foregroundColor(DesignSystem.cosmicBlue)
+            .sheet(isPresented: $showingCart) {
+                BotShoppingCartView()
+            }
+            .sheet(isPresented: $showingBotChat) {
+                if let bot = selectedBot {
+                    BotNegotiationChatView(bot: bot)
+                }
+            }
+            .sheet(isPresented: $showingCustomization) {
+                if let bot = selectedBot {
+                    BotCustomizationView(bot: bot)
+                }
+            }
+            .sheet(isPresented: $showingSpecialOffers) {
+                SpecialOffersView()
+            }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(.top, 100)
     }
     
-    // MARK: - Search and Filters Header
-    
-    private var searchAndFiltersHeader: some View {
-        VStack(spacing: 12) {
+    // MARK: - Shopping Header
+    private var shoppingHeader: some View {
+        VStack(spacing: 0) {
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(shoppingMode.title)
+                        .font(.title2)
+                        .fontWeight(.black)
+                        .foregroundColor(.white)
+                    
+                    Text("Bots competing to manage your money!")
+                        .font(.caption)
+                        .foregroundColor(.gray)
+                }
+                
+                Spacer()
+                
+                // Shopping cart button
+                Button(action: {
+                    showingCart = true
+                }) {
+                    ZStack {
+                        Image(systemName: "cart.fill")
+                            .font(.title2)
+                            .foregroundColor(DesignSystem.primaryGold)
+                            .scaleEffect(cartShakeAnimation ? 1.2 : 1.0)
+                            .animation(.bouncy(duration: 0.3), value: cartShakeAnimation)
+                        
+                        if cartManager.cartItems.count > 0 {
+                            Text("\(cartManager.cartItems.count)")
+                                .font(.caption2)
+                                .fontWeight(.bold)
+                                .foregroundColor(.white)
+                                .padding(6)
+                                .background(Circle().fill(.red))
+                                .offset(x: 12, y: -12)
+                        }
+                    }
+                }
+                .onReceive(cartManager.$cartItems) { _ in
+                    withAnimation {
+                        cartShakeAnimation = true
+                    }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        cartShakeAnimation = false
+                    }
+                }
+            }
+            .padding(.horizontal)
+            .padding(.top, 16)
+            
+            // Search bar
             HStack {
                 Image(systemName: "magnifyingglass")
-                    .foregroundColor(.secondary)
+                    .foregroundColor(.gray)
                 
-                TextField("Search bots...", text: $storeService.searchText)
-                    .textFieldStyle(PlainTextFieldStyle())
+                TextField("Search for money-making bots...", text: $storeService.searchText)
+                    .foregroundColor(.white)
                 
                 if !storeService.searchText.isEmpty {
                     Button("Clear") {
                         storeService.searchText = ""
                     }
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(.gray)
+                }
+            }
+            .padding()
+            .background(.ultraThinMaterial)
+            .cornerRadius(12)
+            .padding(.horizontal)
+            .padding(.bottom, 16)
+        }
+        .background(Color.black.opacity(0.8))
+    }
+    
+    // MARK: - Aisle Selector
+    private var aisleSelector: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 12) {
+                ForEach(BotAisle.allCases, id: \.self) { aisle in
+                    aisleButton(aisle: aisle)
+                }
+            }
+            .padding(.horizontal)
+        }
+        .padding(.vertical, 12)
+        .background(.thinMaterial)
+    }
+    
+    private func aisleButton(aisle: BotAisle) -> some View {
+        Button(action: {
+            withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
+                currentAisle = aisle
+            }
+        }) {
+            VStack(spacing: 6) {
+                Text(aisle.emoji)
+                    .font(.title2)
+                
+                VStack(spacing: 2) {
+                    Text(aisle.rawValue.dropFirst(2))
+                        .font(.caption)
+                        .fontWeight(.bold)
+                        .foregroundColor(currentAisle == aisle ? .white : .primary)
+                    
+                    Text(aisle.description)
+                        .font(.caption2)
+                        .foregroundColor(currentAisle == aisle ? .white.opacity(0.8) : .secondary)
+                        .multilineTextAlignment(.center)
                 }
             }
             .padding(.horizontal, 16)
-            .padding(.vertical, 8)
-            .background(Color(.systemGray6))
-            .cornerRadius(10)
-            
-            // Active filters
-            if storeService.selectedRarity != nil || storeService.selectedTier != nil {
-                activeFiltersView
-            }
-        }
-        .padding(.horizontal)
-        .padding(.bottom, 8)
-    }
-    
-    private var activeFiltersView: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                if let rarity = storeService.selectedRarity {
-                    filterChip(title: rarity.rawValue, color: rarity.color) {
-                        storeService.selectedRarity = nil
-                    }
-                }
-                
-                if let tier = storeService.selectedTier {
-                    filterChip(title: tier.rawValue, color: tier.color) {
-                        storeService.selectedTier = nil
-                    }
-                }
-            }
-            .padding(.horizontal)
-        }
-    }
-    
-    private func filterChip(title: String, color: Color, onRemove: @escaping () -> Void) -> some View {
-        HStack(spacing: 4) {
-            Text(title)
-                .font(.caption)
-                .foregroundColor(.white)
-            
-            Button(action: onRemove) {
-                Image(systemName: "xmark.circle.fill")
-                    .font(.caption)
-                    .foregroundColor(.white.opacity(0.8))
-            }
-        }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 4)
-        .background(color)
-        .cornerRadius(12)
-    }
-    
-    // MARK: - Category Selector
-    
-    private var categorySelector: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 12) {
-                ForEach(BotStoreService.BotStoreCategory.allCases, id: \.self) { category in
-                    categoryButton(category: category)
-                }
-            }
-            .padding(.horizontal)
-        }
-        .padding(.vertical, 8)
-    }
-    
-    private func categoryButton(category: BotStoreService.BotStoreCategory) -> some View {
-        Button(action: {
-            withAnimation(.easeInOut(duration: 0.3)) {
-                storeService.selectedCategory = category
-            }
-        }) {
-            VStack(spacing: 4) {
-                Image(systemName: category.icon)
-                    .font(.title2)
-                    .foregroundColor(storeService.selectedCategory == category ? .white : DesignSystem.cosmicBlue)
-                
-                Text(category.rawValue)
-                    .font(.caption)
-                    .fontWeight(.medium)
-                    .foregroundColor(storeService.selectedCategory == category ? .white : .primary)
-                    .multilineTextAlignment(.center)
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
+            .padding(.vertical, 12)
             .background(
-                storeService.selectedCategory == category 
-                ? DesignSystem.cosmicBlue 
-                : DesignSystem.cosmicBlue.opacity(0.1)
+                currentAisle == aisle 
+                ? AnyShapeStyle(DesignSystem.primaryGold)
+                : AnyShapeStyle(.ultraThinMaterial)
             )
-            .cornerRadius(12)
+            .cornerRadius(16)
+            .shadow(color: currentAisle == aisle ? DesignSystem.primaryGold.opacity(0.3) : .clear, radius: 8)
         }
-        .buttonStyle(PlainButtonStyle())
+        .buttonStyle(.plain)
     }
     
-    // MARK: - Featured Bots Section
-    
-    private var featuredBotsSection: some View {
-        VStack(alignment: .leading, spacing: 16) {
+    // MARK: - Special Offers Banner
+    private var specialOffersbanner: some View {
+        Button(action: {
+            showingSpecialOffers = true
+        }) {
             HStack {
-                Text("⭐ FEATURED BOTS")
-                    .font(.headline)
-                    .fontWeight(.bold)
-                    .foregroundColor(DesignSystem.solarOrange)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("🎉 FLASH SALE!")
+                        .font(.headline)
+                        .fontWeight(.black)
+                        .foregroundColor(.white)
+                    
+                    Text("3 Premium Bots for the price of 1!")
+                        .font(.subheadline)
+                        .foregroundColor(.white.opacity(0.9))
+                }
                 
                 Spacer()
                 
-                Text("HOT 🔥")
-                    .font(.caption)
+                VStack(alignment: .trailing, spacing: 4) {
+                    Text("⏰ 2h 15m left")
+                        .font(.caption)
+                        .fontWeight(.bold)
+                        .foregroundColor(.yellow)
+                    
+                    Text("TAP TO CLAIM")
+                        .font(.caption2)
+                        .foregroundColor(.white.opacity(0.8))
+                }
+            }
+            .padding()
+            .background(
+                LinearGradient(
+                    colors: [.red, .orange, .red],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+            )
+            .cornerRadius(12)
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(.white.opacity(0.3), lineWidth: 1)
+            )
+            .scaleEffect(animateCards ? 1.02 : 1.0)
+            .animation(.easeInOut(duration: 1.0).repeatForever(autoreverses: true), value: animateCards)
+        }
+        .buttonStyle(.plain)
+        .padding(.horizontal)
+    }
+    
+    // MARK: - Cart Summary Card
+    private var cartSummaryCard: some View {
+        VStack(spacing: 12) {
+            HStack {
+                Text("🛒 Your Hiring Cart")
+                    .font(.headline)
+                    .fontWeight(.bold)
+                    .foregroundColor(.white)
+                
+                Spacer()
+                
+                Button("View Cart") {
+                    showingCart = true
+                }
+                .font(.caption)
+                .foregroundColor(DesignSystem.primaryGold)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background(DesignSystem.primaryGold.opacity(0.2))
+                .cornerRadius(8)
+            }
+            
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 12) {
+                    ForEach(cartManager.cartItems.prefix(5)) { item in
+                        CartItemPreview(item: item)
+                    }
+                    
+                    if cartManager.cartItems.count > 5 {
+                        Text("+\(cartManager.cartItems.count - 5) more")
+                            .font(.caption)
+                            .foregroundColor(.gray)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 8)
+                            .background(.ultraThinMaterial)
+                            .cornerRadius(8)
+                    }
+                }
+                .padding(.horizontal, 4)
+            }
+            
+            HStack {
+                Text("Total Investment: \(cartManager.formattedTotal)")
+                    .font(.subheadline)
+                    .fontWeight(.bold)
+                    .foregroundColor(DesignSystem.primaryGold)
+                
+                Spacer()
+                
+                Button("💰 HIRE ALL BOTS") {
+                    cartManager.processHiring()
+                }
+                .font(.caption)
+                .fontWeight(.bold)
+                .foregroundColor(.black)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                .background(DesignSystem.primaryGold)
+                .cornerRadius(20)
+            }
+        }
+        .padding()
+        .background(.ultraThinMaterial)
+        .cornerRadius(16)
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(DesignSystem.primaryGold.opacity(0.3), lineWidth: 1)
+        )
+    }
+    
+    // MARK: - Active Pitches Section
+    private var activePitchesSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack {
+                Text("🎤 BOTS PITCHING FOR YOUR MONEY")
+                    .font(.headline)
+                    .fontWeight(.black)
+                    .foregroundColor(.white)
+                
+                Spacer()
+                
+                Text("LIVE")
+                    .font(.caption2)
                     .fontWeight(.bold)
                     .foregroundColor(.white)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
-                    .background(Color.red)
-                    .cornerRadius(8)
+                    .background(.red)
+                    .cornerRadius(12)
+                    .pulsingEffect()
             }
             
-            if storeService.featuredBots.isEmpty {
-                Text("No featured bots available")
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .center)
-                    .padding(.vertical, 20)
-            } else {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 16) {
-                        ForEach(storeService.featuredBots) { bot in
-                            featuredBotCard(bot: bot)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 16) {
+                    ForEach(storeService.activePitchingBots) { bot in
+                        BotPitchCard(bot: bot) {
+                            selectedBot = bot
+                            showingBotChat = true
                         }
                     }
-                    .padding(.horizontal)
                 }
+                .padding(.horizontal, 4)
             }
         }
     }
     
-    private func featuredBotCard(bot: MarketplaceBotModel) -> some View {
-        Button(action: {
-            selectedBot = bot
-            showingBotDetail = true
-        }) {
-            VStack(spacing: 12) {
-                // Bot image/avatar placeholder
-                ZStack {
-                    Rectangle()
-                        .fill(
-                            LinearGradient(
-                                colors: [bot.rarity.color.opacity(0.8), bot.rarity.color.opacity(0.4)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                        .frame(width: 200, height: 120)
-                        .cornerRadius(12)
-                    
-                    VStack(spacing: 8) {
-                        Text(bot.rarity.sparkleEffect)
-                            .font(.title)
-                        
-                        Text(bot.tier.icon)
-                            .font(.title2)
-                        
-                        Text(bot.rarity.rawValue)
-                            .font(.caption)
-                            .fontWeight(.bold)
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(Color.black.opacity(0.3))
-                            .cornerRadius(4)
-                    }
-                }
-                
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(bot.name)
-                        .font(.subheadline)
-                        .fontWeight(.bold)
-                        .foregroundColor(.primary)
-                        .multilineTextAlignment(.leading)
-                        .lineLimit(2)
-                    
-                    Text(bot.tagline)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .lineLimit(2)
-                    
-                    HStack {
-                        // Star rating
-                        HStack(spacing: 2) {
-                            ForEach(0..<5) { star in
-                                Image(systemName: star < Int(bot.averageRating) ? "star.fill" : "star")
-                                    .font(.caption2)
-                                    .foregroundColor(.yellow)
-                            }
-                        }
-                        
-                        Spacer()
-                        
-                        Text(bot.formattedPrice)
-                            .font(.caption)
-                            .fontWeight(.bold)
-                            .foregroundColor(DesignSystem.cosmicBlue)
-                    }
-                }
-                .frame(width: 200)
-            }
-            .padding()
-            .background(Color(.systemGray6))
-            .cornerRadius(16)
-            .overlay(
-                RoundedRectangle(cornerRadius: 16)
-                    .stroke(bot.rarity.color, lineWidth: 2)
-            )
-        }
-        .buttonStyle(PlainButtonStyle())
-    }
-    
-    // MARK: - Bot Grid Section
-    
-    private var botGridSection: some View {
+    // MARK: - Bot Marketplace Section
+    private var botMarketplaceSection: some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
-                Text("🤖 ALL BOTS")
+                Text("\(currentAisle.emoji) \(currentAisle.rawValue.dropFirst(2))")
                     .font(.headline)
-                    .fontWeight(.bold)
-                    .foregroundColor(.primary)
+                    .fontWeight(.black)
+                    .foregroundColor(.white)
                 
                 Spacer()
                 
-                Text("\(storeService.filteredBots().count) bots")
+                Text("\(getBotsForCurrentAisle().count) bots available")
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(.gray)
             }
             
-            if storeService.filteredBots().isEmpty {
-                emptyStateView
-            } else {
-                LazyVGrid(columns: columns, spacing: 16) {
-                    ForEach(storeService.filteredBots()) { bot in
-                        botCard(bot: bot)
-                            .scaleEffect(selectedCard == bot.id ? 1.05 : 1.0)
-                            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: selectedCard)
+            LazyVGrid(columns: [
+                GridItem(.flexible(), spacing: 12),
+                GridItem(.flexible(), spacing: 12)
+            ], spacing: 16) {
+                ForEach(getBotsForCurrentAisle()) { bot in
+                    InteractiveBotCard(bot: bot) {
+                        selectedBot = bot
+                        showingBotDetail = true
                     }
                 }
             }
         }
     }
     
-    private func botCard(bot: MarketplaceBotModel) -> some View {
-        Button(action: {
-            selectedCard = bot.id
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                selectedCard = nil
-                selectedBot = bot
-                showingBotDetail = true
+    // MARK: - Bot Testimonials Section
+    private var botTestimonialsSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("💬 WHAT OTHER TRADERS SAY")
+                .font(.headline)
+                .fontWeight(.black)
+                .foregroundColor(.white)
+            
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 16) {
+                    ForEach(storeService.testimonials) { testimonial in
+                        TestimonialCard(testimonial: testimonial)
+                    }
+                }
+                .padding(.horizontal, 4)
             }
-        }) {
+        }
+    }
+    
+    // MARK: - Helper Methods and Data
+    private func setupShoppingExperience() {
+        withAnimation(.easeInOut(duration: 1.0).repeatForever(autoreverses: true)) {
+            animateCards = true
+        }
+        
+        // Start bot pitching animations
+        Timer.scheduledTimer(withTimeInterval: 3.0, repeats: true) { _ in
+            storeService.rotatePitchingBots()
+        }
+    }
+    
+    private func getBotsForCurrentAisle() -> [MarketplaceBotModel] {
+        return storeService.getBotsForAisle(currentAisle)
+    }
+}
+
+// MARK: - Bot Pitch Card
+struct BotPitchCard: View {
+    let bot: MarketplaceBotModel
+    let onTap: () -> Void
+    @State private var showingPitch = false
+    
+    var body: some View {
+        Button(action: onTap) {
             VStack(spacing: 12) {
-                // Header with rarity and verification
-                HStack {
-                    Text(bot.rarity.sparkleEffect)
-                        .font(.title2)
+                // Bot character avatar
+                BotCharacterAvatar(bot: bot, size: 60)
+                
+                VStack(spacing: 8) {
+                    Text(bot.name)
+                        .font(.subheadline)
+                        .fontWeight(.bold)
+                        .foregroundColor(.white)
+                        .multilineTextAlignment(.center)
                     
-                    Spacer()
-                    
-                    HStack(spacing: 4) {
-                        Image(systemName: bot.verificationStatus.icon)
+                    // Bot's pitch bubble
+                    VStack(spacing: 6) {
+                        Text("💬")
                             .font(.caption)
-                            .foregroundColor(bot.verificationStatus.color)
                         
-                        Text(bot.availability.rawValue)
+                        Text(bot.currentPitch)
                             .font(.caption2)
-                            .foregroundColor(bot.availability.color)
+                            .foregroundColor(.white.opacity(0.9))
+                            .multilineTextAlignment(.center)
+                            .lineLimit(3)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(.ultraThinMaterial)
+                            .cornerRadius(8)
+                    }
+                    
+                    // Quick stats
+                    HStack(spacing: 12) {
+                        VStack(spacing: 2) {
+                            Text("\(bot.stats.formattedTotalReturn)")
+                                .font(.caption2)
+                                .fontWeight(.bold)
+                                .foregroundColor(.green)
+                            Text("Returns")
+                                .font(.caption2)
+                                .foregroundColor(.gray)
+                        }
+                        
+                        VStack(spacing: 2) {
+                            Text(String(format: "%.0f%%", bot.stats.winRate))
+                                .font(.caption2)
+                                .fontWeight(.bold)
+                                .foregroundColor(.blue)
+                            Text("Win Rate")
+                                .font(.caption2)
+                                .foregroundColor(.gray)
+                        }
+                    }
+                    
+                    // Action buttons
+                    HStack(spacing: 8) {
+                        Button("Chat") {
+                            onTap()
+                        }
+                        .font(.caption2)
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(.blue)
+                        .cornerRadius(6)
+                        
+                        Button("🛒 Hire") {
+                            BotCartManager.shared.addToCart(bot)
+                        }
+                        .font(.caption2)
+                        .foregroundColor(.black)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(DesignSystem.primaryGold)
+                        .cornerRadius(6)
+                    }
+                }
+            }
+            .padding()
+            .frame(width: 180)
+            .background(.ultraThinMaterial)
+            .cornerRadius(16)
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(bot.rarity.color.opacity(0.5), lineWidth: 2)
+            )
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+// MARK: - Interactive Bot Card
+struct InteractiveBotCard: View {
+    let bot: MarketplaceBotModel
+    let onTap: () -> Void
+    @State private var isHovered = false
+    
+    var body: some View {
+        Button(action: onTap) {
+            VStack(spacing: 12) {
+                // Bot character avatar with customization indicator
+                ZStack {
+                    BotCharacterAvatar(bot: bot, size: 80)
+                    
+                    if bot.isCustomizable {
+                        VStack {
+                            Spacer()
+                            HStack {
+                                Spacer()
+                                Image(systemName: "paintbrush.fill")
+                                    .font(.caption2)
+                                    .foregroundColor(.white)
+                                    .padding(4)
+                                    .background(.purple)
+                                    .clipShape(Circle())
+                            }
+                        }
                     }
                 }
                 
-                // Bot avatar
-                ZStack {
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(
-                            LinearGradient(
-                                colors: [bot.rarity.color.opacity(0.3), bot.rarity.color.opacity(0.1)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                        .frame(height: 60)
+                VStack(spacing: 8) {
+                    // Bot name and verification
+                    HStack {
+                        Text(bot.name)
+                            .font(.caption)
+                            .fontWeight(.bold)
+                            .foregroundColor(.white)
+                        
+                        if bot.verificationStatus == .verified {
+                            Image(systemName: "checkmark.seal.fill")
+                                .font(.caption2)
+                                .foregroundColor(.blue)
+                        }
+                    }
                     
-                    Text(bot.tier.icon)
-                        .font(.title)
-                }
-                
-                // Bot info
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(bot.name)
-                        .font(.caption)
-                        .fontWeight(.bold)
-                        .foregroundColor(.primary)
+                    // Bot's value proposition
+                    Text(bot.valueProposition)
+                        .font(.caption2)
+                        .foregroundColor(.gray)
                         .multilineTextAlignment(.center)
                         .lineLimit(2)
                     
-                    Text("by \(bot.creatorUsername)")
-                        .font(.caption2)
-                        .foregroundColor(.secondary)
-                    
-                    // Stats
+                    // Performance metrics
                     VStack(spacing: 4) {
                         HStack {
-                            Text("Return:")
+                            Text("ROI:")
                                 .font(.caption2)
-                                .foregroundColor(.secondary)
-                            
+                                .foregroundColor(.gray)
                             Spacer()
-                            
                             Text(bot.stats.formattedTotalReturn)
                                 .font(.caption2)
-                                .fontWeight(.medium)
+                                .fontWeight(.semibold)
                                 .foregroundColor(bot.stats.totalReturn >= 0 ? .green : .red)
                         }
                         
                         HStack {
                             Text("Win Rate:")
                                 .font(.caption2)
-                                .foregroundColor(.secondary)
-                            
+                                .foregroundColor(.gray)
                             Spacer()
-                            
                             Text(String(format: "%.0f%%", bot.stats.winRate))
                                 .font(.caption2)
-                                .fontWeight(.medium)
+                                .fontWeight(.semibold)
                                 .foregroundColor(.blue)
                         }
                         
                         HStack {
-                            Text("Users:")
+                            Text("Clients:")
                                 .font(.caption2)
-                                .foregroundColor(.secondary)
-                            
+                                .foregroundColor(.gray)
                             Spacer()
-                            
                             Text("\(bot.stats.totalUsers)")
                                 .font(.caption2)
-                                .fontWeight(.medium)
+                                .fontWeight(.semibold)
                                 .foregroundColor(.purple)
                         }
                     }
                     
-                    // Price
-                    HStack {
-                        Text(bot.formattedPrice)
-                            .font(.caption)
-                            .fontWeight(.bold)
-                            .foregroundColor(DesignSystem.cosmicBlue)
-                        
-                        Spacer()
-                        
-                        // Star rating
-                        HStack(spacing: 1) {
-                            ForEach(0..<5) { star in
-                                Image(systemName: star < Int(bot.averageRating) ? "star.fill" : "star")
-                                    .font(.caption2)
-                                    .foregroundColor(.yellow)
+                    // Price and hiring fee
+                    VStack(spacing: 4) {
+                        HStack {
+                            Text(bot.formattedPrice)
+                                .font(.caption)
+                                .fontWeight(.bold)
+                                .foregroundColor(DesignSystem.primaryGold)
+                            
+                            Spacer()
+                            
+                            // Star rating
+                            HStack(spacing: 1) {
+                                ForEach(0..<5) { star in
+                                    Image(systemName: star < Int(bot.averageRating) ? "star.fill" : "star")
+                                        .font(.caption2)
+                                        .foregroundColor(.yellow)
+                                }
                             }
+                        }
+                        
+                        if bot.hasSpecialOffer {
+                            Text("🔥 LIMITED OFFER!")
+                                .font(.caption2)
+                                .fontWeight(.bold)
+                                .foregroundColor(.red)
+                                .pulsingEffect()
+                        }
+                    }
+                    
+                    // Action buttons
+                    HStack(spacing: 6) {
+                        Button("💬") {
+                            // Open chat with bot
+                        }
+                        .font(.caption)
+                        .foregroundColor(.white)
+                        .padding(6)
+                        .background(.blue.opacity(0.8))
+                        .clipShape(Circle())
+                        
+                        Button("🛒 HIRE") {
+                            BotCartManager.shared.addToCart(bot)
+                        }
+                        .font(.caption2)
+                        .fontWeight(.bold)
+                        .foregroundColor(.black)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(DesignSystem.primaryGold)
+                        .cornerRadius(12)
+                        
+                        if bot.isCustomizable {
+                            Button("🎨") {
+                                // Open customization
+                            }
+                            .font(.caption)
+                            .foregroundColor(.white)
+                            .padding(6)
+                            .background(.purple.opacity(0.8))
+                            .clipShape(Circle())
                         }
                     }
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
             }
             .padding()
-            .background(Color(.systemGray6))
+            .background(.ultraThinMaterial)
             .cornerRadius(16)
             .overlay(
                 RoundedRectangle(cornerRadius: 16)
-                    .stroke(bot.rarity.color.opacity(0.5), lineWidth: 1)
+                    .stroke(
+                        isHovered ? bot.rarity.color : bot.rarity.color.opacity(0.3), 
+                        lineWidth: isHovered ? 3 : 1
+                    )
             )
+            .scaleEffect(isHovered ? 1.05 : 1.0)
+            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isHovered)
         }
-        .buttonStyle(PlainButtonStyle())
-    }
-    
-    private var emptyStateView: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "robot")
-                .font(.system(size: 48))
-                .foregroundColor(.secondary)
-            
-            Text("No bots found")
-                .font(.headline)
-                .foregroundColor(.secondary)
-            
-            Text("Try adjusting your filters or search terms")
-                .font(.subheadline)
-                .foregroundColor(.secondary)
-                .multilineTextAlignment(.center)
-            
-            Button("Clear Filters") {
-                storeService.clearFilters()
-            }
-            .foregroundColor(DesignSystem.cosmicBlue)
-        }
-        .padding(.top, 50)
-    }
-    
-    // MARK: - Helper Methods
-    
-    private func startAnimations() {
-        withAnimation(.easeInOut(duration: 1.0).repeatForever(autoreverses: true)) {
-            animateCards = true
+        .buttonStyle(.plain)
+        .onHover { hovering in
+            isHovered = hovering
         }
     }
 }
 
-// MARK: - Bot Store Filters View
-
-struct BotStoreFiltersView: View {
-    @StateObject private var storeService = BotStoreService.shared
-    @Environment(\.dismiss) private var dismiss
+// MARK: - Bot Character Avatar
+struct BotCharacterAvatar: View {
+    let bot: MarketplaceBotModel
+    let size: CGFloat
     
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(spacing: 24) {
-                    // Rarity filter
-                    rarityFilterSection
-                    
-                    // Tier filter
-                    tierFilterSection
-                    
-                    // Price range filter
-                    priceRangeSection
-                    
-                    // Availability filter
-                    availabilitySection
-                }
-                .padding()
-            }
-            .navigationTitle("Filters")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Reset") {
-                        resetFilters()
-                    }
-                    .foregroundColor(.secondary)
-                }
-                
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Done") {
-                        dismiss()
-                    }
-                    .foregroundColor(DesignSystem.cosmicBlue)
-                }
-            }
-        }
-    }
-    
-    private var rarityFilterSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Bot Rarity")
-                .font(.headline)
-                .fontWeight(.bold)
+        ZStack {
+            // Rarity background
+            Circle()
+                .fill(
+                    RadialGradient(
+                        colors: [
+                            bot.rarity.color.opacity(0.8),
+                            bot.rarity.color.opacity(0.3),
+                            bot.rarity.color.opacity(0.1)
+                        ],
+                        center: .center,
+                        startRadius: 0,
+                        endRadius: size/2
+                    )
+                )
+                .frame(width: size, height: size)
             
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 12) {
-                ForEach(BotRarity.allCases, id: \.self) { rarity in
-                    Button(action: {
-                        storeService.selectedRarity = storeService.selectedRarity == rarity ? nil : rarity
-                    }) {
-                        VStack(spacing: 8) {
-                            Text(rarity.sparkleEffect)
-                                .font(.title2)
-                            
-                            Text(rarity.rawValue)
-                                .font(.caption)
-                                .fontWeight(.medium)
-                        }
-                        .padding()
-                        .frame(maxWidth: .infinity)
-                        .background(
-                            storeService.selectedRarity == rarity 
-                            ? rarity.color.opacity(0.3) 
-                            : Color(.systemGray6)
-                        )
-                        .cornerRadius(12)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 12)
-                                .stroke(
-                                    storeService.selectedRarity == rarity ? rarity.color : Color.clear, 
-                                    lineWidth: 2
-                                )
-                        )
-                    }
-                    .buttonStyle(PlainButtonStyle())
+            // Bot character
+            Text(bot.character.avatar)
+                .font(.system(size: size * 0.6))
+            
+            // Animated elements for rare bots
+            if bot.rarity.rawValue == "Legendary" || bot.rarity.rawValue == "Mythic" {
+                ForEach(0..<3) { i in
+                    Circle()
+                        .stroke(bot.rarity.color.opacity(0.5), lineWidth: 2)
+                        .frame(width: size + CGFloat(i * 10), height: size + CGFloat(i * 10))
+                        .scaleEffect(1.0 + sin(Date().timeIntervalSince1970 + Double(i)) * 0.1)
+                        .animation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true), value: Date())
                 }
             }
         }
     }
+}
+
+// MARK: - Cart Item Preview
+struct CartItemPreview: View {
+    let item: CartItem
     
-    private var tierFilterSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Bot Tier")
-                .font(.headline)
-                .fontWeight(.bold)
+    var body: some View {
+        VStack(spacing: 4) {
+            BotCharacterAvatar(bot: item.bot, size: 40)
             
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 12) {
-                ForEach(BotTier.allCases, id: \.self) { tier in
-                    Button(action: {
-                        storeService.selectedTier = storeService.selectedTier == tier ? nil : tier
-                    }) {
-                        VStack(spacing: 8) {
-                            Text(tier.icon)
-                                .font(.title2)
-                            
-                            Text(tier.rawValue)
-                                .font(.caption)
-                                .fontWeight(.medium)
-                        }
-                        .padding()
-                        .frame(maxWidth: .infinity)
-                        .background(
-                            storeService.selectedTier == tier 
-                            ? tier.color.opacity(0.3) 
-                            : Color(.systemGray6)
-                        )
-                        .cornerRadius(12)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 12)
-                                .stroke(
-                                    storeService.selectedTier == tier ? tier.color : Color.clear, 
-                                    lineWidth: 2
-                                )
-                        )
-                    }
-                    .buttonStyle(PlainButtonStyle())
-                }
-            }
-        }
-    }
-    
-    private var priceRangeSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Price Range")
-                .font(.headline)
-                .fontWeight(.bold)
+            Text(item.bot.name)
+                .font(.caption2)
+                .foregroundColor(.white)
+                .lineLimit(1)
             
-            VStack(spacing: 8) {
-                priceRangeButton(title: "Free", range: nil)
-                priceRangeButton(title: "$1 - $50", range: 1...50)
-                priceRangeButton(title: "$51 - $200", range: 51...200)
-                priceRangeButton(title: "$201 - $500", range: 201...500)
-                priceRangeButton(title: "$500+", range: 500...999999)
-            }
+            Text(item.bot.formattedPrice)
+                .font(.caption2)
+                .fontWeight(.bold)
+                .foregroundColor(DesignSystem.primaryGold)
         }
+        .padding(8)
+        .background(.ultraThinMaterial)
+        .cornerRadius(8)
     }
+}
+
+// MARK: - Testimonial Card
+struct TestimonialCard: View {
+    let testimonial: BotTestimonial
     
-    private func priceRangeButton(title: String, range: ClosedRange<Double>?) -> some View {
-        Button(action: {
-            // Handle price range selection - implement if needed
-        }) {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text(title)
-                    .font(.subheadline)
-                    .foregroundColor(.primary)
+                Text(testimonial.userAvatar)
+                    .font(.title3)
                 
-                Spacer()
-                
-                Image(systemName: "chevron.right")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            }
-            .padding()
-            .background(Color(.systemGray6))
-            .cornerRadius(8)
-        }
-        .buttonStyle(PlainButtonStyle())
-    }
-    
-    private var availabilitySection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Availability")
-                .font(.headline)
-                .fontWeight(.bold)
-            
-            VStack(spacing: 8) {
-                ForEach(BotAvailability.allCases, id: \.self) { availability in
-                    availabilityButton(availability: availability)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(testimonial.username)
+                        .font(.caption)
+                        .fontWeight(.bold)
+                        .foregroundColor(.white)
+                    
+                    HStack(spacing: 1) {
+                        ForEach(0..<5) { star in
+                            Image(systemName: star < testimonial.rating ? "star.fill" : "star")
+                                .font(.caption2)
+                                .foregroundColor(.yellow)
+                        }
+                    }
                 }
-            }
-        }
-    }
-    
-    private func availabilityButton(availability: BotAvailability) -> some View {
-        Button(action: {
-            // Handle availability selection - implement if needed
-        }) {
-            HStack(spacing: 12) {
-                Image(systemName: availability.icon)
-                    .foregroundColor(availability.color)
-                
-                Text(availability.rawValue)
-                    .font(.subheadline)
-                    .foregroundColor(.primary)
                 
                 Spacer()
             }
-            .padding()
-            .background(Color(.systemGray6))
-            .cornerRadius(8)
+            
+            Text(testimonial.review)
+                .font(.caption)
+                .foregroundColor(.white.opacity(0.9))
+                .lineLimit(4)
+            
+            HStack {
+                Text("Bot: \(testimonial.botName)")
+                    .font(.caption2)
+                    .foregroundColor(.gray)
+                
+                Spacer()
+                
+                Text(testimonial.profit)
+                    .font(.caption2)
+                    .fontWeight(.bold)
+                    .foregroundColor(.green)
+            }
         }
-        .buttonStyle(PlainButtonStyle())
-    }
-    
-    private func resetFilters() {
-        storeService.clearFilters()
+        .padding()
+        .frame(width: 200)
+        .background(.ultraThinMaterial)
+        .cornerRadius(12)
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(.white.opacity(0.1), lineWidth: 1)
+        )
     }
 }
 

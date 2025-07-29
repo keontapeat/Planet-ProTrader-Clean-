@@ -270,7 +270,7 @@ class EAIntegrationManager: ObservableObject {
             
             DispatchQueue.main.async {
                 self.activeBots.append(activeBot)
-                HapticManager.shared.botDeployed()
+                HapticManager.shared.success()
             }
             
             // 🔥 EXECUTE IMMEDIATE GOLDEX TRADE

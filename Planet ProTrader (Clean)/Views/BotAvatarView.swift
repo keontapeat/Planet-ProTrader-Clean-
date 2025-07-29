@@ -146,9 +146,17 @@ struct BotAvatarView: View {
         case .scalping: return "bolt.fill"
         case .dayTrading: return "sun.max.fill"
         case .swingTrading: return "wave.3.right"
-        case .arbitrage: return "arrow.left.arrow.right"
-        case .newsTrading: return "newspaper.fill"
+        case .positionTrading: return "chart.line.uptrend.xyaxis"
         case .algorithmic: return "cpu.fill"
+        case .highFrequency: return "bolt.circle.fill"
+        case .arbitrage: return "arrow.left.arrow.right"
+        case .momentum: return "arrow.up.right"
+        case .meanReversion: return "arrow.clockwise"
+        case .breakout: return "arrow.up.circle"
+        case .contrarian: return "arrow.turn.up.left"
+        case .gridTrading: return "grid"
+        case .newsTrading: return "newspaper.fill"
+        case .socialTrading: return "person.2.fill"
         }
     }
     
@@ -224,31 +232,48 @@ struct BotAvatarView: View {
 #Preview {
     VStack(spacing: 30) {
         Text("🤖 Bot Avatar Showcase")
-            .font(DesignSystem.Typography.largeTitle)
-            .goldText()
+            .font(.largeTitle)
+            .fontWeight(.bold)
+            .foregroundColor(DesignSystem.primaryGold)
         
         HStack(spacing: 20) {
             VStack(spacing: 8) {
                 BotAvatarView(
                     bot: MarketplaceBotModel(
                         name: "Golden Eagle Pro",
-                        tagline: "Advanced gold trading",
                         creatorUsername: "TradeMaster",
+                        tagline: "Advanced gold trading",
+                        valueProposition: "Premium trading bot",
+                        description: "Advanced AI trading algorithms",
+                        price: 999.99,
                         rarity: .godTier,
                         tier: .expert,
                         verificationStatus: .verified,
                         availability: .exclusive,
-                        price: 999.99,
-                        averageRating: 5.0,
                         stats: BotStats(
                             totalReturn: 500.0,
                             winRate: 95.0,
                             totalTrades: 1000,
                             totalUsers: 10,
-                            maxDrawdown: 2.0
+                            maxDrawdown: 2.0,
+                            sharpeRatio: 3.5,
+                            universeRank: 1,
+                            performanceGrade: "S+"
                         ),
+                        reviews: [],
+                        tags: ["Premium", "AI"],
                         createdDate: Date(),
-                        tradingStyle: .algorithmic
+                        lastUpdated: Date(),
+                        character: BotCharacter(
+                            avatar: "🦅",
+                            personality: "Aggressive",
+                            specialties: ["Gold Trading"],
+                            catchPhrase: "Golden profits!"
+                        ),
+                        tradingStyle: .algorithmic,
+                        isCustomizable: true,
+                        currentPitch: "I'm the best at gold trading!",
+                        hasSpecialOffer: false
                     ),
                     size: 100,
                     showEffects: true
@@ -256,30 +281,46 @@ struct BotAvatarView: View {
                 
                 Text("God Tier")
                     .font(.caption)
-                    .goldText()
+                    .foregroundColor(DesignSystem.primaryGold)
             }
             
             VStack(spacing: 8) {
                 BotAvatarView(
                     bot: MarketplaceBotModel(
                         name: "Scalp Master",
-                        tagline: "Lightning fast",
                         creatorUsername: "QuickTrader",
+                        tagline: "Lightning fast",
+                        valueProposition: "Fast scalping bot",
+                        description: "Ultra-fast scalping algorithms",
+                        price: 299.99,
                         rarity: .legendary,
                         tier: .professional,
                         verificationStatus: .verified,
                         availability: .available,
-                        price: 299.99,
-                        averageRating: 4.8,
                         stats: BotStats(
                             totalReturn: 200.0,
                             winRate: 80.0,
                             totalTrades: 500,
                             totalUsers: 50,
-                            maxDrawdown: 10.0
+                            maxDrawdown: 10.0,
+                            sharpeRatio: 2.5,
+                            universeRank: 15,
+                            performanceGrade: "A+"
                         ),
+                        reviews: [],
+                        tags: ["Fast", "Scalping"],
                         createdDate: Date(),
-                        tradingStyle: .scalping
+                        lastUpdated: Date(),
+                        character: BotCharacter(
+                            avatar: "⚡",
+                            personality: "Aggressive",
+                            specialties: ["Scalping"],
+                            catchPhrase: "Speed is money!"
+                        ),
+                        tradingStyle: .scalping,
+                        isCustomizable: true,
+                        currentPitch: "I'm the fastest trader!",
+                        hasSpecialOffer: false
                     ),
                     size: 100,
                     showEffects: true
@@ -294,23 +335,39 @@ struct BotAvatarView: View {
                 BotAvatarView(
                     bot: MarketplaceBotModel(
                         name: "Safe Trader",
-                        tagline: "Conservative approach",
                         creatorUsername: "SafeTrader",
+                        tagline: "Conservative approach",
+                        valueProposition: "Safe and steady",
+                        description: "Conservative trading approach",
+                        price: 29.99,
                         rarity: .common,
                         tier: .beginner,
                         verificationStatus: .verified,
                         availability: .available,
-                        price: 29.99,
-                        averageRating: 4.0,
                         stats: BotStats(
                             totalReturn: 25.0,
                             winRate: 60.0,
                             totalTrades: 100,
                             totalUsers: 200,
-                            maxDrawdown: 5.0
+                            maxDrawdown: 5.0,
+                            sharpeRatio: 1.2,
+                            universeRank: 500,
+                            performanceGrade: "B"
                         ),
+                        reviews: [],
+                        tags: ["Safe", "Conservative"],
                         createdDate: Date(),
-                        tradingStyle: .dayTrading
+                        lastUpdated: Date(),
+                        character: BotCharacter(
+                            avatar: "🛡️",
+                            personality: "Conservative",
+                            specialties: ["Risk Management"],
+                            catchPhrase: "Steady wins!"
+                        ),
+                        tradingStyle: .dayTrading,
+                        isCustomizable: false,
+                        currentPitch: "Safe and reliable trading!",
+                        hasSpecialOffer: false
                     ),
                     size: 100,
                     showEffects: true

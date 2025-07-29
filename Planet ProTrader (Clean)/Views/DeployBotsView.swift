@@ -8,6 +8,21 @@
 
 import SwiftUI
 
+// Simple bot struct for background trading
+struct SimpleGoldBot {
+    let id: UUID
+    let name: String
+    let status: String
+    let currentPair: String
+    let strategy: String
+    let dailyPnL: Double
+    let totalPnL: Double
+    let winRate: Double
+    let tradesCount: Int
+    let isGodModeEnabled: Bool
+    let vpsConnection: String
+}
+
 struct DeployBotsView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var isDeploying = false
@@ -97,15 +112,15 @@ struct DeployBotsView: View {
     
     private var headerSection: some View {
         VStack(spacing: 16) {
-            Image(systemName: "rocket.fill")
+            Image(systemName: "crown.fill")
                 .font(.system(size: 60))
-                .foregroundColor(.orange)
+                .foregroundColor(.yellow)
             
-            Text("🚀 Mass Bot Deployment")
+            Text("🥇 Gold Army Deployment")
                 .font(.title.bold())
                 .foregroundStyle(.white)
             
-            Text("Deploy AI-powered trading bots to your VPS infrastructure")
+            Text("Deploy AI-powered GOLD trading specialists to dominate XAUUSD markets")
                 .font(.subheadline)
                 .foregroundStyle(.gray)
                 .multilineTextAlignment(.center)
@@ -261,11 +276,12 @@ struct DeployBotsView: View {
     
     private var deploymentButton: some View {
         Button {
+            print("🔥 DEPLOY BUTTON HIT!") // Debug
             startDeployment()
         } label: {
             HStack {
                 Image(systemName: deploymentMode.icon)
-                Text("Deploy \(selectedBotCount) Bots")
+                Text("Deploy \(selectedBotCount) Gold Bots INSTANTLY")
                 Image(systemName: deploymentMode.icon)
             }
             .font(.headline.bold())
@@ -274,7 +290,7 @@ struct DeployBotsView: View {
             .padding(.vertical, 16)
             .background(
                 LinearGradient(
-                    colors: [.orange, .yellow, .orange],
+                    colors: [.yellow, .orange, .yellow],
                     startPoint: .leading,
                     endPoint: .trailing
                 )
@@ -282,21 +298,22 @@ struct DeployBotsView: View {
             .clipShape(RoundedRectangle(cornerRadius: 12))
         }
         .buttonStyle(.plain)
+        .disabled(isDeploying)
     }
     
     private var statsSection: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("📊 Deployment Statistics")
+            Text("🥇 Gold Army Statistics")
                 .font(.headline.bold())
                 .foregroundStyle(.white)
             
             LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 3), spacing: 12) {
-                DeploymentStatCard(title: "Total Deployed", value: "2,450", color: .green)
-                DeploymentStatCard(title: "Success Rate", value: "98.7%", color: .blue)
-                DeploymentStatCard(title: "Avg Speed", value: "15ms", color: .orange)
-                DeploymentStatCard(title: "Active Bots", value: "2,389", color: .purple)
-                DeploymentStatCard(title: "Failed", value: "32", color: .red)
-                DeploymentStatCard(title: "Pending", value: "29", color: .yellow)
+                DeploymentStatCard(title: "Gold Bots", value: "2,450", color: .yellow)
+                DeploymentStatCard(title: "Gold Win Rate", value: "98.7%", color: .green)
+                DeploymentStatCard(title: "Gold Speed", value: "12ms", color: .orange)
+                DeploymentStatCard(title: "Active Gold", value: "2,389", color: .yellow)
+                DeploymentStatCard(title: "Gold Failed", value: "32", color: .red)
+                DeploymentStatCard(title: "Gold Pending", value: "29", color: .cyan)
             }
         }
         .padding()
@@ -307,36 +324,76 @@ struct DeployBotsView: View {
     }
     
     private func startDeployment() {
+        print("🚀 INSTANT DEPLOYMENT STARTING!")
+        
         isDeploying = true
         deploymentProgress = 0.0
         deployedCount = 0
         
-        Task {
-            let totalSteps = 100
-            let botIncrement = selectedBotCount / totalSteps
-            
-            for i in 0...totalSteps {
-                await MainActor.run {
-                    deploymentProgress = Double(i) / Double(totalSteps)
-                    deployedCount = min(selectedBotCount, i * botIncrement)
-                }
-                
-                let delay = switch deploymentMode {
-                case .standard: 100_000_000 // 100ms
-                case .parallel: 50_000_000   // 50ms
-                case .ultraFast: 25_000_000  // 25ms
-                case .gpuAccelerated: 10_000_000 // 10ms
-                }
-                
-                try? await Task.sleep(nanoseconds: UInt64(delay))
+        // Instant feedback
+        DispatchQueue.main.async {
+            self.deploymentProgress = 0.5
+        }
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            // Create all bots instantly
+            let allBots = (0..<self.selectedBotCount).map { index in
+                self.createInstantGoldBot(index: index)
             }
             
-            await MainActor.run {
-                isDeploying = false
-                deployedCount = selectedBotCount
+            // Update UI instantly
+            self.deploymentProgress = 1.0
+            self.deployedCount = self.selectedBotCount
+            self.isDeploying = false
+            
+            // Start background trading
+            self.startInstantBackgroundTrading(bots: allBots)
+            
+            // Show success
+            GlobalToastManager.shared.show("🥇 \(self.selectedBotCount) Gold Bots deployed and trading!", type: .success)
+            
+            print("🎉 INSTANT deployment completed: \(allBots.count) gold bots")
+            
+            // Auto dismiss
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                self.dismiss()
+            }
+        }
+    }
+    
+    // Create instant gold bot - Return simple struct instead
+    private func createInstantGoldBot(index: Int) -> SimpleGoldBot {
+        return SimpleGoldBot(
+            id: UUID(),
+            name: "Gold-AI-\(String(format: "%04d", index + 1))",
+            status: "active",
+            currentPair: "XAUUSD", // 🥇 ONLY GOLD
+            strategy: "AI-GoldSpecialist",
+            dailyPnL: Double.random(in: 50...200),
+            totalPnL: Double.random(in: 500...5000),
+            winRate: Double.random(in: 85...99),
+            tradesCount: Int.random(in: 50...200),
+            isGodModeEnabled: true,
+            vpsConnection: "Gold-VPS-Active"
+        )
+    }
+    
+    // Start instant background trading
+    private func startInstantBackgroundTrading(bots: [SimpleGoldBot]) {
+        Task.detached(priority: .background) {
+            print("🥇 Starting background gold trading for \(bots.count) bots")
+            
+            // Background trading loop
+            while true {
+                // Simulate gold trading
+                let activeTraders = bots.shuffled().prefix(50)
+                for bot in activeTraders {
+                    let goldProfit = Double.random(in: -20...100)
+                    print("🥇 \(bot.name): XAUUSD profit: $\(String(format: "%.2f", goldProfit))")
+                }
                 
-                // Show success notification
-                GlobalToastManager.shared.show("🚀 \(selectedBotCount) bots deployed successfully!", type: .success)
+                // Wait 5 seconds before next trading cycle
+                try? await Task.sleep(nanoseconds: 5_000_000_000)
             }
         }
     }

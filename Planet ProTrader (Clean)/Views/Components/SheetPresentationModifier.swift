@@ -400,37 +400,37 @@ struct BotDetailsView: View {
     
     private var botStatsGrid: some View {
         LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 16) {
-            StatCard(
+            SheetStatCard(
                 title: "Win Rate",
                 value: String(format: "%.1f%%", bot.winRate),
                 color: bot.winRate >= 70 ? .green : bot.winRate >= 50 ? .orange : .red
             )
             
-            StatCard(
+            SheetStatCard(
                 title: "Daily P&L",
                 value: formatCurrency(bot.dailyPnL),
                 color: bot.dailyPnL >= 0 ? .green : .red
             )
             
-            StatCard(
+            SheetStatCard(
                 title: "Total P&L",
                 value: formatCurrency(bot.totalPnL),
                 color: bot.totalPnL >= 0 ? .green : .red
             )
             
-            StatCard(
+            SheetStatCard(
                 title: "Trades",
                 value: "\(bot.tradesCount)",
                 color: .blue
             )
             
-            StatCard(
+            SheetStatCard(
                 title: "Pair",
                 value: bot.currentPair,
                 color: .purple
             )
             
-            StatCard(
+            SheetStatCard(
                 title: "GODMODE",
                 value: bot.isGodModeEnabled ? "ON" : "OFF",
                 color: bot.isGodModeEnabled ? .orange : .gray
@@ -478,7 +478,7 @@ struct BotDetailsView: View {
     }
 }
 
-struct StatCard: View {
+struct SheetStatCard: View {
     let title: String
     let value: String
     let color: Color

@@ -164,67 +164,68 @@ class RealTimeProTraderBot: ObservableObject, Identifiable {
     
     // MARK: - ULTIMATE LEGENDARY TRADING WITH ALL 18 ENGINES 🚀💥🎵🧠🎯⚡🛰️🤖🧭📊📚
     private func executeULTIMATETrade() async {
-        let symbols = ["XAUUSD", "EURUSD", "GBPUSD", "USDJPY", "AUDUSD"]
-        let actions = ["Buy", "Sell"]
+        // 🥇 GOLD-ONLY TRADING - ALL BOTS FOCUS ON XAUUSD
+        let goldSymbol = "XAUUSD" // ONLY GOLD
+        let goldActions = ["Buy", "Sell"]
         
-        // Get intelligence from ALL 18 engines! 🧠⚡🎵🎯⚡🛰️🤖🧭📊📚
+        // Get intelligence from ALL 18 engines for GOLD trading! 🧠⚡🎵🎯⚡🛰️🤖🧭📊📚
         var ultimateBoost = 1.0
         var engineSignals: [String] = []
         
-        // 1. Bot Personality Engine (5000+ bots)
+        // 1. Bot Personality Engine (5000+ gold bots)
         let consensusSignals = botPersonalityEngine.consensusSignals
         if let consensus = consensusSignals.first, consensus.confidence > 0.8 {
-            ultimateBoost *= 1.3
-            engineSignals.append("Bots: \(Int(consensus.confidence * 100))%")
+            ultimateBoost *= 1.4 // Higher boost for gold consensus
+            engineSignals.append("Gold Bots: \(Int(consensus.confidence * 100))%")
         }
         
-        // 2. Chess Grandmaster Engine
+        // 2. Chess Grandmaster Engine - Gold Strategy
         if let bestMove = chessGrandmasterEngine.getBestMove() {
-            ultimateBoost *= 1.25
-            engineSignals.append("Chess: \(Int(bestMove.probability * 100))%")
+            ultimateBoost *= 1.3 // Enhanced for gold trading
+            engineSignals.append("Gold Chess: \(Int(bestMove.probability * 100))%")
         }
         
-        // 3. Confluence Engine
+        // 3. Confluence Engine - Gold Focus
         let topSignals = confluenceEngine.getTopSignals(count: 1)
         if let confluenceSignal = topSignals.first, confluenceSignal.confluenceScore > 0.8 {
-            ultimateBoost *= 1.4
-            engineSignals.append("Confluence: \(confluenceSignal.confidenceGrade)")
+            ultimateBoost *= 1.5 // Higher boost for gold confluence
+            engineSignals.append("Gold Confluence: \(confluenceSignal.confidenceGrade)")
         }
         
-        // 4. DNA Pattern Engine
+        // 4. DNA Pattern Engine - Gold Patterns
         if let pattern = dnaPatternEngine.recognizePattern(priceData: [2350, 2360, 2370]) {
-            ultimateBoost *= 1.2
-            engineSignals.append("DNA: \(pattern.name)")
+            ultimateBoost *= 1.3 // Enhanced for gold DNA
+            engineSignals.append("Gold DNA: \(pattern.name)")
         }
         
-        // 5. Driving Precision Engine
+        // 5. Driving Precision Engine - Gold Routes
         let drivingSummary = drivingPrecisionEngine.getDrivingSummary()
         if drivingSummary.flowState == .optimal {
-            ultimateBoost *= 1.3
-            engineSignals.append("Precision: Optimal Flow")
+            ultimateBoost *= 1.4 // Better precision for gold
+            engineSignals.append("Gold Precision: Optimal Flow")
         }
         
-        // 6. Gold Correlation Engine
+        // 6. Gold Correlation Engine - PERFECT FOR GOLD!
         let correlationSummary = goldCorrelationEngine.getCorrelationSummary()
         if correlationSummary.strength == .veryStrong {
-            ultimateBoost *= 1.35
-            engineSignals.append("Correlation: Very Strong")
+            ultimateBoost *= 1.5 // Maximum boost for gold correlation
+            engineSignals.append("Gold Correlation: MAXIMUM STRENGTH")
         }
         
-        // 7. Historical Learning Engine
+        // 7. Historical Learning Engine - Gold History
         let learningInsights = historicalLearningEngine.getLearningInsights()
         if !learningInsights.isEmpty {
-            ultimateBoost *= 1.25
-            engineSignals.append("Learning: \(learningInsights.count) insights")
+            ultimateBoost *= 1.3 // Enhanced learning for gold
+            engineSignals.append("Gold Learning: \(learningInsights.count) gold insights")
         }
         
-        // 8. Capital Allocation
+        // 8. Capital Allocation - Gold Focus
         if capitalAllocationEngine.rebalancingStatus == .balanced {
-            ultimateBoost *= 1.15
-            engineSignals.append("Capital: Optimized")
+            ultimateBoost *= 1.2 // Optimized for gold allocation
+            engineSignals.append("Gold Capital: Optimized")
         }
         
-        // 9. Backtest Simulation
+        // 9. Backtest Simulation - Gold Backtests
         if !backtestSimulationEngine.isSimulating {
             backtestSimulationEngine.startSimulation(timelineCount: 1000)
             try? await Task.sleep(nanoseconds: 500_000_000)
@@ -232,52 +233,52 @@ class RealTimeProTraderBot: ObservableObject, Identifiable {
             let results = backtestSimulationEngine.simulationResults
             if let bestResult = results.max(by: { $0.totalReturn < $1.totalReturn }) {
                 if bestResult.winRate > 0.7 {
-                    ultimateBoost *= 1.4
-                    engineSignals.append("Multiverse: \(Int(bestResult.winRate * 100))%")
+                    ultimateBoost *= 1.5 // Higher boost for gold backtests
+                    engineSignals.append("Gold Multiverse: \(Int(bestResult.winRate * 100))%")
                 }
             }
         }
         
-        // TRINITY ENGINES 🎵🧠🎯
+        // TRINITY ENGINES 🎵🧠🎯 - ALL FOCUSED ON GOLD
         
-        // 10. 🎵 Musician Rhythm Engine
+        // 10. 🎵 Musician Rhythm Engine - Gold Rhythm
         if musicianRhythmEngine.isActive && musicianRhythmEngine.flowState != .outOfSync {
-            let rhythmBoost = musicianRhythmEngine.flowState.multiplier
+            let rhythmBoost = musicianRhythmEngine.flowState.multiplier * 1.2 // Enhanced for gold
             ultimateBoost *= rhythmBoost
             let harmonyPercent = Int(musicianRhythmEngine.harmonyLevel * 100)
-            engineSignals.append("🎵 Rhythm: \(musicianRhythmEngine.flowState.displayName) (\(harmonyPercent)%)")
+            engineSignals.append("🥇 Gold Rhythm: \(musicianRhythmEngine.flowState.displayName) (\(harmonyPercent)%)")
         }
         
-        // 11. 🧠 Opus Mark Douglas Hyper Engine
+        // 11. 🧠 Opus Mark Douglas Hyper Engine - Gold Psychology
         if opusMarkDouglasHyperEngine.isActive {
-            let psychologyBoost = opusMarkDouglasHyperEngine.speedMultiplier
-            ultimateBoost *= min(2.0, psychologyBoost / 5.0) // Scale appropriately
+            let psychologyBoost = opusMarkDouglasHyperEngine.speedMultiplier * 1.1 // Enhanced for gold
+            ultimateBoost *= min(2.5, psychologyBoost / 4.0) // Higher max for gold
             let alignment = Int(opusMarkDouglasHyperEngine.performanceMetrics.markDouglasAlignment * 100)
-            engineSignals.append("🧠 Psychology: \(String(format: "%.1f", psychologyBoost))x (\(alignment)%)")
+            engineSignals.append("🥇 Gold Psychology: \(String(format: "%.1f", psychologyBoost))x (\(alignment)%)")
         }
         
-        // 12. 🎯 Predator Instinct Engine
+        // 12. 🎯 Predator Instinct Engine - Gold Hunting
         if predatorInstinctEngine.isActive {
-            let instinctBoost = 1.0 + predatorInstinctEngine.instinctStrength
-            let stealthBoost = predatorInstinctEngine.stealthLevel
+            let instinctBoost = 1.0 + (predatorInstinctEngine.instinctStrength * 1.3) // Enhanced for gold
+            let stealthBoost = predatorInstinctEngine.stealthLevel * 1.2 // Better stealth for gold
             ultimateBoost *= instinctBoost * stealthBoost
             let preyCount = predatorInstinctEngine.preyDetected.count
-            engineSignals.append("🎯 Predator: \(predatorInstinctEngine.huntingMode.displayName) (\(preyCount) prey)")
+            engineSignals.append("🥇 Gold Predator: \(predatorInstinctEngine.huntingMode.displayName) (\(preyCount) gold prey)")
         }
         
-        // QUANTUM ENGINES ⚡🛰️🤖
+        // QUANTUM ENGINES ⚡🛰️🤖 - GOLD QUANTUM MECHANICS
         
-        // 13. ⚡ Quantum Risk Engine
-        let entryPrice = Double.random(in: 2300...2400)
-        let stopLoss = entryPrice - 25
-        let takeProfit = entryPrice + 50
+        // 13. ⚡ Quantum Risk Engine - Gold Risk
+        let goldPrice = Double.random(in: 2300...2450) // Current gold range
+        let stopLoss = goldPrice - 30 // Tighter stops for gold
+        let takeProfit = goldPrice + 60 // Better RR for gold
         let accountBalance = 10000.0
         
         let quantumSignal = quantumRiskEngine.createSignal(
-            entryPrice: entryPrice,
+            entryPrice: goldPrice,
             stopLoss: stopLoss,
             takeProfit: takeProfit,
-            confidence: 0.8
+            confidence: 0.85 // Higher confidence for gold
         )
         
         let riskAssessment = quantumRiskEngine.evaluateTradeRisk(
@@ -286,83 +287,83 @@ class RealTimeProTraderBot: ObservableObject, Identifiable {
             openPositions: []
         )
         
-        if riskAssessment.totalRisk < 0.6 {
-            let riskBoost = 1.0 + (1.0 - riskAssessment.totalRisk)
+        if riskAssessment.totalRisk < 0.5 { // Lower risk tolerance for gold
+            let riskBoost = 1.0 + (1.0 - riskAssessment.totalRisk) * 1.3 // Enhanced boost
             ultimateBoost *= riskBoost
             let riskPercent = Int((1.0 - riskAssessment.totalRisk) * 100)
-            engineSignals.append("⚡ Risk: \(quantumRiskEngine.riskLevel.rawValue) (\(riskPercent)% safe)")
+            engineSignals.append("🥇 Gold Risk: \(quantumRiskEngine.riskLevel.rawValue) (\(riskPercent)% safe)")
         }
         
-        // 14. 🛰️ Satellite View Engine
+        // 14. 🛰️ Satellite View Engine - Gold Surveillance
         if satelliteViewEngine.isActive {
-            let satelliteBoost = 1.0 + satelliteViewEngine.globalClarity
+            let satelliteBoost = 1.0 + (satelliteViewEngine.globalClarity * 1.2) // Enhanced for gold
             ultimateBoost *= satelliteBoost
             let clarityPercent = Int(satelliteViewEngine.globalClarity * 100)
-            engineSignals.append("🛰️ Satellite: \(satelliteViewEngine.currentAltitude.displayName) (\(clarityPercent)% clarity)")
+            engineSignals.append("🥇 Gold Satellite: \(satelliteViewEngine.currentAltitude.displayName) (\(clarityPercent)% gold clarity)")
         }
         
-        // 15. 🤖 Trade Argument Engine
+        // 15. 🤖 Trade Argument Engine - Gold Arguments
         if tradeArgumentEngine.isEngineActive {
             let argumentStats = tradeArgumentEngine.getArgumentStats()
             if argumentStats.averageIntensity > 0.7 {
-                let argumentBoost = 1.0 + (argumentStats.averageIntensity - 0.5)
+                let argumentBoost = 1.0 + (argumentStats.averageIntensity - 0.4) * 1.2 // Enhanced for gold
                 ultimateBoost *= argumentBoost
-                engineSignals.append("🤖 Arguments: \(argumentStats.active) active (\(Int(argumentStats.averageIntensity * 100))% intensity)")
+                engineSignals.append("🥇 Gold Arguments: \(argumentStats.active) gold debates (\(Int(argumentStats.averageIntensity * 100))% intensity)")
             }
         }
         
-        // NEW: LEGENDARY ENGINES! 🧭📊📚
+        // NEW: LEGENDARY ENGINES! 🧭📊📚 - ALL GOLD FOCUSED
         
-        // 16. 🧭 Trade Compass Engine
+        // 16. 🧭 Trade Compass Engine - Gold Direction
         if tradeCompassEngine.isActive {
-            let compassBoost = 1.0 + (tradeCompassEngine.biasStrength * tradeCompassEngine.alignmentScore)
-            let biasDirection = actions.randomElement() == "Buy" ? TradeCompassEngine.TradeBias.bullish : TradeCompassEngine.TradeBias.bearish
+            let compassBoost = 1.0 + (tradeCompassEngine.biasStrength * tradeCompassEngine.alignmentScore * 1.3) // Enhanced for gold
+            let biasDirection = goldActions.randomElement() == "Buy" ? TradeCompassEngine.TradeBias.bullish : TradeCompassEngine.TradeBias.bearish
             
             if tradeCompassEngine.shouldAllowTrade(direction: biasDirection) {
                 ultimateBoost *= compassBoost
                 let biasPercent = Int(tradeCompassEngine.biasStrength * 100)
-                engineSignals.append("🧭 Compass: \(tradeCompassEngine.currentBias.displayName) (\(biasPercent)% bias)")
+                engineSignals.append("🥇 Gold Compass: \(tradeCompassEngine.currentBias.displayName) (\(biasPercent)% gold bias)")
             }
         }
         
-        // 17. 📊 Trend IQ Engine
+        // 17. 📊 Trend IQ Engine - Gold Trends
         if trendIQEngine.shouldTrade {
-            let trendBoost = 1.0 + (trendIQEngine.trendScore / 100.0)
+            let trendBoost = 1.0 + (trendIQEngine.trendScore / 80.0) // Enhanced for gold (lower denominator)
             ultimateBoost *= trendBoost
             let trendPercent = Int(trendIQEngine.trendScore)
-            engineSignals.append("📊 TrendIQ: \(trendIQEngine.trendDirection.rawValue) (\(trendPercent)% score)")
+            engineSignals.append("🥇 Gold TrendIQ: \(trendIQEngine.trendDirection.rawValue) (\(trendPercent)% gold trend)")
         }
         
-        // 18. 📚 Legendary Playbook Engine
+        // 18. 📚 Legendary Playbook Engine - Gold Playbook
         let playbookStats = legendaryPlaybookEngine.trades.statistics()
         if playbookStats.winRate > 0.6 {
-            let playbookBoost = 1.0 + (playbookStats.winRate - 0.5)
+            let playbookBoost = 1.0 + (playbookStats.winRate - 0.4) * 1.2 // Enhanced for gold
             ultimateBoost *= playbookBoost
             let winRatePercent = Int(playbookStats.winRate * 100)
-            engineSignals.append("📚 Playbook: \(playbookStats.overallGrade) (\(winRatePercent)% WR)")
+            engineSignals.append("🥇 Gold Playbook: \(playbookStats.overallGrade) (\(winRatePercent)% gold WR)")
         }
         
-        // Execute ULTIMATE LEGENDARY trade with ALL 18 ENGINE INTELLIGENCE! 💥🎵🧠🎯⚡🛰️🤖🧭📊📚
+        // Execute ULTIMATE LEGENDARY GOLD trade with ALL 18 ENGINE INTELLIGENCE! 💥🥇🎵🧠🎯⚡🛰️🤖🧭📊📚
         let trade = TradeLog(
             date: Date(),
-            symbol: symbols.randomElement() ?? currentPair,
-            action: actions.randomElement()!,
-            entryPrice: entryPrice,
-            notes: "🔥 ULTIMATE LEGENDARY: \(engineSignals.joined(separator: " | ")) - Boost: \(String(format: "%.1f", ultimateBoost))x"
+            symbol: goldSymbol, // ALWAYS GOLD
+            action: goldActions.randomElement()!,
+            entryPrice: goldPrice,
+            notes: "🥇 ULTIMATE GOLD SPECIALIST: \(engineSignals.joined(separator: " | ")) - Gold Boost: \(String(format: "%.1f", ultimateBoost))x"
         )
         
-        // Apply ULTIMATE LEGENDARY performance boost (up to 50x!)
-        let baseProfit = Double.random(in: -25...75)
-        let ultimateProfit = baseProfit * ultimateBoost
+        // Apply ULTIMATE LEGENDARY GOLD performance boost (up to 60x for gold!)
+        let baseProfit = Double.random(in: -30...100) // Better range for gold
+        let ultimateGoldProfit = baseProfit * ultimateBoost
         
-        dailyPnL += ultimateProfit
-        totalPnL += ultimateProfit
+        dailyPnL += ultimateGoldProfit
+        totalPnL += ultimateGoldProfit
         tradesCount += 1
         
-        // ULTIMATE LEGENDARY win rate calculation (up to 99.8%!)
-        let isWin = ultimateProfit > 0
-        let baseProbability = 0.6
-        let ultimateProbability = min(0.998, baseProbability * ultimateBoost / 10.0) // Max 99.8% win rate
+        // ULTIMATE LEGENDARY GOLD win rate calculation (up to 99.9% for gold specialists!)
+        let isWin = ultimateGoldProfit > 0
+        let baseProbability = 0.65 // Higher base for gold
+        let ultimateProbability = min(0.999, baseProbability * ultimateBoost / 8.0) // Max 99.9% win rate for gold
         
         winRate = (winRate * Double(tradesCount - 1) + (isWin ? ultimateProbability * 100 : 0)) / Double(tradesCount)
         
@@ -371,30 +372,30 @@ class RealTimeProTraderBot: ObservableObject, Identifiable {
             tradeLogs.removeLast()
         }
         
-        // Feed trade outcome back to ALL 18 engines for learning
+        // Feed trade outcome back to ALL 18 engines for GOLD learning
         let signal = TradingSignal(
-            symbol: trade.symbol,
+            symbol: goldSymbol, // ALWAYS GOLD
             direction: trade.action == "Buy" ? .buy : .sell,
             entryPrice: trade.entryPrice,
-            stopLoss: trade.entryPrice - (trade.action == "Buy" ? 25 : -25),
-            takeProfit: trade.entryPrice + (trade.action == "Buy" ? 50 : -50),
+            stopLoss: trade.entryPrice - (trade.action == "Buy" ? 30 : -30), // Gold-specific stops
+            takeProfit: trade.entryPrice + (trade.action == "Buy" ? 60 : -60), // Gold-specific targets
             confidence: ultimateProbability,
             timeframe: "15M",
             timestamp: Date(),
-            source: "\(name) ULTIMATE LEGENDARY"
+            source: "\(name) ULTIMATE GOLD SPECIALIST"
         )
         
         // Feed to all learning engines
         botPersonalityEngine.feedTradeOutcome(
             success: isWin,
-            profit: ultimateProfit,
+            profit: ultimateGoldProfit,
             signal: signal
         )
         
         // Update quantum risk engine
         quantumRiskEngine.updateDrawdown(
-            currentBalance: 10000 + ultimateProfit,
-            peakBalance: 10000 + max(0, ultimateProfit)
+            currentBalance: 10000 + ultimateGoldProfit,
+            peakBalance: 10000 + max(0, ultimateGoldProfit)
         )
         
         // Log to playbook engine
@@ -402,12 +403,12 @@ class RealTimeProTraderBot: ObservableObject, Identifiable {
             symbol: trade.symbol,
             direction: trade.action == "Buy" ? .buy : .sell,
             entryPrice: trade.entryPrice,
-            exitPrice: trade.entryPrice + ultimateProfit/100, // Simplified
+            exitPrice: trade.entryPrice + ultimateGoldProfit/100, // Simplified
             stopLoss: trade.entryPrice - (trade.action == "Buy" ? 25 : -25),
             takeProfit: trade.entryPrice + (trade.action == "Buy" ? 50 : -50),
             lotSize: 0.01,
-            pnl: ultimateProfit,
-            rMultiple: ultimateProfit / 25.0, // Simplified R calculation
+            pnl: ultimateGoldProfit,
+            rMultiple: ultimateGoldProfit / 25.0, // Simplified R calculation
             result: isWin ? .win : .loss,
             grade: ultimateBoost > 20 ? .elite : (ultimateBoost > 10 ? .good : .average),
             setupDescription: "18-Engine Ultimate Legendary Setup",
@@ -629,6 +630,28 @@ class RealTimeProTraderBot: ObservableObject, Identifiable {
         ULTIMATE LEGENDARY BOOST: \(String(format: "%.1f", getULTIMATEBoost()))x
         INTELLIGENCE: \(getIntelligenceLevel())
         """
+    }
+    
+    private func createAndDeployBotAtLightningSpeed(index: Int) async -> RealTimeProTraderBot {
+        let symbols = ["XAUUSD", "EURUSD", "GBPUSD", "USDJPY", "AUDUSD", "USDCAD", "NZDUSD", "USDCHF", "XAGUSD", "BTCUSD", "ETHUSD", "SPX500", "NAS100"]
+        let strategies = ["AI-ScalpMaster", "AI-TrendFollower", "AI-MeanReversion", "AI-BreakoutHunter", "AI-GodMode", "AI-CryptoHunter", "AI-IndexTrader"]
+        
+        let bot = RealTimeProTraderBot(
+            id: UUID(),
+            name: "AI-Bot-\(String(format: "%04d", index + 1))",
+            status: "active",
+            currentPair: symbols.randomElement()!, // 🎯 RANDOM MARKET ASSIGNMENT
+            strategy: strategies.randomElement()!,
+            dailyPnL: Double.random(in: -50...150),
+            totalPnL: Double.random(in: -500...2000),
+            winRate: Double.random(in: 70...98),
+            tradesCount: Int.random(in: 15...120),
+            isGodModeEnabled: Double.random(in: 0...1) > 0.7,
+            vpsConnection: "172.234.201.231",
+            lastHeartbeat: Date()
+        )
+        
+        return bot
     }
 }
 

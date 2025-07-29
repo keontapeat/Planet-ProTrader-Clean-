@@ -407,8 +407,6 @@ struct SetupStepRow: View {
     }
 }
 
-// ... existing code ...
-
 // MARK: - Real Trading Bot Card (Enhanced)
 struct RealTradingBotCard: View {
     let bot: TradingBot
@@ -507,7 +505,7 @@ struct RealTradingBotCard: View {
                     Button("🚀 Deploy for REAL Trading") {
                         if vpsManager.vpsStatus == .connected && vpsManager.mt5Status == .connected {
                             onDeploy()
-                            hapticManager.botDeployed()
+                            hapticManager.success()
                         } else {
                             GlobalToastManager.shared.show("❌ Setup VPS first", type: .error)
                         }

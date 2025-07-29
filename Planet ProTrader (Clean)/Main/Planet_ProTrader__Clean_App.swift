@@ -13,7 +13,7 @@ import AVFoundation
 struct Planet_ProTrader__Clean_App: App {
     // MARK: - Shared Managers (Singleton Pattern)
     @StateObject private var tradingManager = TradingManager.shared
-    @StateObject private var botManager = BotManager.shared
+    @StateObject private var botManager = BotManager.shared  // FIXED: Use BotManager from CoreManagers
     @StateObject private var accountManager = AccountManager.shared
     @StateObject private var hapticManager = HapticManager.shared
     @StateObject private var audioManager = AudioManager.shared

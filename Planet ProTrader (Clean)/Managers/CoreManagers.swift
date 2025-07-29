@@ -1,4 +1,3 @@
-//
 //  CoreManagers.swift
 //  Planet ProTrader - Clean Foundation
 //
@@ -9,210 +8,6 @@
 import SwiftUI
 import Combine
 import UIKit
-
-// MARK: - Trading Manager
-@MainActor
-class TradingManager: ObservableObject {
-    static let shared = TradingManager()
-    
-    @Published var accounts: [TradingAccount] = []
-    @Published var selectedAccount: TradingAccount?
-    @Published var isConnected = false
-    @Published var goldPrice: MarketData = SampleData.goldPrice
-    @Published var isLoading = false
-    @Published var activeTrades: [Trade] = []
-    @Published var pendingOrders: [Order] = []
-    @Published var tradingHistory: [Trade] = []
-    @Published var todaysPnL: Double = 245.75
-    @Published var todaysChangePercent: Double = 2.8
-    @Published var weeklyPnL: Double = 1342.60
-    @Published var weeklyChangePercent: Double = 12.4
-    @Published var monthlyPnL: Double = 5687.30
-    @Published var monthlyChangePercent: Double = 35.7
-    @Published var allTimePnL: Double = 23456.80
-    @Published var allTimeChangePercent: Double = 124.8
-    @Published var winRate: Double = 73.5
-    @Published var currentGoldPrice: Double = 2374.85
-    @Published var goldPriceChange: Double = 12.45
-    @Published var goldPriceChangePercent: Double = 0.52
-    @Published var priceHistory: [Double] = []
-    
-    // VPS Integration
-    @Published var vpsConnected = false
-    @Published var mt5Connected = false
-    @Published var realTimeDataActive = false
-    
-    private var priceTimer: Timer?
-    private var vpsManager = VPSConnectionManager.shared
-    
-    private init() {
-        setupAccounts()
-        setupTradingManager()
-        generatePriceHistory()
-    }
-    
-    private func setupAccounts() {
-        accounts = [SampleData.demoAccount, SampleData.liveAccount]
-        selectedAccount = accounts.first
-        isConnected = true
-    }
-    
-    private func setupTradingManager() {
-        Timer.scheduledTimer(withTimeInterval: 3.0, repeats: true) { _ in
-            Task {
-                await self.updateLiveData()
-            }
-        }
-    }
-    
-    private func setupVPSConnection() {
-        Task {
-            await vpsManager.connectToVPS()
-            vpsConnected = vpsManager.isConnected
-            
-            let mt5Status = vpsManager.mt5Status 
-            mt5Connected = mt5Status.isConnected
-            
-            if mt5Connected {
-                updateRealAccountData(from: mt5Status)
-            }
-        }
-    }
-    
-    private func updateRealAccountData(from mt5Status: VPSConnectionManager.MT5Status) {
-        if let liveAccount = accounts.first(where: { $0.isLive }) {
-            let updatedAccount = TradingAccount(
-                name: liveAccount.name,
-                broker: liveAccount.broker,
-                accountNumber: liveAccount.accountNumber,
-                balance: mt5Status.balance,
-                equity: liveAccount.equity,
-                margin: liveAccount.margin,
-                freeMargin: liveAccount.freeMargin,
-                isLive: true,
-                currency: liveAccount.currency,
-                lastUpdate: Date()
-            )
-            
-            if let index = accounts.firstIndex(where: { $0.id == liveAccount.id }) {
-                accounts[index] = updatedAccount
-                if selectedAccount?.id == liveAccount.id {
-                    selectedAccount = updatedAccount
-                }
-            }
-        }
-        
-        todaysPnL = mt5Status.balance - 5000.0
-    }
-    
-    private func generatePriceHistory() {
-        // Generate sample price history for charts
-        var prices: [Double] = []
-        var currentPrice = 2350.0
-        
-        for _ in 0..<50 {
-            currentPrice += Double.random(in: -15...15)
-            prices.append(currentPrice)
-        }
-        
-        priceHistory = prices
-    }
-    
-    func refreshData() async {
-        DispatchQueue.main.async {
-            self.isLoading = true
-        }
-        
-        // Simulate data refresh
-        try? await Task.sleep(for: .seconds(1))
-        
-        await updateLiveData()
-        
-        DispatchQueue.main.async {
-            self.isLoading = false
-        }
-    }
-    
-    func updateLiveData() async {
-        // Fix: Ensure all UI updates happen on main thread
-        await MainActor.run {
-            // Update live gold price
-            self.currentGoldPrice += Double.random(in: -2...2)
-            self.goldPriceChange = Double.random(in: -20...20)
-            self.goldPriceChangePercent = (self.goldPriceChange / self.currentGoldPrice) * 100
-            
-            // Update P&L values
-            self.todaysPnL += Double.random(in: -50...100)
-            self.todaysChangePercent = (self.todaysPnL / 10000) * 100
-            
-            // Update price history
-            self.priceHistory.removeFirst()
-            self.priceHistory.append(self.currentGoldPrice)
-            
-            // Update gold price market data
-            self.goldPrice = MarketData(
-                symbol: "XAUUSD",
-                currentPrice: self.currentGoldPrice,
-                change: self.goldPriceChange,
-                changePercent: self.goldPriceChangePercent,
-                volume: 125_000,
-                timestamp: Date()
-            )
-        }
-    }
-    
-    func executeSignal(_ signal: TradingSignal) async -> Bool {
-        if vpsConnected {
-            let success = await vpsManager.sendSignalToVPS(signal)
-            
-            if success {
-                activeTrades.append(Trade(
-                    symbol: signal.symbol,
-                    direction: signal.direction,
-                    volume: 0.1,
-                    entryPrice: signal.entryPrice,
-                    currentPrice: signal.entryPrice,
-                    profit: 0,
-                    timestamp: Date()
-                ))
-                return true
-            }
-            
-            return false
-        } else {
-            activeTrades.append(Trade(
-                symbol: signal.symbol,
-                direction: signal.direction,
-                volume: 0.1,
-                entryPrice: signal.entryPrice,
-                currentPrice: signal.entryPrice,
-                profit: 0,
-                timestamp: Date()
-            ))
-            return true
-        }
-    }
-    
-    func generateSignal() -> TradingSignal? {
-        let signal = TradingSignal(
-            symbol: "XAUUSD",
-            direction: .buy,
-            entryPrice: currentGoldPrice,
-            stopLoss: currentGoldPrice - 25.0,
-            takeProfit: currentGoldPrice + 50.0,
-            confidence: Double.random(in: 0.75...0.95),
-            timeframe: "15M",
-            timestamp: Date(),
-            source: "GOLDEX AI iOS"
-        )
-        
-        return signal
-    }
-    
-    deinit {
-        priceTimer?.invalidate()
-    }
-}
 
 // MARK: - AI Engine Manager
 class AIEngine: ObservableObject {
@@ -435,7 +230,7 @@ class BotManager: ObservableObject {
             deploymentStatus = "⚡ In The Zone - Enhanced Performance Active"
             
             // Deploy with both AI and Flow enhancement
-            if let aiSignal = await aiEngine.analyzeMarket() {
+            if let aiSignal = await aiEngine.quickAnalysis() {
                 // Convert AI signal to system signal
                 let systemSignal = TradingSignal(
                     symbol: aiSignal.symbol,
@@ -740,7 +535,7 @@ class BotManager: ObservableObject {
     private func connectToMasterEngines() {
         // Activate master engines
         masterCapitalEngine.activateEngine()
-        masterBacktestEngine.isActive = true // Set isActive directly for BacktestSimulationEngine
+        masterBacktestEngine.isActive = true
         
         // Update engine stats
         totalAIBots = masterBotEngine.globalBotStats.totalBots
@@ -1029,37 +824,12 @@ struct ActivityItem: Identifiable {
     let dateTime: Date
 }
 
-// MARK: - Additional Types
-struct Trade: Identifiable {
-    let id = UUID()
-    let symbol: String
-    let direction: TradeDirection
-    let volume: Double
-    let entryPrice: Double
-    let currentPrice: Double
-    let profit: Double
-    let timestamp: Date
-}
-
-struct Order: Identifiable {
-    let id = UUID()
-    let symbol: String
-    let direction: TradeDirection
-    let volume: Double
-    let targetPrice: Double
-    let type: OrderType
-    let timestamp: Date
-    
-    enum OrderType {
-        case limit, stop, market
-    }
-}
-
 #Preview {
     VStack(spacing: 20) {
         Text("Enhanced Managers Preview")
-            .font(DesignSystem.Typography.largeTitle)
-            .goldText()
+            .font(.largeTitle)
+            .fontWeight(.bold)
+            .foregroundColor(.gold)
         
         VStack(spacing: 12) {
             HStack {
@@ -1067,7 +837,7 @@ struct Order: Identifiable {
                 Spacer()
                 Text(TradingManager.shared.goldPrice.formattedPrice)
                     .font(.headline)
-                    .profitText(TradingManager.shared.goldPrice.isPositive)
+                    .foregroundColor(TradingManager.shared.goldPrice.isPositive ? .green : .red)
             }
             
             HStack {
@@ -1094,7 +864,10 @@ struct Order: Identifiable {
                     .foregroundColor(.green)
             }
         }
-        .standardCard()
+        .padding()
+        .background(Color(.systemBackground))
+        .cornerRadius(12)
+        .shadow(radius: 4)
         
         Button("Test VPS Signal") {
             Task {
@@ -1104,7 +877,10 @@ struct Order: Identifiable {
                 }
             }
         }
-        .buttonStyle(.primary)
+        .padding()
+        .background(Color.blue)
+        .foregroundColor(.white)
+        .cornerRadius(8)
     }
     .padding()
 }

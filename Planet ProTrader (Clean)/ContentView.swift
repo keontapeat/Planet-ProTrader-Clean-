@@ -14,7 +14,7 @@ struct ContentView: View {
     @State private var isInitialized = false
     @State private var showingAudioControls = false
     
-    // FIXED: Safe manager initialization with fallbacks
+    // FIXED: Use proper existing managers to avoid conflicts
     @StateObject private var realTimeBalanceManager = RealTimeBalanceManager()
     @StateObject private var audioManager = AudioManager.shared
     @StateObject private var tradingManager = TradingManager.shared
@@ -93,7 +93,7 @@ struct ContentView: View {
         }
         .overlay(alignment: .topTrailing) {
             if showingAudioControls {
-                SafeAudioToggle()
+                AudioToggle()
                     .padding(.top, 60)
                     .padding(.trailing, 20)
                     .transition(.opacity)
@@ -107,6 +107,7 @@ struct ContentView: View {
         .environmentObject(hapticManager)
         .environmentObject(realTimeBalanceManager)
         .environmentObject(audioManager)
+        .withGlobalToast()
     }
     
     // MARK: - Helper Methods
@@ -137,14 +138,14 @@ struct ContentView: View {
                 _ = tradingManager
                 _ = botManager
                 
-                print("✅ System ready!")
+                print("✅ System ready with all managers!")
             }
             
             // RESTORED: Launch sound effects
-            await audioManager.playNotification() // Launch notification sound
+            await audioManager.playNotification()
             
             // Small delay then play theme music if enabled
-            try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 second
+            try? await Task.sleep(nanoseconds: 500_000_000)
             
             if audioManager.isMusicEnabled {
                 await audioManager.playInterstellarTheme()
@@ -156,6 +157,7 @@ struct ContentView: View {
         Task {
             await audioManager.playButtonTap()
         }
+        hapticManager.lightImpact()
     }
 }
 
@@ -196,13 +198,13 @@ struct ProfessionalMoreTabView: View {
             }
         }
         .sheet(isPresented: $showingProfile) { 
-            SafeProfileView() 
+            ProfileSettingsSheet()
         }
         .sheet(isPresented: $showingSettings) { 
-            SafeSettingsView() 
+            AppSettingsSheet()
         }
         .sheet(isPresented: $showingVPSSetup) { 
-            SafeVPSSetupView() 
+            VPSSetupSheet()
         }
         .sheet(isPresented: $showingPlaybook) { 
             NavigationStack {
@@ -370,6 +372,111 @@ struct ProfessionalMoreTabView: View {
     
     private func showComingSoon(_ feature: String) {
         print("🔜 Feature \(feature) is coming soon!")
+        GlobalToastManager.shared.show("🔜 \(feature) coming soon!", type: .info)
+    }
+}
+
+// MARK: - Placeholder Sheets (to prevent crashes)
+struct ProfileSettingsSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 20) {
+                Image(systemName: "person.crop.circle.fill")
+                    .font(.system(size: 60))
+                    .foregroundColor(DesignSystem.primaryGold)
+                
+                Text("Profile Settings")
+                    .font(.title.bold())
+                    .foregroundColor(.white)
+                
+                Text("Profile management coming soon!")
+                    .foregroundColor(.secondary)
+                
+                Spacer()
+            }
+            .padding()
+            .background(DesignSystem.AnimatedStarField().ignoresSafeArea())
+            .navigationTitle("Profile")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Done") { dismiss() }
+                        .foregroundColor(DesignSystem.primaryGold)
+                }
+            }
+        }
+    }
+}
+
+struct AppSettingsSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 20) {
+                Image(systemName: "gearshape.fill")
+                    .font(.system(size: 60))
+                    .foregroundColor(DesignSystem.primaryGold)
+                
+                Text("App Settings")
+                    .font(.title.bold())
+                    .foregroundColor(.white)
+                
+                Text("Settings panel coming soon!")
+                    .foregroundColor(.secondary)
+                
+                // FIXED: Add audio controls to settings
+                AudioControlView()
+                    .solarCard()
+                
+                Spacer()
+            }
+            .padding()
+            .background(DesignSystem.AnimatedStarField().ignoresSafeArea())
+            .navigationTitle("Settings")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Done") { dismiss() }
+                        .foregroundColor(DesignSystem.primaryGold)
+                }
+            }
+        }
+    }
+}
+
+struct VPSSetupSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 20) {
+                Image(systemName: "server.rack")
+                    .font(.system(size: 60))
+                    .foregroundColor(DesignSystem.primaryGold)
+                
+                Text("VPS Setup")
+                    .font(.title.bold())
+                    .foregroundColor(.white)
+                
+                Text("VPS configuration coming soon!")
+                    .foregroundColor(.secondary)
+                
+                Spacer()
+            }
+            .padding()
+            .background(DesignSystem.AnimatedStarField().ignoresSafeArea())
+            .navigationTitle("VPS Setup")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Done") { dismiss() }
+                        .foregroundColor(DesignSystem.primaryGold)
+                }
+            }
+        }
     }
 }
 
@@ -435,122 +542,7 @@ struct MoreListItem: View {
     }
 }
 
-// MARK: - Safe Views
-struct SafeProfileView: View {
-    @Environment(\.dismiss) private var dismiss
-    
-    var body: some View {
-        NavigationStack {
-            ZStack {
-                // RESTORED: Dynamic animated starfield background
-                DesignSystem.AnimatedStarField()
-                    .ignoresSafeArea()
-                
-                VStack(spacing: 20) {
-                    Image(systemName: "person.crop.circle.fill")
-                        .font(.system(size: 60))
-                        .foregroundColor(DesignSystem.primaryGold)
-                    
-                    Text("Profile Settings")
-                        .font(.title.bold())
-                        .foregroundColor(.white)
-                    
-                    Text("Profile management coming soon!")
-                        .foregroundColor(.secondary)
-                    
-                    Spacer()
-                }
-                .padding()
-            }
-            .navigationTitle("Profile")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Done") { dismiss() }
-                        .foregroundColor(DesignSystem.primaryGold)
-                }
-            }
-        }
-    }
-}
-
-struct SafeSettingsView: View {
-    @Environment(\.dismiss) private var dismiss
-    
-    var body: some View {
-        NavigationStack {
-            ZStack {
-                // RESTORED: Dynamic animated starfield background
-                DesignSystem.AnimatedStarField()
-                    .ignoresSafeArea()
-                
-                VStack(spacing: 20) {
-                    Image(systemName: "gearshape.fill")
-                        .font(.system(size: 60))
-                        .foregroundColor(DesignSystem.primaryGold)
-                    
-                    Text("App Settings")
-                        .font(.title.bold())
-                        .foregroundColor(.white)
-                    
-                    Text("Settings panel coming soon!")
-                        .foregroundColor(.secondary)
-                    
-                    Spacer()
-                }
-                .padding()
-            }
-            .navigationTitle("Settings")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Done") { dismiss() }
-                        .foregroundColor(DesignSystem.primaryGold)
-                }
-            }
-        }
-    }
-}
-
-struct SafeVPSSetupView: View {
-    @Environment(\.dismiss) private var dismiss
-    
-    var body: some View {
-        NavigationStack {
-            ZStack {
-                // RESTORED: Dynamic animated starfield background
-                DesignSystem.AnimatedStarField()
-                    .ignoresSafeArea()
-                
-                VStack(spacing: 20) {
-                    Image(systemName: "server.rack")
-                        .font(.system(size: 60))
-                        .foregroundColor(DesignSystem.primaryGold)
-                    
-                    Text("VPS Setup")
-                        .font(.title.bold())
-                        .foregroundColor(.white)
-                    
-                    Text("VPS configuration coming soon!")
-                        .foregroundColor(.secondary)
-                    
-                    Spacer()
-                }
-                .padding()
-            }
-            .navigationTitle("VPS Setup")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Done") { dismiss() }
-                        .foregroundColor(DesignSystem.primaryGold)
-                }
-            }
-        }
-    }
-}
-
-struct SafeAudioToggle: View {
+struct AudioToggle: View {
     @StateObject private var audioManager = AudioManager.shared
     
     var body: some View {
@@ -586,9 +578,9 @@ struct SafeAudioToggle: View {
 // MARK: - Preview
 #Preview {
     ContentView()
+        .environmentObject(RealTimeBalanceManager())
+        .environmentObject(AudioManager.shared)
         .environmentObject(TradingManager.shared)
         .environmentObject(BotManager.shared)
         .environmentObject(HapticManager.shared)
-        .environmentObject(RealTimeBalanceManager())
-        .environmentObject(AudioManager.shared)
 }

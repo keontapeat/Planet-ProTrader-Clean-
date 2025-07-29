@@ -1,8 +1,8 @@
 //
 //  BotJournalView.swift
-//  Planet ProTrader - Bot Journal Interface
+//  Planet ProTrader - Bot Journal
 //
-//  Professional bot monitoring and logging interface
+//  Trading Bot Journal and Insights
 //  Created by AI Assistant on 1/25/25.
 //
 
@@ -14,195 +14,131 @@ struct BotJournalView: View {
     let insights: [ClaudeInsight]
     
     @Environment(\.dismiss) private var dismiss
+    @State private var selectedTab = 0
     
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: 24) {
-                    // Header
-                    VStack(spacing: 12) {
-                        Image(systemName: "brain.head.profile")
-                            .font(.system(size: 48))
-                            .foregroundColor(.cyan)
-                        
-                        Text(botName)
-                            .font(.title.bold())
-                            .foregroundStyle(.white)
-                        
-                        Text("AI-Powered Trading Journal")
-                            .font(.subheadline)
-                            .foregroundStyle(.gray)
-                    }
-                    
-                    // Recent Logs Section
-                    VStack(alignment: .leading, spacing: 16) {
-                        HStack {
-                            Text("📊 Recent Activity")
-                                .font(.headline.bold())
-                                .foregroundStyle(.white)
-                            
-                            Spacer()
-                            
-                            Text("\(logs.count) entries")
-                                .font(.caption)
-                                .foregroundStyle(.gray)
-                        }
-                        
-                        LazyVStack(spacing: 12) {
-                            ForEach(logs.prefix(10)) { log in
-                                HStack(alignment: .top, spacing: 12) {
-                                    VStack(spacing: 4) {
-                                        Text(log.date, style: .time)
-                                            .font(.caption2)
-                                            .foregroundStyle(.gray)
-                                        
-                                        Circle()
-                                            .fill(log.action == "BUY" ? .green : log.action == "SELL" ? .red : .blue)
-                                            .frame(width: 8, height: 8)
-                                    }
-                                    
-                                    VStack(alignment: .leading, spacing: 4) {
-                                        HStack {
-                                            Text(log.symbol)
-                                                .font(.subheadline.bold())
-                                                .foregroundStyle(.white)
-                                            
-                                            if log.action != "INFO" {
-                                                Text(log.action)
-                                                    .font(.caption.bold())
-                                                    .foregroundStyle(log.action == "BUY" ? .green : .red)
-                                                    .padding(.horizontal, 6)
-                                                    .padding(.vertical, 2)
-                                                    .background(
-                                                        Capsule()
-                                                            .fill((log.action == "BUY" ? Color.green : Color.red).opacity(0.2))
-                                                    )
-                                            }
-                                            
-                                            Spacer()
-                                        }
-                                        
-                                        Text(log.notes)
-                                            .font(.caption)
-                                            .foregroundStyle(.gray)
-                                            .lineLimit(2)
-                                        
-                                        if log.entryPrice > 0 {
-                                            Text("Entry: $\(String(format: "%.2f", log.entryPrice))")
-                                                .font(.caption2)
-                                                .foregroundStyle(.blue)
-                                        }
-                                    }
-                                }
-                                .padding()
-                                .background(
-                                    RoundedRectangle(cornerRadius: 12)
-                                        .fill(.ultraThinMaterial)
-                                )
-                            }
-                        }
-                    }
-                    
-                    // AI Insights Section
-                    VStack(alignment: .leading, spacing: 16) {
-                        HStack {
-                            Text("🧠 AI Insights")
-                                .font(.headline.bold())
-                                .foregroundStyle(.white)
-                            
-                            Spacer()
-                            
-                            Text("\(insights.count) insights")
-                                .font(.caption)
-                                .foregroundStyle(.gray)
-                        }
-                        
-                        LazyVStack(spacing: 12) {
-                            ForEach(insights.prefix(5)) { insight in
-                                VStack(alignment: .leading, spacing: 8) {
-                                    Text(insight.summary)
-                                        .font(.subheadline.bold())
-                                        .foregroundStyle(.white)
-                                    
-                                    Text(insight.advice)
-                                        .font(.caption)
-                                        .foregroundStyle(.gray)
-                                        .lineLimit(3)
-                                    
-                                    HStack {
-                                        Spacer()
-                                        
-                                        Text(insight.timestamp, style: .relative)
-                                            .font(.caption2)
-                                            .foregroundStyle(.blue)
-                                    }
-                                }
-                                .padding()
-                                .background(
-                                    RoundedRectangle(cornerRadius: 12)
-                                        .fill(.ultraThinMaterial)
-                                        .overlay(
-                                            RoundedRectangle(cornerRadius: 12)
-                                                .stroke(.cyan.opacity(0.3), lineWidth: 1)
-                                        )
-                                )
-                            }
-                        }
-                    }
+            VStack {
+                // Tab Selector
+                Picker("View", selection: $selectedTab) {
+                    Text("Trade Logs").tag(0)
+                    Text("AI Insights").tag(1)
                 }
+                .pickerStyle(SegmentedPickerStyle())
                 .padding()
+                
+                // Content
+                TabView(selection: $selectedTab) {
+                    // Trade Logs
+                    ScrollView {
+                        LazyVStack(spacing: 12) {
+                            ForEach(logs) { log in
+                                TradeLogCard(log: log)
+                            }
+                        }
+                        .padding()
+                    }
+                    .tag(0)
+                    
+                    // AI Insights
+                    ScrollView {
+                        LazyVStack(spacing: 12) {
+                            ForEach(insights) { insight in
+                                InsightCard(insight: insight)
+                            }
+                        }
+                        .padding()
+                    }
+                    .tag(1)
+                }
+                .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
             }
-            .background(Color.black)
-            .navigationTitle("Bot Journal")
+            .background(DesignSystem.AnimatedStarField().ignoresSafeArea())
+            .navigationTitle(botName)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Done") {
-                        dismiss()
-                    }
-                    .foregroundStyle(.blue)
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Done") { dismiss() }
+                        .foregroundColor(DesignSystem.primaryGold)
                 }
             }
         }
     }
 }
 
+struct TradeLogCard: View {
+    let log: TradeLog
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text(log.symbol)
+                    .font(.headline)
+                    .fontWeight(.bold)
+                    .foregroundColor(.white)
+                
+                Spacer()
+                
+                Text(log.action)
+                    .font(.caption)
+                    .fontWeight(.bold)
+                    .foregroundColor(log.action == "BUY" ? .green : .red)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background((log.action == "BUY" ? Color.green : Color.red).opacity(0.2), in: Capsule())
+            }
+            
+            Text(log.notes)
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+            
+            Text(log.date, style: .time)
+                .font(.caption)
+                .foregroundColor(.gray)
+        }
+        .padding()
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+    }
+}
+
+struct InsightCard: View {
+    let insight: ClaudeInsight
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("AI Analysis")
+                .font(.caption)
+                .fontWeight(.bold)
+                .foregroundColor(DesignSystem.primaryGold)
+            
+            Text(insight.summary)
+                .font(.headline)
+                .fontWeight(.semibold)
+                .foregroundColor(.white)
+            
+            Text(insight.advice)
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+        }
+        .padding()
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(DesignSystem.primaryGold.opacity(0.3), lineWidth: 1)
+        )
+    }
+}
+
 #Preview {
     BotJournalView(
-        botName: "Golden Eagle AI",
+        botName: "Gold-Bot-001",
         logs: [
-            TradeLog(
-                date: Date(),
-                symbol: "XAUUSD",
-                action: "BUY",
-                entryPrice: 2374.50,
-                notes: "Strong bullish momentum detected"
-            ),
-            TradeLog(
-                date: Date().addingTimeInterval(-300),
-                symbol: "XAUUSD",
-                action: "SELL",
-                entryPrice: 2380.25,
-                notes: "Profit target reached"
-            ),
-            TradeLog(
-                date: Date().addingTimeInterval(-600),
-                symbol: "XAUUSD",
-                action: "INFO",
-                entryPrice: 0.0,
-                notes: "🤖 AI optimization active"
-            )
+            TradeLog(date: Date(), symbol: "XAUUSD", action: "BUY", entryPrice: 2350.0, notes: "Strong bullish signal detected"),
+            TradeLog(date: Date(), symbol: "XAUUSD", action: "SELL", entryPrice: 2375.0, notes: "Profit target reached")
         ],
         insights: [
-            ClaudeInsight(
-                summary: "Market Analysis: Strong upward trend detected",
-                advice: "Consider increasing position size for favorable conditions"
-            ),
-            ClaudeInsight(
-                summary: "Risk Assessment: Low volatility environment",
-                advice: "Maintain current risk parameters for optimal performance"
-            )
+            ClaudeInsight(summary: "Bot performance excellent", advice: "Continue current strategy"),
+            ClaudeInsight(summary: "Market conditions favorable", advice: "Consider increasing position size")
         ]
     )
-    .preferredColorScheme(.dark)
 }

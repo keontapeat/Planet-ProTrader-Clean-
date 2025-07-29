@@ -311,21 +311,21 @@ struct MarketplaceBotDetailView: View {
                 .fontWeight(.bold)
             
             VStack(spacing: 12) {
-                ReviewCard(
+                MarketplaceReviewCard(
                     username: "TraderPro123",
                     rating: 5,
                     comment: "Excellent bot! Consistent profits and great risk management.",
                     date: "2 days ago"
                 )
                 
-                ReviewCard(
+                MarketplaceReviewCard(
                     username: "InvestorGuru",
                     rating: 4,
                     comment: "Good performance overall, though had some rough patches during volatile markets.",
                     date: "1 week ago"
                 )
                 
-                ReviewCard(
+                MarketplaceReviewCard(
                     username: "CryptoMaster",
                     rating: 5,
                     comment: "Best bot I've used so far. Highly recommended!",
@@ -446,7 +446,7 @@ struct IndicatorRow: View {
     }
 }
 
-struct ReviewCard: View {
+struct MarketplaceReviewCard: View {
     let username: String
     let rating: Int
     let comment: String
@@ -484,26 +484,44 @@ struct ReviewCard: View {
     }
 }
 
+// MARK: - Preview
 #Preview {
     MarketplaceBotDetailView(
         bot: MarketplaceBotModel(
             name: "Golden Eagle Pro",
-            tagline: "Advanced gold trading with AI precision",
             creatorUsername: "TradeMaster",
-            rarity: .legendary,
-            tier: .professional,
-            verificationStatus: .verified,
-            availability: .available,
+            tagline: "Advanced gold trading with AI precision",
+            valueProposition: "AI-powered gold trading specialist",
+            description: "Advanced algorithms for maximum gold trading profits",
             price: 299.99,
-            averageRating: 4.8,
+            rarity: BotRarity.legendary,
+            tier: BotTier.professional,
+            verificationStatus: VerificationStatus.verified,
+            availability: BotAvailability.available,
             stats: BotStats(
                 totalReturn: 342.5,
                 winRate: 87.2,
                 totalTrades: 1250,
                 totalUsers: 450,
-                maxDrawdown: 8.5
+                maxDrawdown: 8.5,
+                sharpeRatio: 2.8,
+                universeRank: 25,
+                performanceGrade: "A+"
             ),
-            createdDate: Date().addingTimeInterval(-86400 * 45)
+            reviews: [],
+            tags: ["Gold", "AI", "Professional"],
+            createdDate: Date().addingTimeInterval(-86400 * 45),
+            lastUpdated: Date(),
+            character: BotCharacter(
+                avatar: "🦅",
+                personality: "Aggressive",
+                specialties: ["Gold Trading", "AI Analysis"],
+                catchPhrase: "Golden profits await!"
+            ),
+            tradingStyle: TradingStyle.algorithmic,
+            isCustomizable: true,
+            currentPitch: "I specialize in gold trading with 87% win rate!",
+            hasSpecialOffer: false
         )
     )
 }

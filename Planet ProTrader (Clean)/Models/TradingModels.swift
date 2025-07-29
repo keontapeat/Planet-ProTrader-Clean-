@@ -356,7 +356,7 @@ struct PortfolioPerformance: Identifiable, Codable {
 }
 
 // MARK: - Risk Metrics Model
-struct RiskMetrics: Identifiable, Codable {
+struct RiskMetrics: Identifiable, Codable, Equatable, Hashable {
     let id = UUID()
     let maxDrawdown: Double
     let currentDrawdown: Double

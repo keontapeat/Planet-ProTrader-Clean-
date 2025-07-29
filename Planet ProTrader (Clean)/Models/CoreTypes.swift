@@ -45,20 +45,6 @@ enum TradeStatus: String, CaseIterable, Codable {
     }
 }
 
-enum RiskLevel: String, CaseIterable, Codable {
-    case low = "Low"
-    case medium = "Medium"
-    case high = "High"
-    
-    var color: Color {
-        switch self {
-        case .low: return .green
-        case .medium: return .yellow
-        case .high: return .red
-        }
-    }
-}
-
 enum BotStatus: String, CaseIterable, Codable {
     case active = "Active"
     case inactive = "Inactive"
@@ -85,7 +71,7 @@ enum BotStatus: String, CaseIterable, Codable {
 }
 
 // MARK: - Trading Bot Model
-struct TradingBot: Identifiable, Codable, Hashable {
+struct TradingBot: Identifiable, Codable, Hashable, Equatable {
     let id = UUID()
     let name: String
     let description: String
@@ -119,8 +105,8 @@ struct TradingBot: Identifiable, Codable, Hashable {
             description: "Advanced gold trading AI with 94% accuracy",
             winRate: 94.2,
             profitability: 342.5,
-            riskLevel: .medium,
-            status: .active,
+            riskLevel: RiskLevel.medium,
+            status: BotStatus.active,
             icon: "crown.fill",
             totalTrades: 1250,
             successfulTrades: 1178,
@@ -133,8 +119,8 @@ struct TradingBot: Identifiable, Codable, Hashable {
             description: "Precision scalping bot for quick profits",
             winRate: 87.8,
             profitability: 156.3,
-            riskLevel: .low,
-            status: .active,
+            riskLevel: RiskLevel.low,
+            status: BotStatus.active,
             icon: "bolt.fill",
             totalTrades: 2850,
             successfulTrades: 2503,
@@ -147,8 +133,8 @@ struct TradingBot: Identifiable, Codable, Hashable {
             description: "Conservative long-term trading strategy",
             winRate: 72.5,
             profitability: 89.4,
-            riskLevel: .low,
-            status: .inactive,
+            riskLevel: RiskLevel.low,
+            status: BotStatus.inactive,
             icon: "shield.fill",
             totalTrades: 650,
             successfulTrades: 471,
