@@ -69,7 +69,8 @@ class LiveTradingManager: ObservableObject {
     }
     
     private init() {
-        setupRealMetaApiConnection()
+        // 🔥 FIX: Don't auto-connect to prevent home view popups
+        print("🏦 LiveTradingManager initialized - Ready for manual connection")
     }
     
     // MARK: - REAL MetaApi Connection Setup

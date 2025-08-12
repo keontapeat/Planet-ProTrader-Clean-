@@ -16,13 +16,18 @@ struct TradeScreenshot: Identifiable, Codable, Hashable {
     let id: String
     let tradeId: String
     let phase: TradePhase
-    let imageName: String // Stored image filename
+    let imageName: String
     let timestamp: Date
     let analysis: String
     let aiConfidence: Double
     let technicalIndicators: [String]
     let marketCondition: String
     let setupQuality: ScreenshotQuality
+    
+    // Unified additional fields
+    let tradeGrade: TradeGrade
+    let symbol: String
+    let profitLoss: Double
     
     enum TradePhase: String, Codable, CaseIterable {
         case before = "Before Entry"
@@ -100,6 +105,39 @@ struct TradeScreenshot: Identifiable, Codable, Hashable {
         }
     }
     
+    enum TradeGrade: String, Codable {
+        case aPlusPlus = "A++"
+        case aPlus = "A+"
+        case a = "A"
+        case bPlus = "B+"
+        case b = "B"
+        case c = "C"
+        case d = "D"
+        case f = "F"
+        
+        var emoji: String {
+            switch self {
+            case .aPlusPlus: return "🏆"
+            case .aPlus: return "🔥"
+            case .a: return "💎"
+            case .bPlus: return "⭐️"
+            case .b: return "✅"
+            case .c: return "📘"
+            case .d: return "🛠️"
+            case .f: return "⚠️"
+            }
+        }
+        
+        var color: Color {
+            switch self {
+            case .aPlusPlus, .aPlus, .a: return .green
+            case .bPlus, .b: return .blue
+            case .c: return .orange
+            case .d, .f: return .red
+            }
+        }
+    }
+    
     // MARK: - Computed Properties
     
     var formattedTimestamp: String {
@@ -128,7 +166,10 @@ struct TradeScreenshot: Identifiable, Codable, Hashable {
         aiConfidence: Double = 0.85,
         technicalIndicators: [String] = [],
         marketCondition: String = "Trending",
-        setupQuality: ScreenshotQuality = .good
+        setupQuality: ScreenshotQuality = .good,
+        tradeGrade: TradeGrade = .a,
+        symbol: String = "",
+        profitLoss: Double = 0.0
     ) {
         self.id = id
         self.tradeId = tradeId
@@ -140,6 +181,9 @@ struct TradeScreenshot: Identifiable, Codable, Hashable {
         self.technicalIndicators = technicalIndicators
         self.marketCondition = marketCondition
         self.setupQuality = setupQuality
+        self.tradeGrade = tradeGrade
+        self.symbol = symbol
+        self.profitLoss = profitLoss
     }
     
     // MARK: - Hashable Conformance
@@ -168,7 +212,6 @@ class ScreenshotGalleryManager: ObservableObject {
         isLoading = true
         defer { isLoading = false }
         
-        // Save image to documents directory
         if await saveImage(image, fileName: screenshot.imageName) {
             var tradeScreenshots = screenshots[screenshot.tradeId] ?? []
             tradeScreenshots.append(screenshot)
@@ -207,7 +250,6 @@ class ScreenshotGalleryManager: ObservableObject {
     // MARK: - AI Analysis
     
     func analyzeScreenshot(_ screenshot: TradeScreenshot) async -> String {
-        // Simulate AI analysis
         try? await Task.sleep(nanoseconds: 2_000_000_000)
         
         let analysisTemplates = [
@@ -243,7 +285,6 @@ class ScreenshotGalleryManager: ObservableObject {
 class ScreenshotAnalysisEngine {
     
     static func analyzeTradeSetup(_ image: UIImage) async -> ScreenshotAnalysis {
-        // Simulate advanced AI analysis
         try? await Task.sleep(nanoseconds: 1_000_000_000)
         
         return ScreenshotAnalysis(
@@ -391,17 +432,6 @@ enum ScreenshotMarketCondition: String, Codable, CaseIterable {
         case .consolidation: return "🔄"
         }
     }
-    
-    var rawValue: String {
-        switch self {
-        case .trending: return "Trending"
-        case .ranging: return "Ranging"
-        case .volatile: return "Volatile"
-        case .quiet: return "Quiet"
-        case .breakout: return "Breakout"
-        case .consolidation: return "Consolidation"
-        }
-    }
 }
 
 // MARK: - Sample Screenshot Data
@@ -417,7 +447,10 @@ extension TradeScreenshot {
                 aiConfidence: 0.92,
                 technicalIndicators: ["RSI Bullish Divergence", "Volume Confirmation", "Support Level Hold"],
                 marketCondition: "Trending",
-                setupQuality: .elite
+                setupQuality: .elite,
+                tradeGrade: .aPlusPlus,
+                symbol: "XAUUSD",
+                profitLoss: 150.0
             ),
             TradeScreenshot(
                 tradeId: "sample-trade-1",
@@ -427,7 +460,10 @@ extension TradeScreenshot {
                 aiConfidence: 0.89,
                 technicalIndicators: ["Breakout Confirmation", "MACD Crossover"],
                 marketCondition: "Breakout",
-                setupQuality: .excellent
+                setupQuality: .excellent,
+                tradeGrade: .aPlus,
+                symbol: "XAUUSD",
+                profitLoss: 0.0
             ),
             TradeScreenshot(
                 tradeId: "sample-trade-1",
@@ -437,7 +473,10 @@ extension TradeScreenshot {
                 aiConfidence: 0.95,
                 technicalIndicators: ["Resistance Rejection", "Profit Target Hit"],
                 marketCondition: "Consolidation",
-                setupQuality: .elite
+                setupQuality: .elite,
+                tradeGrade: .aPlusPlus,
+                symbol: "XAUUSD",
+                profitLoss: 275.0
             )
         ]
     ]

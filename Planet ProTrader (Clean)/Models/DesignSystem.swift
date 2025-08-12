@@ -195,6 +195,7 @@ struct DesignSystem {
         static let headline = moon
         static let body = asteroid
         static let caption = dust
+        static let caption2 = Font.system(size: 11, weight: .regular, design: .default)
         
         // Trading-specific
         static let priceFont = Font.system(size: 36, weight: .black, design: .monospaced)

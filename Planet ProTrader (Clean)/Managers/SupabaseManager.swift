@@ -14,8 +14,8 @@ import Combine
 class SupabaseManager: ObservableObject {
     static let shared = SupabaseManager()
     
-    private let baseURL = "https://afhhfkbicbcgycphpewn.supabase.co"
-    private let apiKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFmaGhma2JpY2JjZ3ljcGhwZXduIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMzNzMyMDMsImV4cCI6MjA2ODk0OTIwM30.n_pWraI59MWfjUEF8dD4Xhib-05qFL0U3BPyNr5Uwss"
+    private let baseURL = "https://bywgvdodipvotzuddzkp.supabase.co"
+    private let apiKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ5d2d2ZG9kaXB2b3R6dWRkemtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ5ODI2MjIsImV4cCI6MjA3MDU1ODYyMn0.yXteC8gRCWERwZJnnWwkviXN5pybEMmFmLsnBpIYRVc"
     
     @Published var isConnected = false
     @Published var connectionStatus = "Initializing..."
@@ -26,6 +26,18 @@ class SupabaseManager: ObservableObject {
         }
     }
     
+    // MARK: - Header Helper
+    private func applyAuthHeaders(_ request: inout URLRequest) {
+        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        request.setValue(apiKey, forHTTPHeaderField: "apikey")
+        if request.value(forHTTPHeaderField: "Content-Type") == nil {
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        }
+        if request.value(forHTTPHeaderField: "Accept") == nil {
+            request.setValue("application/json", forHTTPHeaderField: "Accept")
+        }
+    }
+    
     // MARK: - Connection Management
     
     @MainActor
@@ -33,33 +45,45 @@ class SupabaseManager: ObservableObject {
         connectionStatus = "Connecting to Supabase..."
         
         do {
-            // Test connection with a simple API call
-            let url = URL(string: "\(baseURL)/rest/v1/")!
-            var request = URLRequest(url: url)
-            request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
-            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            request.setValue("application/json", forHTTPHeaderField: "Accept")
-            request.setValue("*", forHTTPHeaderField: "Accept-Profile")
-            
-            let (_, response) = try await URLSession.shared.data(for: request)
-            
-            if let httpResponse = response as? HTTPURLResponse {
-                if httpResponse.statusCode == 200 || httpResponse.statusCode == 404 {
+            // Primary health check (Auth health endpoint returns 200)
+            if let healthURL = URL(string: "\(baseURL)/auth/v1/health") {
+                var healthReq = URLRequest(url: healthURL)
+                applyAuthHeaders(&healthReq)
+                let (_, healthResp) = try await URLSession.shared.data(for: healthReq)
+                if let http = healthResp as? HTTPURLResponse, (200..<300).contains(http.statusCode) {
                     isConnected = true
                     connectionStatus = "Connected ✅"
-                    print("🟢 Supabase connected successfully!")
-                } else {
-                    throw NSError(domain: "SupabaseError", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: "HTTP \(httpResponse.statusCode)"])
+                    print("🟢 Supabase health OK")
+                    return
                 }
             }
             
+            // Fallback: REST root (expect 200 or 404)
+            if let url = URL(string: "\(baseURL)/rest/v1/") {
+                var request = URLRequest(url: url)
+                applyAuthHeaders(&request)
+                let (_, response) = try await URLSession.shared.data(for: request)
+                
+                if let httpResponse = response as? HTTPURLResponse {
+                    if httpResponse.statusCode == 200 || httpResponse.statusCode == 404 {
+                        isConnected = true
+                        connectionStatus = "Connected ✅"
+                        print("🟢 Supabase connected (REST fallback)")
+                        return
+                    } else {
+                        throw NSError(domain: "SupabaseError", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: "HTTP \(httpResponse.statusCode)"])
+                    }
+                }
+            }
+            
+            throw NSError(domain: "SupabaseError", code: -1, userInfo: [NSLocalizedDescriptionKey: "Unknown connection failure"])
         } catch {
             isConnected = false
             connectionStatus = "Connection Failed ❌"
             print("🔴 Supabase connection failed: \(error)")
             
             // Retry connection after delay
-            try? await Task.sleep(nanoseconds: 5_000_000_000) // 5 seconds
+            try? await Task.sleep(nanoseconds: 5_000_000_000)
             await testConnection()
         }
     }
@@ -70,9 +94,7 @@ class SupabaseManager: ObservableObject {
         let url = URL(string: "\(baseURL)/rest/v1/bot_states")!
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
-        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        applyAuthHeaders(&request)
         request.setValue("return=minimal", forHTTPHeaderField: "Prefer")
         
         let encoder = JSONEncoder()
@@ -91,8 +113,7 @@ class SupabaseManager: ObservableObject {
     func loadBotStates() async throws -> [BotState] {
         let url = URL(string: "\(baseURL)/rest/v1/bot_states?select=*")!
         var request = URLRequest(url: url)
-        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
-        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        applyAuthHeaders(&request)
         
         let (data, response) = try await URLSession.shared.data(for: request)
         
@@ -112,7 +133,7 @@ class SupabaseManager: ObservableObject {
         let url = URL(string: "\(baseURL)/rest/v1/bot_states?id=eq.\(id.uuidString)")!
         var request = URLRequest(url: url)
         request.httpMethod = "DELETE"
-        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        applyAuthHeaders(&request)
         
         let (_, response) = try await URLSession.shared.data(for: request)
         
@@ -129,8 +150,7 @@ class SupabaseManager: ObservableObject {
         let url = URL(string: "\(baseURL)/rest/v1/bot_trades")!
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
-        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        applyAuthHeaders(&request)
         request.setValue("return=minimal", forHTTPHeaderField: "Prefer")
         
         let encoder = JSONEncoder()
@@ -149,8 +169,7 @@ class SupabaseManager: ObservableObject {
     func loadTradingHistory(for botId: UUID, limit: Int = 100) async throws -> [BotTrade] {
         let url = URL(string: "\(baseURL)/rest/v1/bot_trades?bot_id=eq.\(botId.uuidString)&order=timestamp.desc&limit=\(limit)")!
         var request = URLRequest(url: url)
-        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
-        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        applyAuthHeaders(&request)
         
         let (data, response) = try await URLSession.shared.data(for: request)
         
@@ -163,14 +182,51 @@ class SupabaseManager: ObservableObject {
         return try decoder.decode([BotTrade].self, from: data)
     }
     
+    // MARK: - Trade Screenshots
+    
+    func saveTradeScreenshot(_ screenshot: TradeScreenshot) async throws {
+        let url = URL(string: "\(baseURL)/rest/v1/trade_screenshots")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        applyAuthHeaders(&request)
+        request.setValue("return=minimal", forHTTPHeaderField: "Prefer")
+        
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        request.httpBody = try encoder.encode(screenshot)
+        
+        let (_, response) = try await URLSession.shared.data(for: request)
+        
+        if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode >= 400 {
+            throw NSError(domain: "SupabaseError", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: "Failed to save trade screenshot"])
+        }
+        
+        print("📸 Trade screenshot saved: \(screenshot.phase.rawValue) - \(screenshot.tradeId)")
+    }
+    
+    func loadTradeScreenshots(for botId: UUID, limit: Int = 50) async throws -> [TradeScreenshot] {
+        let url = URL(string: "\(baseURL)/rest/v1/trade_screenshots?bot_id=eq.\(botId.uuidString)&order=timestamp.desc&limit=\(limit)")!
+        var request = URLRequest(url: url)
+        applyAuthHeaders(&request)
+        
+        let (data, response) = try await URLSession.shared.data(for: request)
+        
+        if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode >= 400 {
+            throw NSError(domain: "SupabaseError", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: "Failed to load trade screenshots"])
+        }
+        
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        return try decoder.decode([TradeScreenshot].self, from: data)
+    }
+
     // MARK: - Learning Data
     
     func saveLearningData(_ data: BotLearningData) async throws {
         let url = URL(string: "\(baseURL)/rest/v1/bot_learning_data")!
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
-        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        applyAuthHeaders(&request)
         request.setValue("return=minimal", forHTTPHeaderField: "Prefer")
         
         let encoder = JSONEncoder()
@@ -189,8 +245,7 @@ class SupabaseManager: ObservableObject {
     func loadLearningData(for botId: UUID) async throws -> BotLearningData? {
         let url = URL(string: "\(baseURL)/rest/v1/bot_learning_data?bot_id=eq.\(botId.uuidString)&limit=1")!
         var request = URLRequest(url: url)
-        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
-        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        applyAuthHeaders(&request)
         
         let (data, response) = try await URLSession.shared.data(for: request)
         
@@ -210,8 +265,7 @@ class SupabaseManager: ObservableObject {
         let url = URL(string: "\(baseURL)/rest/v1/bot_performance")!
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
-        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        applyAuthHeaders(&request)
         request.setValue("return=minimal", forHTTPHeaderField: "Prefer")
         
         let encoder = JSONEncoder()
@@ -230,8 +284,7 @@ class SupabaseManager: ObservableObject {
     func loadPerformanceMetrics(for botId: UUID) async throws -> [BotPerformanceMetrics] {
         let url = URL(string: "\(baseURL)/rest/v1/bot_performance?bot_id=eq.\(botId.uuidString)&order=timestamp.desc&limit=30")!
         var request = URLRequest(url: url)
-        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
-        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        applyAuthHeaders(&request)
         
         let (data, response) = try await URLSession.shared.data(for: request)
         
@@ -242,6 +295,23 @@ class SupabaseManager: ObservableObject {
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
         return try decoder.decode([BotPerformanceMetrics].self, from: data)
+    }
+    
+    // MARK: - Event/Error Logging (Optional)
+    func logClientEvent(_ message: String, context: [String: String] = [:]) async {
+        guard let url = URL(string: "\(baseURL)/rest/v1/app_events") else { return }
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        applyAuthHeaders(&request)
+        request.setValue("return=minimal", forHTTPHeaderField: "Prefer")
+        let payload: [String: Any] = [
+            "id": UUID().uuidString,
+            "timestamp": ISO8601DateFormatter().string(from: Date()),
+            "message": message,
+            "context": context
+        ]
+        request.httpBody = try? JSONSerialization.data(withJSONObject: payload)
+        _ = try? await URLSession.shared.data(for: request)
     }
 }
 
@@ -388,4 +458,114 @@ struct BotPerformanceMetrics: Codable, Identifiable {
         self.marketCondition = ["Bullish", "Bearish", "Sideways", "Volatile"].randomElement()!
         self.adaptationScore = Double.random(in: 0.6...0.95)
     }
+}
+
+// MARK: - Flip Mode Persistence
+extension SupabaseManager {
+    func saveFlipSession(_ session: FlipSession) async throws {
+        let url = URL(string: "\(baseURL)/rest/v1/flip_sessions")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        applyAuthHeaders(&request)
+        request.setValue("return=minimal", forHTTPHeaderField: "Prefer")
+        request.httpBody = try JSONEncoder().encode(session)
+        let (_, response) = try await URLSession.shared.data(for: request)
+        if let http = response as? HTTPURLResponse, http.statusCode >= 400 {
+            throw NSError(domain: "SupabaseError", code: http.statusCode, userInfo: [NSLocalizedDescriptionKey: "Failed to save flip session"])
+        }
+        print("🏁 Flip session saved")
+    }
+    
+    func updateFlipSession(_ session: FlipSession) async throws {
+        let url = URL(string: "\(baseURL)/rest/v1/flip_sessions?id=eq.\(session.id.uuidString)")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "PATCH"
+        applyAuthHeaders(&request)
+        request.setValue("return=minimal", forHTTPHeaderField: "Prefer")
+        request.httpBody = try JSONEncoder().encode(session)
+        let (_, response) = try await URLSession.shared.data(for: request)
+        if let http = response as? HTTPURLResponse, http.statusCode >= 400 {
+            throw NSError(domain: "SupabaseError", code: http.statusCode, userInfo: [NSLocalizedDescriptionKey: "Failed to update flip session"])
+        }
+    }
+    
+    func saveFlipTrade(_ trade: FlipTrade) async throws {
+        let url = URL(string: "\(baseURL)/rest/v1/flip_trades")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        applyAuthHeaders(&request)
+        request.setValue("return=minimal", forHTTPHeaderField: "Prefer")
+        request.httpBody = try JSONEncoder().encode(trade)
+        let (_, response) = try await URLSession.shared.data(for: request)
+        if let http = response as? HTTPURLResponse, http.statusCode >= 400 {
+            throw NSError(domain: "SupabaseError", code: http.statusCode, userInfo: [NSLocalizedDescriptionKey: "Failed to save flip trade"])
+        }
+    }
+}
+
+extension SupabaseManager {
+    struct TradeCommandDTO: Codable {
+        let id: UUID
+        let created_at: String
+        let status: String
+        let symbol: String
+        let volume: Double
+        let type: String
+        let account_login: String?
+        let account_server: String?
+        let bot_id: String
+        let bot_name: String
+        let mode: String
+    }
+
+    func enqueueTradeCommand(
+        symbol: String,
+        volume: Double,
+        type: String,
+        accountLogin: String?,
+        accountServer: String?,
+        botId: UUID,
+        botName: String,
+        mode: String = "flip"
+    ) async throws {
+        let dto = TradeCommandDTO(
+            id: UUID(),
+            created_at: ISO8601DateFormatter().string(from: Date()),
+            status: "pending",
+            symbol: symbol,
+            volume: volume,
+            type: type,
+            account_login: accountLogin,
+            account_server: accountServer,
+            bot_id: botId.uuidString,
+            bot_name: botName,
+            mode: mode
+        )
+        let url = URL(string: "\(baseURL)/rest/v1/trade_commands")!
+        var req = URLRequest(url: url)
+        req.httpMethod = "POST"
+        applyAuthHeaders(&req)
+        req.setValue("return=minimal", forHTTPHeaderField: "Prefer")
+        req.httpBody = try JSONEncoder().encode(dto)
+        let (_, resp) = try await URLSession.shared.data(for: req)
+        if let http = resp as? HTTPURLResponse, http.statusCode >= 300 {
+            throw NSError(domain: "SupabaseError", code: http.statusCode, userInfo: [NSLocalizedDescriptionKey: "Failed to enqueue trade command"])
+        }
+    }
+}
+
+#Preview {
+    VStack {
+        Text("Supabase Status: \(SupabaseManager.shared.connectionStatus)")
+            .foregroundColor(.white)
+            .padding()
+        Button("Test Log Event") {
+            Task {
+                await SupabaseManager.shared.logClientEvent("Preview Log", context: ["screen": "Supabase Preview"])
+            }
+        }
+        .buttonStyle(.borderedProminent)
+    }
+    .frame(maxWidth: .infinity, maxHeight: .infinity)
+    .background(Color.black.ignoresSafeArea())
 }

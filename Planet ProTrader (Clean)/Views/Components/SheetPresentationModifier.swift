@@ -445,11 +445,11 @@ struct BotDetailsView: View {
                 .foregroundStyle(.white)
             
             VStack(spacing: 8) {
-                InfoRow(label: "Strategy", value: bot.strategy)
-                InfoRow(label: "VPS Connection", value: bot.vpsConnection)
-                InfoRow(label: "Last Heartbeat", value: formatDate(bot.lastHeartbeat))
-                InfoRow(label: "Trade Logs", value: "\(bot.tradeLogs.count)")
-                InfoRow(label: "Insights", value: "\(bot.insights.count)")
+                SheetInfoRow(label: "Strategy", value: bot.strategy)
+                SheetInfoRow(label: "VPS Connection", value: bot.vpsConnection)
+                SheetInfoRow(label: "Last Heartbeat", value: formatDate(bot.lastHeartbeat))
+                SheetInfoRow(label: "Trade Logs", value: "\(bot.tradeLogs.count)")
+                SheetInfoRow(label: "Insights", value: "\(bot.insights.count)")
             }
             .padding(16)
             .background(
@@ -506,22 +506,34 @@ struct SheetStatCard: View {
     }
 }
 
-struct InfoRow: View {
+struct SheetInfoRow: View {
     let label: String
     let value: String
     
     var body: some View {
         HStack {
             Text(label)
-                .font(.system(size: 14, weight: .medium, design: .rounded))
+                .font(.system(size: 12, weight: .medium, design: .rounded))
                 .foregroundStyle(.white.opacity(0.7))
-            
             Spacer()
-            
             Text(value)
                 .font(.system(size: 14, weight: .semibold, design: .rounded))
                 .foregroundStyle(.white)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
         }
+    }
+}
+
+#Preview("SheetInfoRow") {
+    ZStack {
+        Color.black.ignoresSafeArea()
+        VStack(spacing: 12) {
+            SheetInfoRow(label: "Strategy", value: "AI-ScalpMaster")
+            SheetInfoRow(label: "Latency", value: "35ms")
+            SheetInfoRow(label: "CPU Usage", value: "62.3%")
+        }
+        .padding()
     }
 }
 
@@ -581,10 +593,10 @@ struct VPSStatusView: View {
     
     private var vpsInfoSection: some View {
         VStack(spacing: 16) {
-            InfoRow(label: "Server IP", value: "172.234.201.231")
-            InfoRow(label: "Status", value: vpsManager.connectionStatus.rawValue)
-            InfoRow(label: "Latency", value: vpsStatus != nil ? "35ms" : "N/A")
-            InfoRow(label: "CPU Usage", value: vpsStatus != nil ? String(format: "%.1f%%", vpsStatus!.cpuUsage) : "N/A")
+            SheetInfoRow(label: "Server IP", value: "172.234.201.231")
+            SheetInfoRow(label: "Status", value: vpsManager.connectionStatus.rawValue)
+            SheetInfoRow(label: "Latency", value: vpsStatus != nil ? "35ms" : "N/A")
+            SheetInfoRow(label: "CPU Usage", value: vpsStatus != nil ? String(format: "%.1f%%", vpsStatus!.cpuUsage) : "N/A")
         }
         .padding(20)
         .background(

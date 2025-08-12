@@ -9,7 +9,7 @@ import Foundation
 import SwiftUI
 
 @MainActor
-class RealTimeProTraderBot: ObservableObject, Identifiable {
+class RealTimeProTraderBot: ObservableObject, Identifiable, Codable {
     let id: UUID
     @Published var name: String
     @Published var status: String
@@ -24,6 +24,14 @@ class RealTimeProTraderBot: ObservableObject, Identifiable {
     @Published var lastHeartbeat: Date
     @Published var tradeLogs: [TradeLog] = []
     @Published var insights: [ClaudeInsight] = []
+    
+    // 🔥 NEW: Enhanced Learning Properties
+    @Published var learningSpeed: Double = 1.0
+    @Published var isLearningActive: Bool = false
+    @Published var confidenceLevel: Double = 0.75
+    @Published var learningProgress: Double = 0.0
+    @Published var xpPoints: Double = 0.0
+    @Published var adaptationRate: Double = 0.5
     
     // MARK: - ALL 18 ENGINES CONNECTED! 🔥🧠💪🎵🎯⚡🛰️🤖🧭📊📚
     private let botPersonalityEngine = BotPersonalityEngine()
@@ -77,10 +85,86 @@ class RealTimeProTraderBot: ObservableObject, Identifiable {
         self.vpsConnection = vpsConnection
         self.lastHeartbeat = lastHeartbeat
         
+        // 🔥 Initialize learning properties with optimized defaults
+        self.learningSpeed = Double.random(in: 0.8...1.0)
+        self.isLearningActive = true
+        self.confidenceLevel = Double.random(in: 0.75...0.90)
+        self.learningProgress = Double.random(in: 0.3...0.7)
+        self.xpPoints = Double.random(in: 100...500)
+        self.adaptationRate = Double.random(in: 0.6...0.9)
+        
         // Initialize ALL 18 ENGINES for ULTIMATE LEGENDARY GODMODE INTELLIGENCE 🧠⚡🎵🎯⚡🛰️🤖🧭📊📚
         initializeAllEngines()
         
         print("🚀🔥 \(name): ULTIMATE LEGENDARY GODMODE ACTIVATED - ALL 18 ENGINES ONLINE!")
+    }
+    
+    // 🔥 Computed Properties for Enhanced Functionality
+    var AisHealthy: Bool {
+        return isLearningActive && confidenceLevel > 0.7 && learningProgress > 0.3
+    }
+    
+    var displayStatus: String {
+        if !isLearningActive { return "Offline" }
+        if learningProgress >= 0.9 { return "Expert" }
+        if learningProgress >= 0.7 { return "Advanced" }
+        if learningProgress >= 0.5 { return "Learning" }
+        return "Training"
+    }
+    
+    // MARK: - 🔥 CODABLE CONFORMANCE FOR PERSISTENCE
+    enum CodingKeys: String, CodingKey {
+        case id, name, status, currentPair, strategy, dailyPnL, totalPnL, winRate, tradesCount
+        case isGodModeEnabled, vpsConnection, lastHeartbeat, learningSpeed, isLearningActive
+        case confidenceLevel, learningProgress, xpPoints, adaptationRate
+    }
+    
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(name, forKey: .name)
+        try container.encode(status, forKey: .status)
+        try container.encode(currentPair, forKey: .currentPair)
+        try container.encode(strategy, forKey: .strategy)
+        try container.encode(dailyPnL, forKey: .dailyPnL)
+        try container.encode(totalPnL, forKey: .totalPnL)
+        try container.encode(winRate, forKey: .winRate)
+        try container.encode(tradesCount, forKey: .tradesCount)
+        try container.encode(isGodModeEnabled, forKey: .isGodModeEnabled)
+        try container.encode(vpsConnection, forKey: .vpsConnection)
+        try container.encode(lastHeartbeat, forKey: .lastHeartbeat)
+        try container.encode(learningSpeed, forKey: .learningSpeed)
+        try container.encode(isLearningActive, forKey: .isLearningActive)
+        try container.encode(confidenceLevel, forKey: .confidenceLevel)
+        try container.encode(learningProgress, forKey: .learningProgress)
+        try container.encode(xpPoints, forKey: .xpPoints)
+        try container.encode(adaptationRate, forKey: .adaptationRate)
+    }
+    
+    required init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        
+        id = try container.decode(UUID.self, forKey: .id)
+        name = try container.decode(String.self, forKey: .name)
+        status = try container.decode(String.self, forKey: .status)
+        currentPair = try container.decode(String.self, forKey: .currentPair)
+        strategy = try container.decode(String.self, forKey: .strategy)
+        dailyPnL = try container.decode(Double.self, forKey: .dailyPnL)
+        totalPnL = try container.decode(Double.self, forKey: .totalPnL)
+        winRate = try container.decode(Double.self, forKey: .winRate)
+        tradesCount = try container.decode(Int.self, forKey: .tradesCount)
+        isGodModeEnabled = try container.decode(Bool.self, forKey: .isGodModeEnabled)
+        vpsConnection = try container.decode(String.self, forKey: .vpsConnection)
+        lastHeartbeat = try container.decode(Date.self, forKey: .lastHeartbeat)
+        learningSpeed = try container.decode(Double.self, forKey: .learningSpeed)
+        isLearningActive = try container.decode(Bool.self, forKey: .isLearningActive)
+        confidenceLevel = try container.decode(Double.self, forKey: .confidenceLevel)
+        learningProgress = try container.decode(Double.self, forKey: .learningProgress)
+        xpPoints = try container.decode(Double.self, forKey: .xpPoints)
+        adaptationRate = try container.decode(Double.self, forKey: .adaptationRate)
+        
+        // Initialize engines after decoding
+        initializeAllEngines()
     }
     
     // MARK: - ULTIMATE LEGENDARY ENGINE INITIALIZATION 🔥💥🎵🧠🎯⚡🛰️🤖🧭📊📚

@@ -40,7 +40,7 @@ struct ContentView: View {
                 
                 // AI Bots Tab
                 NavigationStack {
-                    ProTraderDashboardView()
+                    EnhancedProTraderDashboard()
                 }
                 .tabItem {
                     Image(systemName: "location.slash")
@@ -68,6 +68,16 @@ struct ContentView: View {
                 }
                 .tag(3)
                 
+                // Real MT5 Account Tab
+                NavigationStack {
+                    RealMT5AccountView()
+                }
+                .tabItem {
+                    Image(systemName: "dollarsign.circle.fill")
+                    Text("Real MT5")
+                }
+                .tag(4)
+                
                 // More Tab
                 NavigationStack {
                     ProfessionalMoreTabView()
@@ -76,7 +86,7 @@ struct ContentView: View {
                     Image(systemName: "ellipsis.circle.fill")
                     Text("More")
                 }
-                .tag(4)
+                .tag(5)
             }
             .tint(DesignSystem.primaryGold)
             .preferredColorScheme(.dark)

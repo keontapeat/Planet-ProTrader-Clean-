@@ -73,7 +73,8 @@ class MetaApiManager: ObservableObject {
     
     private init() {
         print("🚀 MetaApi Manager initialized with 2025 production endpoints")
-        setupInitialConnection()
+        // 🔥 FIX: Don't auto-connect to prevent home view popups
+        // Only connect when explicitly needed for trading
     }
     
     // MARK: - Connection Management
